@@ -178,7 +178,8 @@ async function kysy(body: any) {
 - Älä anna oikeudellisia tai turvallisuusneuvoja.`;
     user = `Data: ${JSON.stringify({ ...f, valittu_lupa: lupa })}\n\nKysymys: ${kysymys}`;
   }
-  const vastaus = await claude(viesti ? MALLI_KIRJOITUS : MALLI_NOPEA, system, user, 900);
+  const vastaus = (await claude(viesti ? MALLI_KIRJOITUS : MALLI_NOPEA, system, user, 4000)).trim();
+  if (!vastaus) return { virhe: "Vastausta ei saatu, kokeile uudelleen." };
   return { vastaus, malli: viesti ? MALLI_KIRJOITUS : MALLI_NOPEA };
 }
 
