@@ -173,6 +173,30 @@ table.t .r{text-align:right;white-space:nowrap;font-family:"IBM Plex Mono"}
 .flow div{background:var(--p);border:1px solid var(--l);border-radius:10px;padding:10px 12px;font-size:13px;color:var(--i2)}
 .flow b{display:block;color:var(--i);font-size:13.5px;margin-bottom:2px}
 
+.ai{background:var(--p);border:1px solid var(--l);border-radius:var(--r);margin-bottom:18px;overflow:hidden}
+.ai .ph{background:linear-gradient(90deg,#FFF7F1,transparent)}
+.ai-badge{display:inline-flex;align-items:center;gap:6px;font:500 11.5px "IBM Plex Mono";letter-spacing:.04em;color:var(--a)}
+.ai-badge i{width:7px;height:7px;border-radius:2px;background:var(--a);transform:rotate(45deg)}
+.ai-body{padding:14px 18px 16px}
+.ai-body h3{margin:0 0 10px;font-size:17px;letter-spacing:-.01em}
+.ai-body ol{margin:0 0 10px;padding-left:20px}
+.ai-body li{margin:6px 0;font-size:14.5px;line-height:1.5;color:var(--i2)}
+.ai-body li a{font-family:"IBM Plex Mono";font-size:12px;margin-left:4px}
+.ai-reco{background:var(--g);border-left:3px solid var(--a);border-radius:4px;padding:8px 12px;font-size:14px}
+.ai-meta{color:var(--m);font-size:11.5px;margin-top:10px}
+.ai-off{padding:14px 18px;color:var(--m);font-size:13.5px}
+.ask{display:flex;gap:8px;padding:14px 18px 6px}
+.ask input{flex:1;border:1px solid var(--l);border-radius:9px;padding:10px 12px;font:inherit;font-size:14.5px}
+.ask button,.btn{border:0;background:var(--i);color:#fff;border-radius:9px;padding:9px 14px;font-size:13.5px;font-weight:500;white-space:nowrap}
+.btn.ghost{background:var(--p);color:var(--i);border:1px solid var(--l)}
+.ask-ex{display:flex;flex-wrap:wrap;gap:6px;padding:0 18px 12px}
+.ask-ex button{border:1px solid var(--l);background:var(--p);border-radius:999px;padding:4px 10px;font-size:12.5px;color:var(--i2)}
+.answer{margin:0 18px 16px;padding:12px 14px;background:var(--g);border-radius:10px;font-size:14.5px;line-height:1.55;white-space:pre-wrap}
+.answer a{font-family:"IBM Plex Mono";font-size:12.5px}
+.aitag{font:500 11px "IBM Plex Mono";padding:1px 6px;border-radius:4px;white-space:nowrap}
+.aitag.suuri{background:#FDECEA;color:var(--slow)}.aitag.kohtalainen{background:#FFF4E5;color:#9A5B00}.aitag.pieni,.aitag.ei{background:var(--l2);color:var(--m)}
+.aibox{background:#FFFAF6;border:1px solid #F6DCCB;border-radius:10px;padding:10px 12px;margin:10px 0;font-size:13.5px}
+.draft{white-space:pre-wrap;background:var(--g);border-radius:10px;padding:12px 14px;font-size:13.5px;line-height:1.55;margin-top:8px}
 .sys{margin-top:16px;display:flex;flex-wrap:wrap;gap:6px 22px;font-size:12.5px;color:var(--m);padding:12px 2px;border-top:1px solid var(--l)}
 .sys b{color:var(--i2);font-weight:500;font-family:"IBM Plex Mono"}
 footer{max-width:1360px;margin:0 auto;padding:0 28px 32px;color:var(--m);font-size:12px;line-height:1.6}
@@ -199,6 +223,11 @@ footer{max-width:1360px;margin:0 auto;padding:0 28px 32px;color:var(--m);font-si
     <div class="when" id="briefWhen"></div>
   </div>
   <div class="kpis" id="kpis"></div>
+  <section class="ai" id="aiBox">
+    <div class="ph"><span class="ai-badge"><i></i>TEKOÄLYN KATSAUS</span>
+      <div class="seg" id="aiRole"><button data-r="hsl" class="on">HSL</button><button data-r="kaupunki">Kaupunki</button></div></div>
+    <div id="aiBody"><div class="ai-off">Ladataan…</div></div>
+  </section>
   <div class="h2row"><h2 id="cardsTitle">Eniten vaikuttavat työt nyt</h2><a href="#/tyot">Kaikki työmaat →</a></div>
   <div class="cards" id="cards"></div>
   <div class="split">
@@ -215,6 +244,16 @@ footer{max-width:1360px;margin:0 auto;padding:0 28px 32px;color:var(--m);font-si
     </div>
     <div class="panel" id="detail"><div class="det"><div class="empty">Valitse työmaa.</div></div></div>
   </div>
+  <section class="ai" style="margin-top:16px">
+    <div class="ph"><span class="ai-badge"><i></i>KYSY TUTKALTA</span><span class="note">Vastaus perustuu sivun mitattuihin lukuihin</span></div>
+    <form class="ask" id="askForm"><input id="askQ" maxlength="300" placeholder="Esim. mitkä työt hidastavat ratikkaa 4 tällä viikolla?" autocomplete="off"><button>Kysy</button></form>
+    <div class="ask-ex" id="askEx">
+      <button type="button">Mitkä työt haittaavat raitiovaunuja eniten?</button>
+      <button type="button">Mitä alkaa ensi viikolla Kampissa?</button>
+      <button type="button">Missä kannattaisi harkita poikkeusreittiä?</button>
+    </div>
+    <div id="askOut"></div>
+  </section>
 </section>
 
 <!-- ================= TYÖMAAT ================= -->
@@ -496,6 +535,7 @@ async function renderDetail(){
     <div class="sup"><span class="st ${ph.k}">${esc(ph.txt)}</span><span class="chip">${esc(l.lupa_id)}</span><span class="note">${esc(layerName(l.layer))}${l.kaupunginosa?" · "+esc(l.kaupunginosa.charAt(0)+l.kaupunginosa.slice(1).toLowerCase()):""}</span></div>
     <h3>${esc(title(l))}</h3>
     <div class="addr">${esc(purpose(l))} · ${l.alkaa?fmtDate(l.alkaa):""}–${l.paattyy?fmtDate(l.paattyy):""}</div>
+    ${l.ai_vaikutus?`<div class="aibox"><span class="ai-badge"><i></i>TEKOÄLYN TULKINTA LUVASTA</span><div style="margin-top:4px"><span class="aitag ${esc(l.ai_vaikutus)}">vaikutus: ${esc(l.ai_vaikutus)}</span> ${(l.ai_sulkee||[]).map(x=>`<span class="aitag pieni">${esc(String(x).replace("_"," "))}</span>`).join(" ")} <span class="note">${esc(l.ai_perustelu||"")}</span></div></div>`:""}
     <div class="facts">${facts.map(f=>`<div><b>${f[0]}</b><small>${f[1]}</small></div>`).join("")}</div>
     ${im && im.kind==="ennen" ? `<div class="note" style="margin:-6px 0 8px">Ennen ja jälkeen: ajoaika ${sgn(im.pct,1," %")} perustasosta, yleinen ruuhka vähennetty.</div>`:""}
     ${onRoute(l)?`<div class="sec">Linjat työmaan kohdalla</div>
@@ -512,7 +552,11 @@ async function renderDetail(){
     </div>`:""}
     ${segs.length?`<div class="sec">Pysäkkivälit (${segs.length})</div>
     <table class="t"><tbody>${segs.slice().sort((a,b)=>(b.n_24h||0)-(a.n_24h||0)).slice(0,6).map(g=>`<tr><td><span class="mono">${g.from_stop} → ${g.to_stop}</span><br><span class="note">${esc(lines(g.linjat).join(", "))}</span></td><td class="r">${nf(g.n_24h)} ajoa<br><span class="${g.lisaviive_s>10?"slow":g.lisaviive_s<-10?"fast":""}">${sgn(g.lisaviive_s)}</span></td></tr>`).join("")}</tbody></table>`:""}
+    ${onRoute(l)?`<div class="sec">Toimenpide</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn ghost" data-draft="urakoitsija">Luonnostele viesti urakoitsijalle</button><button class="btn ghost" data-draft="hsl">Luonnostele viesti HSL:lle</button></div>
+    <div id="draftOut"></div>`:""}
     <div style="height:10px"></div></div>`;
+  box.querySelectorAll("[data-draft]").forEach(b=>b.onclick=()=>draft(b.dataset.draft, l.lupa_id));
   const r = document.getElementById("load");
   if(r) r.oninput = () => { S.load = +r.value; document.getElementById("loadV").textContent = S.load; document.getElementById("paxH").textContent = nf(im.vehH*S.load,0)+" h / vrk"; };
   if(onRoute(l)){
@@ -592,7 +636,7 @@ function renderTyot(){
     const right = onRoute(l) ? (im && im.s!=null ? `<span class="${im.s>10?"slow":""}">${sgn(im.s)}</span><small>lisäviive</small>` : `${nf(l.ajoja_vrk)}<small>ajoa / vrk</small>`) : `<small>ei reitillä</small>`;
     return `<div class="li ${S.sel2===l.lupa_id?"sel":""}" data-id="${esc(l.lupa_id)}">
       <div class="d">${l.alkaa?fmtShort(l.alkaa):"–"}<small>${l.paattyy?"→ "+fmtShort(l.paattyy):""}</small></div>
-      <div class="n">${esc(title(l))}</div>
+      <div class="n">${esc(title(l))} ${l.ai_vaikutus==="suuri"||l.ai_vaikutus==="kohtalainen"?`<span class="aitag ${l.ai_vaikutus}">${l.ai_vaikutus==="suuri"?"suuri haitta":"kohtalainen"}</span>`:""}</div>
       <div class="x">${right}</div>
       <div class="p">${esc(purpose(l))}${onRoute(l)?` · linjat ${esc(lines(l.linjat).slice(0,8).join(", "))}${lines(l.linjat).length>8?"…":""}`:""}</div>
     </div>`;
@@ -710,6 +754,66 @@ function drawLive(){
   document.getElementById("liveFeed").innerHTML = passing.length ? passing.sort((a,b)=>a.v.dl-b.v.dl).slice(0,40).map(({v,site})=>`<div class="veh"><span class="badge ${v.mode==="tram"?"tram":""}">${esc(v.line)}</span><div><b style="font-weight:500">${esc(title(site))}</b><div class="note">${esc(purpose(site))} · ${nf(v.spd*3.6)} km/h</div></div><div class="r mono ${v.dl<-120?"slow":""}">${v.dl<0?"+"+nf(-v.dl/60,1)+" min":"ajallaan"}</div></div>`).join("") : `<div class="empty" style="padding:14px 16px">${LV.veh.size? "Yksikään ajoneuvo ei ole juuri nyt työmaan kohdalla." : "Odotetaan ajoneuvoja…"}</div>`;
 }
 
+
+/* ================= TEKOÄLY ================= */
+const FN = "https://pdbmxnmeyhifksgivnky.supabase.co/functions/v1/tekoaly";
+S.aiRole = "hsl"; S.ai = null; S.katsaus = {};
+async function fn(body){
+  const r = await fetch(FN, {method:"POST", headers:{apikey:KEY, Authorization:"Bearer "+KEY, "content-type":"application/json"}, body:JSON.stringify(body)});
+  return r.json();
+}
+const linkLupa = t => esc(t).replace(/\[([A-Z]{2}\d{5,}(?:-\d+)?)\]/g, (m,id)=> S.byId[id] ? `<a href="#/?l=${encodeURIComponent(id)}">${esc(title(S.byId[id]))}</a>` : id);
+function renderAI(){
+  const el = document.getElementById("aiBody"); if(!el) return;
+  const k = S.katsaus[S.aiRole];
+  if(!k){
+    el.innerHTML = S.ai === false
+      ? `<div class="ai-off">Tekoälykerros on rakennettu ja odottaa API-avainta. Kun avain on lisätty, Claude tulkitsee jokaisen luvan tekstin (sulkeeko työ kaistan, raitiotien tai pysäkin) ja kirjoittaa tähän katsauksen HSL:lle ja kaupungille kolmen tunnin välein. Luvut lasketaan aina koodilla, tekoäly vain selittää ne.</div>`
+      : `<div class="ai-off">Ensimmäinen katsaus kirjoitetaan seuraavalla ajokerralla (klo 6, 9, 12, 15, 18 ja 21).</div>`;
+    return;
+  }
+  const c = k.sisalto || {};
+  el.innerHTML = `<div class="ai-body">
+    <h3>${esc(c.otsikko||"")}</h3>
+    <ol>${(c.kohdat||[]).map(x=>`<li>${esc(x.teksti)}${x.lupa_id && S.byId[x.lupa_id]?`<a href="#/?l=${encodeURIComponent(x.lupa_id)}">${esc(x.lupa_id)} →</a>`:""}</li>`).join("")}</ol>
+    ${c.suositus?`<div class="ai-reco"><b>Suositus:</b> ${esc(c.suositus)}</div>`:""}
+    <div class="ai-meta">Kirjoittanut ${esc(k.malli||"Claude")} ${ago(k.luotu)} mitatuista luvuista. Tarkista luvut työmaan tiedoista ennen päätöksiä.</div>
+  </div>`;
+}
+document.querySelectorAll("#aiRole button").forEach(b=>b.onclick=()=>{ S.aiRole=b.dataset.r; document.querySelectorAll("#aiRole button").forEach(x=>x.classList.toggle("on",x===b)); renderAI(); });
+async function ask(q){
+  const out = document.getElementById("askOut");
+  if(S.ai === false){ out.innerHTML = `<div class="answer">Kysy tutkalta -toiminto otetaan käyttöön, kun tekoälykerroksen API-avain on lisätty.</div>`; return; }
+  out.innerHTML = `<div class="answer note">Haetaan vastausta…</div>`;
+  try{
+    const r = await fn({tila:"kysy", kysymys:q, lupa_id:S.sel});
+    out.innerHTML = `<div class="answer">${r.vastaus ? linkLupa(r.vastaus) : esc(r.virhe||"Vastausta ei saatu.")}</div>`;
+  }catch(e){ out.innerHTML = `<div class="answer">Yhteysvirhe.</div>`; }
+}
+document.getElementById("askForm").onsubmit = e => { e.preventDefault(); const q = document.getElementById("askQ").value.trim(); if(q) ask(q); };
+document.querySelectorAll("#askEx button").forEach(b=>b.onclick=()=>{ document.getElementById("askQ").value = b.textContent; ask(b.textContent); });
+async function draft(kind, id){
+  const box = document.getElementById("draftOut"); if(!box) return;
+  if(S.ai === false){ box.innerHTML = `<div class="draft">Viestiluonnokset otetaan käyttöön, kun tekoälykerroksen API-avain on lisätty.</div>`; return; }
+  box.innerHTML = `<div class="draft note">Luonnostellaan…</div>`;
+  try{
+    const r = await fn({tila:"kysy", viesti:kind, lupa_id:id});
+    if(S.sel!==id) return;
+    box.innerHTML = r.vastaus ? `<div class="draft" id="draftText">${esc(r.vastaus)}</div><div style="margin-top:6px;display:flex;gap:8px"><button class="btn ghost" id="copyDraft">Kopioi</button><span class="note" style="align-self:center">Luonnos, tarkista ennen lähettämistä.</span></div>` : `<div class="draft">${esc(r.virhe||"Luonnosta ei saatu.")}</div>`;
+    const c = document.getElementById("copyDraft"); if(c) c.onclick = ()=>{ navigator.clipboard?.writeText(r.vastaus); c.textContent="Kopioitu"; };
+  }catch(e){ box.innerHTML = `<div class="draft">Yhteysvirhe.</div>`; }
+}
+async function loadAI(){
+  try{
+    const [st, k] = await Promise.all([
+      fetch(FN+"?tila=tila",{headers:{apikey:KEY, Authorization:"Bearer "+KEY}}).then(r=>r.json()).catch(()=>({})),
+      get("v_ai_katsaus").catch(()=>[])
+    ]);
+    S.ai = !!st.avain; S.katsaus = Object.fromEntries((k||[]).map(r=>[r.rooli,r]));
+    renderAI();
+  }catch(e){}
+}
+
 /* ================= reititys ================= */
 function parseHash(){ const h = location.hash.replace(/^#\/?/,""); const [path, qs] = h.split("?"); const p = new URLSearchParams(qs||""); return {path: path||"", l: p.get("l")}; }
 function setHash(path, l){ const h = "#/"+path+(l?"?l="+encodeURIComponent(l):""); if(location.hash!==h) history.replaceState(null,"",h); }
@@ -720,7 +824,7 @@ function route(nav){
   document.querySelectorAll("nav a").forEach(a=>a.classList.toggle("on", (a.dataset.r||"home")===(v==="home"?"home":v) || (a.dataset.r===""&&v==="home")));
   if(!S.loaded) return;
   if(v==="home"){ const changed = l && S.byId[l] && S.sel!==l; if(changed) S.sel = l;
-    renderBrief(); renderCards(); renderHomeMap(); renderDetail(); setTimeout(()=>M.home.invalidateSize(),50);
+    renderBrief(); renderAI(); renderCards(); renderHomeMap(); renderDetail(); setTimeout(()=>M.home.invalidateSize(),50);
     if((changed || nav==="first") && S.byId[S.sel] && l){ const c = centroid(S.byId[S.sel].geom||{coordinates:[]}); if(c) M.home.setView(c,16); } }
   if(v==="tyot") renderTyot();
   if(v==="live") startLive();
@@ -758,7 +862,8 @@ async function load(){
     document.getElementById("status").textContent = "Yhteysvirhe: " + err.message;
   }
 }
-route(); load();
+route(); load(); loadAI();
+setInterval(()=>{ if(!document.hidden) loadAI(); }, 600000);
 setInterval(()=>{ if(!document.hidden && location.hash.indexOf("#/live")!==0) load(); }, 120000);
 </script>
 </body>
