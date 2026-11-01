@@ -319,7 +319,8 @@ const sgn = (v,d=0,u=" s") => v == null ? "–" : (v>0.5?"+":v<-0.5?"−":"±")+
 const pct = x => x == null ? null : (x-1)*100;
 // HSL:n sisäinen linjatunnus → matkustajan näkemä numero (1002 → 2, 2194 → 194)
 const ln = id => { id = String(id||""); return /^\d{4}/.test(id) ? (id.slice(1).replace(/^0+/,"") || id) : id; };
-const lines = arr => [...new Set((arr||[]).map(ln))].sort((a,b)=>parseInt(a)-parseInt(b)||a.localeCompare(b));
+// vain matkustajalle näkyvät linjat (esim. 4, 55, 69N, 550B); HSL:n sisäiset erikoisvuorot (100HA5, 7H6) pois
+const lines = arr => [...new Set((arr||[]).map(ln))].filter(r=>/^\d{1,3}[A-Z]?$/.test(r)).sort((a,b)=>parseInt(a)-parseInt(b)||a.localeCompare(b));
 const layerName = l => l && l.startsWith("Tilapainen") ? "Liikennejärjestely" : "Kaivutyö";
 const title = l => (l.osoite||"").split(/,\s*/).slice(0,2).join(", ") || l.lupa_id;
 const purpose = l => (l.tarkoitus||"").split(/\s(?:LISÄYS|KORJAUS|MUUTOS|PÄIVITYS|Lisäys|Korjaus|Muutos)\b/)[0].replace(/\s+/g," ").trim().slice(0,160).replace(/^(Työstä vastaava )?[Vv]ar(ataan|aa) tila(a)? /,"").replace(/^kaivutyölle;?\s*/,"").replace(/^./,c=>c.toUpperCase()) || layerName(l.layer);
@@ -385,7 +386,7 @@ function renderBrief(){
   }
   if(up7.length) parts.push(`Seuraavan 7 päivän aikana alkaa ${nf(up7.length)} uutta työtä${up7R.length?`, joista ${nf(up7R.length)} reittien varrella`:""}.`);
   const cl = clashes();
-  if(cl.length) parts.push(`<a href="#/tyot">${cl.length} ${cl.length===1?"päällekkäisyys":"päällekkäisyyttä"}</a> samoilla linjoilla vaatii huomiota.`);
+  if(cl.length) parts.push(`<a href="#/tyot">${cl.length} ${cl.length===1?"kasautuma":"kasautumaa"}</a>: uusi työ alkaa linjalle, jolla on jo toinen työ lähellä.`);
   document.getElementById("brief").innerHTML = parts.join(" ");
   const upd = all.map(l=>l.paivitetty).filter(Boolean).sort().pop();
   document.getElementById("briefWhen").textContent = "Laskettu automaattisesti mittaus- ja lupadatasta · päivitetty " + ago(upd);
@@ -532,22 +533,38 @@ function select(id, pan){
 }
 
 /* ================= TYÖMAAT ================= */
-function clashes(){
-  const act = S.luvat.filter(l=>onRoute(l) && phase(l).k!=="paattynyt" && +new Date(l.alkaa) < Date.now()+14*DAY);
-  const out = [];
-  for(let i=0;i<act.length;i++) for(let j=i+1;j<act.length;j++){
-    const a=act[i], b=act[j];
-    const lo = Math.max(+new Date(a.alkaa), +new Date(b.alkaa), Date.now()), hi = Math.min(+new Date(a.paattyy||8e15), +new Date(b.paattyy||8e15));
-    if(hi <= lo) continue;
-    // vähintään toinen alkaa 14 pv sisällä, muuten tilanne on jo vakiintunut
-    if(!(phase(a).k==="tulossa" || phase(b).k==="tulossa")) continue;
-    const ca = a.geom && centroid(a.geom), cb = b.geom && centroid(b.geom);
-    const dist = ca && cb ? Math.hypot((ca[0]-cb[0])*111200, (ca[1]-cb[1])*55800) : 1e9;
-    if(dist < 150) continue; // vierekkäiset luvat = käytännössä sama työmaa
-    const shared = lines(a.linjat).filter(r=>lines(b.linjat).includes(r) && !/N$/.test(r));
-    if(shared.length) out.push({a,b,lo,hi,shared,dist});
+// Päällekkäisyys = alkava työ samalle linjalle, jolla on jo toinen työ lähellä (0,3–2,5 km) samaan aikaan.
+// Alle 300 m päässä toisistaan olevat luvat yhdistetään samaksi työmaa-alueeksi (esim. Laakson sairaalatyömaan useat luvat).
+function clusters(list){
+  const c = list.map(l=>l.geom && centroid(l.geom)), parent = list.map((_,i)=>i);
+  const find = i => parent[i]===i ? i : (parent[i]=find(parent[i]));
+  for(let i=0;i<list.length;i++) for(let j=i+1;j<list.length;j++){
+    if(!c[i]||!c[j]) continue;
+    if(Math.hypot((c[i][0]-c[j][0])*111200,(c[i][1]-c[j][1])*55800) < 300) parent[find(i)] = find(j);
   }
-  return out.sort((x,y)=>y.shared.length-x.shared.length || x.lo-y.lo);
+  return {cl: list.map((_,i)=>find(i)), c};
+}
+let _clashCache = null;
+function clashes(){
+  if(_clashCache && _clashCache.k === S.luvat) return _clashCache.v;
+  const act = S.luvat.filter(l=>onRoute(l) && phase(l).k!=="paattynyt" && +new Date(l.alkaa) < Date.now()+14*DAY);
+  const {cl, c} = clusters(act), best = new Map();
+  for(let i=0;i<act.length;i++) for(let j=0;j<act.length;j++){
+    const a=act[i], b=act[j];
+    if(i===j || cl[i]===cl[j] || phase(a).k!=="tulossa") continue;      // a = uusi alkava työ
+    if(phase(b).k==="tulossa" && +new Date(b.alkaa) > +new Date(a.alkaa)) continue; // b on jo käynnissä tai alkaa ensin
+    const lo = Math.max(+new Date(a.alkaa), +new Date(b.alkaa)), hi = Math.min(+new Date(a.paattyy||8e15), +new Date(b.paattyy||8e15));
+    if(hi <= lo || !c[i] || !c[j]) continue;
+    const dist = Math.hypot((c[i][0]-c[j][0])*111200, (c[i][1]-c[j][1])*55800);
+    if(dist > 2500) continue;
+    const shared = lines(a.linjat).filter(r=>lines(b.linjat).includes(r) && !/N$/.test(r));
+    if(!shared.length) continue;
+    const key = [cl[i],cl[j]].sort().join("|"), prev = best.get(key);
+    if(!prev || shared.length > prev.shared.length) best.set(key, {a,b,lo,hi,shared,dist});
+  }
+  const v = [...best.values()].sort((x,y)=>y.shared.length-x.shared.length || x.lo-y.lo);
+  _clashCache = {k:S.luvat, v};
+  return v;
 }
 function filtered(){
   const q = S.q.trim().toLowerCase();
@@ -566,7 +583,7 @@ function renderTyot(){
   const lineSet = new Set(upR.flatMap(l=>lines(l.linjat)));
   document.getElementById("tyotBrief").innerHTML = `Seuraavan 14 päivän aikana alkaa <strong>${nf(up.length)} katutyötä</strong>. Niistä <strong>${nf(upR.length)}</strong> on bussi- tai ratikkareitin varrella, ja ne koskettavat ${nf(lineSet.size)} linjaa. Kaikki ${nf(all.filter(l=>phase(l).k==="kaynnissa").length)} käynnissä olevaa työtä löytyvät suodattimella <em>Käynnissä</em>.`;
   const cl = clashes();
-  document.getElementById("clash").innerHTML = cl.length ? `<div class="warn"><h4>Päällekkäiset työt samoilla linjoilla (${cl.length})</h4><ul>${cl.slice(0,5).map(c=>`<li><b>${esc(title(c.a))}</b> ja <b>${esc(title(c.b))}</b>: yhtä aikaa ${fmtShort(c.lo)}–${c.hi<8e15?fmtShort(c.hi):""}, yhteiset linjat ${c.shared.slice(0,6).map(esc).join(", ")}${c.shared.length>6?"…":""}.</li>`).join("")}</ul></div>` : "";
+  document.getElementById("clash").innerHTML = cl.length ? `<div class="warn"><h4>Kasautuvat työt samoilla linjoilla (${cl.length})</h4><div class="note" style="margin-bottom:6px">Uusi työ alkaa linjalle, jolla on jo toinen työ alle 2,5 km päässä. Viiveet kasautuvat samalle matkustajalle.</div><ul>${cl.slice(0,5).map(c=>`<li><b>${esc(title(c.a))}</b> alkaa ${fmtDate(c.a.alkaa)} linjoilla ${c.shared.slice(0,6).map(esc).join(", ")}${c.shared.length>6?"…":""}, joilla on jo työ ${nf(c.dist/1000,1)} km päässä (<b>${esc(title(c.b))}</b>). Yhtä aikaa ${fmtShort(c.lo)}–${c.hi<8e15?fmtShort(c.hi):""}.</li>`).join("")}</ul></div>` : "";
   const items = filtered();
   document.getElementById("listTitle").textContent = `${nf(items.length)} työtä`;
   const el = document.getElementById("list");
