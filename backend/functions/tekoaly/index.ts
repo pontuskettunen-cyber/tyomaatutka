@@ -36,7 +36,7 @@ function parseJSON(t: string): any {
   const end = Math.max(t.lastIndexOf("}"), t.lastIndexOf("]"));
   try { return JSON.parse(t.slice(start, end + 1)); } catch { /* katkennut vastaus: pelastetaan valmiit oliot */ }
   if (t[start] === "[") return (t.match(/\{[^{}]*\}/g) ?? []).map((x) => { try { return JSON.parse(x); } catch { return null; } }).filter(Boolean);
-  throw new Error("vastaus ei ollut JSONia");
+  throw new Error("vastaus ei ollut JSONia (" + t.length + " merkkiä): " + t.slice(0, 120).replace(/\s+/g, " ") + " … " + t.slice(-80).replace(/\s+/g, " "));
 }
 
 /* ---------- apurit (samat säännöt kuin sivulla) ---------- */
@@ -137,10 +137,10 @@ Säännöt:
 - Jokainen kohta viittaa yhteen lupaan (lupa_id) tai on yleinen (lupa_id null).
 - Kirjoita selkeää yleiskieltä suomeksi, ei jargonia. Linjat matkustajan numeroina (esim. "ratikka 4", "bussi 55").
 - Priorisoi: 1) mitattu suuri lisäviive, 2) kasautumat (uusi työ linjalle, jolla on jo työ), 3) alkavat työt vilkkailla linjoilla, joiden tulkinta on "suuri".
-Palauta VAIN JSON: {"hsl": K, "kaupunki": K}, jossa K = {"otsikko": max 12 sanaa, "kohdat": [{"teksti": max 40 sanaa, "lupa_id": string|null}] (3–5 kpl), "suositus": max 30 sanaa}.
+Vastaa pelkällä JSONilla ilman johdantoa tai markdownia: {"hsl": K, "kaupunki": K}, jossa K = {"otsikko": max 12 sanaa, "kohdat": [{"teksti": max 40 sanaa, "lupa_id": string|null}] (3–5 kpl), "suositus": max 30 sanaa}.
 - "hsl" on HSL:n liikennesuunnittelijalle: mitä linjoille tapahtuu ja mihin pitää varautua (poikkeusreitit, aikataulut, tiedotus).
 - "kaupunki" on kaupungin lupakäsittelijälle: mitkä luvat aiheuttavat joukkoliikenteelle eniten haittaa ja missä ajoitusta tai ehtoja kannattaisi tarkistaa.`;
-  const t = await claude(MALLI_KIRJOITUS, system, JSON.stringify(f), 2500);
+  const t = await claude(MALLI_KIRJOITUS, system, JSON.stringify(f), 6000);
   const k = parseJSON(t);
   const rivit = ["hsl", "kaupunki"].filter((r) => k?.[r]).map((r) => ({ rooli: r, sisalto: k[r], malli: MALLI_KIRJOITUS }));
   if (rivit.length) await db.from("ai_katsaus").insert(rivit);
