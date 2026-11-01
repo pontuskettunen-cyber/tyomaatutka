@@ -613,12 +613,13 @@ function startLive(){
   setTimeout(()=>M.live.invalidateSize(), 50);
   // työmaiden kärkipisteet
   LV.near = [];
+  if(!LV.sites) LV.sites = L.layerGroup().addTo(M.live); LV.sites.clearLayers();
   S.luvat.filter(l=>onRoute(l) && phase(l).k==="kaynnissa" && l.geom).forEach(l=>{
     const rings = []; const walk = c => { if(typeof c[0][0]==="number") rings.push(c); else c.forEach(walk); };
     try{ if(l.geom.type==="Point") rings.push([l.geom.coordinates]); else if(l.geom.type==="LineString") rings.push(l.geom.coordinates); else walk(l.geom.coordinates); }catch(e){}
     const all = rings.flat(); if(!all.length) return;
     LV.near.push({l, rings, b:[Math.min(...all.map(p=>p[1])), Math.min(...all.map(p=>p[0])), Math.max(...all.map(p=>p[1])), Math.max(...all.map(p=>p[0]))]});
-    L.geoJSON(l.geom,{interactive:false,style:{color:"#C2410C",weight:1,fillColor:"#C2410C",fillOpacity:.2}}).addTo(M.live);
+    L.geoJSON(l.geom,{interactive:false,style:{color:"#C2410C",weight:1,fillColor:"#C2410C",fillOpacity:.2}}).addTo(LV.sites);
   });
   if(LV.client) return;
   LV.client = mqtt.connect("wss://mqtt.hsl.fi:443/", {reconnectPeriod:3000, connectTimeout:10000});
