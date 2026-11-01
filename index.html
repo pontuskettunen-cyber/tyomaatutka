@@ -338,7 +338,8 @@ function chartSVG(cell){
   let g = "";
   [ -ymax, -ymax/2, 0, ymax/2, ymax ].forEach(v=>{ g += `<line x1="${ml}" x2="${W-mr}" y1="${Y(v)}" y2="${Y(v)}" stroke="${v===0?"#B9BEB4":"#EEF0EB"}" stroke-width="1"/><text x="${ml-6}" y="${Y(v)+4}" text-anchor="end" font-size="10.5" fill="#6B737B" font-family="IBM Plex Mono">${v>0?"+":""}${v}%</text>`; });
   const span = now - t0, step = span > 3*DAY ? DAY : span > DAY ? DAY/2 : DAY/4;
-  for(let k=Math.ceil(t0/step)*step; k<=now; k+=step){ const t = new Date(k); g += `<line x1="${X(+t)}" x2="${X(+t)}" y1="${mt}" y2="${H-mb}" stroke="#F3F4F1"/><text x="${X(+t)}" y="${H-8}" text-anchor="middle" font-size="10.5" fill="#6B737B">${step>=DAY||t.getHours()===0?wd[t.getDay()]+" "+t.getDate()+".":"klo "+t.getHours()}</text>`; }
+  const tzo = new Date().getTimezoneOffset()*60000;
+  for(let k=Math.ceil((t0-tzo)/step)*step+tzo; k<=now; k+=step){ const t = new Date(k); g += `<line x1="${X(+t)}" x2="${X(+t)}" y1="${mt}" y2="${H-mb}" stroke="#F3F4F1"/><text x="${X(+t)}" y="${H-8}" text-anchor="middle" font-size="10.5" fill="#6B737B">${step>=DAY||t.getHours()===0?wd[t.getDay()]+" "+t.getDate()+".":"klo "+t.getHours()}</text>`; }
   // työn alku
   let startMark = "";
   if(site && site.alkaa){
