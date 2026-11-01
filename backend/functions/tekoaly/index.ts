@@ -30,10 +30,13 @@ async function claude(model: string, system: string, user: string, max = 1500): 
   return (d.content ?? []).map((c: any) => c.text ?? "").join("");
 }
 function parseJSON(t: string): any {
+  t = t.replace(/```(?:json)?/g, "");
   const a = t.indexOf("{"), b = t.indexOf("[");
   const start = a < 0 ? b : b < 0 ? a : Math.min(a, b);
   const end = Math.max(t.lastIndexOf("}"), t.lastIndexOf("]"));
-  return JSON.parse(t.slice(start, end + 1));
+  try { return JSON.parse(t.slice(start, end + 1)); } catch { /* katkennut vastaus: pelastetaan valmiit oliot */ }
+  if (t[start] === "[") return (t.match(/\{[^{}]*\}/g) ?? []).map((x) => { try { return JSON.parse(x); } catch { return null; } }).filter(Boolean);
+  throw new Error("vastaus ei ollut JSONia");
 }
 
 /* ---------- apurit (samat säännöt kuin sivulla) ---------- */
@@ -101,18 +104,18 @@ async function luokittele() {
   const reitilla = new Set((reitti ?? []).map((r: any) => r.lupa_id));
   const { data: luvat } = await db.from("luvat_snapshot").select("lupa_id,layer,osoite,tarkoitus,alkaa,paattyy").eq("snap_date", pv);
   const jono = (luvat ?? []).filter((l: any) => !tehty.has(l.lupa_id) && (!l.paattyy || +new Date(l.paattyy) > Date.now() - DAY))
-    .sort((a: any, b: any) => Number(reitilla.has(b.lupa_id)) - Number(reitilla.has(a.lupa_id))).slice(0, 90);
+    .sort((a: any, b: any) => Number(reitilla.has(b.lupa_id)) - Number(reitilla.has(a.lupa_id))).slice(0, 60);
   let n = 0;
-  for (let i = 0; i < jono.length; i += 30) {
-    const erä = jono.slice(i, i + 30).map((l: any) => ({ id: l.lupa_id, tyyppi: l.layer?.startsWith("Tilapainen") ? "liikennejärjestely" : "kaivuilmoitus",
-      osoite: l.osoite, kuvaus: (l.tarkoitus ?? "").slice(0, 700) }));
+  for (let i = 0; i < jono.length; i += 15) {
+    const erä = jono.slice(i, i + 15).map((l: any) => ({ id: l.lupa_id, tyyppi: l.layer?.startsWith("Tilapainen") ? "liikennejärjestely" : "kaivuilmoitus",
+      osoite: l.osoite, kuvaus: (l.tarkoitus ?? "").split(/\s(?:LISÄYS|KORJAUS|MUUTOS)\b/)[0].slice(0, 500) }));
     const system = `Olet liikenneinsinööri, joka luokittelee Helsingin katulupia. Arvioi jokaisesta luvasta pelkän kuvauksen perusteella, missä työ tehdään ja haittaako se ajoneuvoliikennettä.
 Palauta VAIN JSON-taulukko, yksi olio per lupa: {"id","sijainti","vaikutus","sulkee","perustelu"}.
 - sijainti: "ajorata" | "kaista" | "raitiotie" | "pysakki" | "jalkakaytava" | "piha" | "muu"
 - vaikutus ajoneuvoliikenteelle: "suuri" (kaista/raitiotie suljetaan tai kadun liikenne katkeaa) | "kohtalainen" (kavennus, kääntymisrajoitus, ajoittainen haitta) | "pieni" (lähinnä jalkakäytävä, lyhyt työ) | "ei" (piha, puisto, tontin sisällä)
 - sulkee: taulukko arvoista "kaista","raitiotie","pysakki","kaantyminen","koko_katu" sen mukaan mitä kuvaus kertoo; tyhjä jos ei mitään
 - perustelu: enintään 18 sanaa suomeksi, vain kuvauksessa mainittuihin seikkoihin nojaten. Jos kuvaus ei kerro, sano "kuvaus ei kerro".`;
-    const t = await claude(MALLI_NOPEA, system, JSON.stringify(erä), 4000);
+    const t = await claude(MALLI_NOPEA, system, JSON.stringify(erä), 6000);
     const arr = parseJSON(t);
     const rivit = (Array.isArray(arr) ? arr : []).filter((r: any) => r?.id).map((r: any) => ({
       lupa_id: String(r.id), sijainti: r.sijainti ?? null, vaikutus: r.vaikutus ?? null,
@@ -124,6 +127,9 @@ Palauta VAIN JSON-taulukko, yksi olio per lupa: {"id","sijainti","vaikutus","sul
 
 /* ---------- 2) katsaus ---------- */
 async function katsaus() {
+  // estää toistuvat kutsut: uusi katsaus korkeintaan 90 min välein
+  const { data: viim } = await db.from("ai_katsaus").select("luotu").order("luotu", { ascending: false }).limit(1);
+  if (viim?.[0] && Date.now() - +new Date(viim[0].luotu) < 90 * 60000) return { kirjoitettu: [] as string[], ohitettu: "tuore katsaus on jo olemassa" };
   const f = await faktat();
   const system = `Kirjoitat Työmaatutka-palvelun tilannekatsauksen. Saat JSON-muodossa valmiiksi lasketut luvut Helsingin katutöistä ja niiden vaikutuksesta busseihin ja ratikoihin.
 Säännöt:
