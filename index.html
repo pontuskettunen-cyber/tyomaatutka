@@ -58,6 +58,10 @@ td.mono{font-size:12.5px}
 .about ul{margin:0 0 10px;padding-left:18px}
 .about a{color:var(--a)}
 footer{color:var(--m);font-size:12.5px;padding:0 28px 30px;max-width:1440px;margin:0 auto}
+.tiles{filter:grayscale(1) contrast(.9) brightness(1.06)}
+.num{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:var(--a);color:#fff;font:600 11.5px "IBM Plex Mono";margin-right:8px;vertical-align:1px}
+.num.v{background:var(--m)}
+.pin{background:transparent;border:0}
 .leaflet-container{font-family:"IBM Plex Sans",sans-serif}
 .lbl{background:transparent;border:0;box-shadow:none;font:600 11.5px "IBM Plex Sans";color:var(--i);text-shadow:0 0 3px #fff,0 0 3px #fff}
 .empty{padding:18px 16px;color:var(--m);font-size:13.5px}
@@ -87,7 +91,7 @@ footer{color:var(--m);font-size:12.5px;padding:0 28px 30px;max-width:1440px;marg
   <section class="row2">
     <div class="card">
       <h2>Viimeisimmät havainnot <em id="feednote"></em></h2>
-      <div class="scroll"><table><thead><tr><th>Aika</th><th>Tapahtuma</th><th>Linja</th><th>Pysäkki</th><th>Alue</th><th style="text-align:right">Aikataulu­poikkeama</th></tr></thead><tbody id="feed"></tbody></table></div>
+      <div class="scroll"><table><thead><tr><th>Aika</th><th>Tapahtuma</th><th>Linja</th><th>Pysäkki</th><th>Alue</th><th style="text-align:right">Myöhässä</th></tr></thead><tbody id="feed"></tbody></table></div>
     </div>
     <div class="card">
       <h2>Mitä tämä on</h2>
@@ -108,7 +112,7 @@ footer{color:var(--m);font-size:12.5px;padding:0 28px 30px;max-width:1440px;marg
 </main>
 
 <footer>
-  Lähteet: HSL High-frequency positioning (HFP v2, CC BY 4.0) · Helsingin kaupunki, kartta.hel.fi avoin data (CC BY 4.0) · Fintraffic Digitraffic (CC BY 4.0) · Pohjakartta © OpenStreetMap, © CARTO.
+  Lähteet: HSL High-frequency positioning (HFP v2, CC BY 4.0) · Helsingin kaupunki, kartta.hel.fi avoin data (CC BY 4.0) · Fintraffic Digitraffic (CC BY 4.0) · Pohjakartta © OpenStreetMap-tekijät.
   Konsepti ja toteutus: Pontus Kettunen. Päivittyy 20 s välein.
 </footer>
 
@@ -123,7 +127,9 @@ const fmtN = n => n == null ? "–" : Number(n).toLocaleString("fi-FI");
 const fmtT = t => t ? new Date(t).toLocaleTimeString("fi-FI",{hour:"2-digit",minute:"2-digit",second:"2-digit"}) : "–";
 const fmtDT = t => t ? new Date(t).toLocaleString("fi-FI",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"}) : "–";
 const ago = t => { if(!t) return "–"; const s=Math.round((Date.now()-new Date(t))/1000); if(s<60) return s+" s sitten"; if(s<3600) return Math.round(s/60)+" min sitten"; return Math.round(s/3600)+" h sitten"; };
-function dlCell(v){ if(v==null) return '<span style="color:var(--m)">–</span>'; const n=Math.round(Number(v)); const cls=n>60?"dl-pos":n<-60?"dl-neg":"dl-ok"; const txt=n>0?"+"+n+" s":n+" s"; return `<span class="${cls}">${txt}</span>`; }
+// HFP:n dl: negatiivinen = myöhässä aikataulusta. Näytetään myöhästyminen (= -dl).
+function dlCell(v){ if(v==null) return '<span style="color:var(--m)">–</span>'; const d=-Math.round(Number(v)); const cls=d>60?"dl-pos":d<-60?"dl-neg":"dl-ok"; const txt=d>0?"+"+d+" s":d<0?"−"+(-d)+" s":"0 s"; return `<span class="${cls}" title="${d>0?"myöhässä":d<0?"etuajassa":"ajallaan"}">${txt}</span>`; }
+const dlColor = v => v==null?"#5B636B":(-v)>60?"#B91C1C":(-v)<-60?"#1D4ED8":"#1F7A4D";
 
 // HFP-geohash "60;24/19/82" → 0,01° ruutu
 function cellBounds(c){
@@ -139,7 +145,7 @@ async function get(view){
 }
 
 const map = L.map("map",{zoomControl:true,scrollWheelZoom:false}).setView([60.175,24.935],14);
-L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",{maxZoom:19,subdomains:"abcd",attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/">CARTO</a>'}).addTo(map);
+L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,className:"tiles",attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}).addTo(map);
 const cellLayer = L.layerGroup().addTo(map), dotLayer = L.layerGroup().addTo(map);
 const rects = {}; let fitted=false, selected=null;
 
@@ -164,22 +170,23 @@ function renderAreas(a){
   const el = document.getElementById("areas");
   if(!a.length){ el.innerHTML='<div class="empty">Ei seuranta-alueita.</div>'; return; }
   a.sort((x,y)=> (x.rooli==="vertailu") - (y.rooli==="vertailu") || String(x.nimi).localeCompare(y.nimi,"fi"));
-  el.innerHTML = a.map(r=>`
+  el.innerHTML = a.map((r,i)=>`
     <div class="area ${selected===r.cell?"sel":""}" data-cell="${esc(r.cell)}">
-      <div class="n">${esc(r.nimi)}<span class="tag ${r.rooli==="tyomaa"?"tm":""}">${r.rooli==="tyomaa"?"työmaa":"vertailu"}</span></div>
-      <div class="v" title="Keskimääräinen aikataulupoikkeama lähdöissä">${dlCell(r.keskim_aikataulupoikkeama_s)}</div>
+      <div class="n"><span class="num ${r.rooli==="tyomaa"?"":"v"}">${i+1}</span>${esc(r.nimi)}<span class="tag ${r.rooli==="tyomaa"?"tm":""}">${r.rooli==="tyomaa"?"työmaa":"vertailu"}</span></div>
+      <div class="v" title="Keskimääräinen myöhästyminen lähdöissä (+ = myöhässä)">${dlCell(r.keskim_aikataulupoikkeama_s)}</div>
       <div class="meta">${fmtN(r.tapahtumia_60min)} havaintoa · ${fmtN(r.linjoja_60min)} linjaa · viimeisin ${ago(r.viimeisin)}${r.lupa_id?` · lupa <span class="mono">${esc(r.lupa_id)}</span>`:""}</div>
     </div>`).join("");
   el.querySelectorAll(".area").forEach(d=>d.onclick=()=>{ selected=d.dataset.cell; const b=cellBounds(selected); if(b) map.fitBounds(b,{padding:[80,80],maxZoom:16}); el.querySelectorAll(".area").forEach(x=>x.classList.toggle("sel",x===d)); });
 
   cellLayer.clearLayers(); const all=[];
-  a.forEach(r=>{
+  a.forEach((r,i)=>{
     const b = cellBounds(r.cell); if(!b) return; all.push(...b);
     const tm = r.rooli==="tyomaa";
     const rect = L.rectangle(b,{color:tm?"#C2410C":"#5B636B",weight:1.5,fillColor:tm?"#C2410C":"#5B636B",fillOpacity:tm?.10:.06,dashArray:tm?null:"4 4"})
-      .bindPopup(`<b>${esc(r.nimi)}</b><br>${tm?"Työmaa-alue":"Vertailualue"}<br>${fmtN(r.tapahtumia_60min)} havaintoa / 60 min<br>Aikataulupoikkeama: ${dlCell(r.keskim_aikataulupoikkeama_s)}`);
+      .bindPopup(`<b>${esc(r.nimi)}</b><br>${tm?"Työmaa-alue":"Vertailualue"}<br>${fmtN(r.tapahtumia_60min)} havaintoa / 60 min<br>Myöhästyminen: ${dlCell(r.keskim_aikataulupoikkeama_s)}`);
     rect.addTo(cellLayer);
-    L.tooltip({permanent:true,direction:"center",className:"lbl"}).setContent(esc(r.nimi)).setLatLng([(b[0][0]+b[1][0])/2,(b[0][1]+b[1][1])/2]).addTo(cellLayer);
+    L.marker([b[1][0],b[0][1]],{interactive:false,icon:L.divIcon({className:"pin",iconSize:[20,20],iconAnchor:[-4,-4],html:`<span class="num ${tm?"":"v"}">${i+1}</span>`})}).addTo(cellLayer);
+    rect.bindTooltip(esc(r.nimi),{sticky:true});
   });
   if(!fitted && all.length){ map.fitBounds(all,{padding:[30,30]}); fitted=true; }
 }
@@ -190,11 +197,11 @@ function renderFeed(v, names){
   v.forEach(e=>{
     if(e.lat==null||e.lon==null) return;
     const age = (now-new Date(e.tst))/60000;
-    const col = e.dl==null?"#5B636B":e.dl>60?"#B91C1C":e.dl<-60?"#1D4ED8":"#1F7A4D";
+    const col = dlColor(e.dl);
     L.circleMarker([e.lat,e.lon],{radius:4,weight:0,fillColor:col,fillOpacity:Math.max(.15,1-age/30)})
-      .bindTooltip(`Linja ${esc(e.route)} · ${esc(String(e.event).toUpperCase())} · ${fmtT(e.tst)}${e.dl!=null?" · "+Math.round(e.dl)+" s":""}`).addTo(dotLayer);
+      .bindTooltip(`Linja ${esc(e.route)} · ${esc(String(e.event).toUpperCase())} · ${fmtT(e.tst)}${e.dl!=null?" · "+(e.dl<=0?"myöhässä "+(-Math.round(e.dl)):"etuajassa "+Math.round(e.dl))+" s":""}`).addTo(dotLayer);
   });
-  document.getElementById("mapnote").textContent = v.length+" havaintoa · väri = aikataulupoikkeama";
+  document.getElementById("mapnote").textContent = v.length+" havaintoa · punainen = yli 1 min myöhässä, vihreä = ajallaan, sininen = etuajassa";
   document.getElementById("feednote").textContent = "viimeiset 30 min";
   const fb = document.getElementById("feed");
   if(!v.length){ fb.innerHTML='<tr><td colspan="6" class="empty">Ei havaintoja viimeisen 30 minuutin aikana. Yöllä liikennettä on vähän.</td></tr>'; return; }
