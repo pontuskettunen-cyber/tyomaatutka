@@ -51,6 +51,22 @@ main{max-width:1360px;margin:0 auto;padding:24px 28px 32px}
 .brief .when{grid-column:2;color:var(--m);font-size:12.5px}
 @media(max-width:720px){.brief{grid-template-columns:1fr}.brief .when{grid-column:1}.brief p{font-size:17px}}
 
+/* Now / headline */
+.now{margin-bottom:16px}
+.now-k{display:flex;align-items:center;gap:8px;font:500 11.5px "IBM Plex Mono";letter-spacing:.05em;text-transform:uppercase;color:var(--a);margin-bottom:8px}
+.headline{margin:0 0 14px;font-size:26px;line-height:1.25;letter-spacing:-.02em;font-weight:600;max-width:900px}
+.headline em{font-style:normal;color:var(--a)}
+.signals{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.sig{display:block;text-decoration:none;color:inherit;background:var(--p);border:1px solid var(--l);border-left:3px solid var(--a);border-radius:10px;padding:10px 12px;min-width:0}
+.sig.ind{border-left-color:var(--ind)}.sig.warn2{border-left-color:#B45309}
+.sig small{display:block;color:var(--m);font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;font-weight:600;margin-bottom:2px}
+.sig b{display:block;font-size:14.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sig span{color:var(--i2);font-size:13px}
+.sig:hover{border-color:#C9CDC4}
+@media(max-width:720px){.headline{font-size:21px}.signals{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:2px}.sig{min-width:72%;scroll-snap-align:start}
+ .kpi{padding:10px 12px}.kpi b{font-size:20px}.kpi small{font-size:11.5px}}
+.ai-short li{margin:4px 0}
+.ai-more{border:0;background:none;color:var(--a);font-size:13.5px;padding:4px 0;font-weight:500}
 /* KPI strip */
 .kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:18px}
 @media(max-width:860px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -217,10 +233,10 @@ footer{max-width:1360px;margin:0 auto;padding:0 28px 32px;color:var(--m);font-si
 <main>
 <!-- ================= TILANNEKUVA ================= -->
 <section class="view" id="v-home">
-  <div class="brief" aria-live="polite">
-    <div class="k">Tilannekatsaus</div>
-    <p id="brief">Ladataan tilannekuvaa…</p>
-    <div class="when" id="briefWhen"></div>
+  <div class="now" aria-live="polite">
+    <div class="now-k"><span class="dot on"></span><span id="briefWhen">Tilanne nyt</span></div>
+    <h1 class="headline" id="brief">Ladataan tilannekuvaa…</h1>
+    <div class="signals" id="signals"></div>
   </div>
   <div class="kpis" id="kpis"></div>
   <section class="ai" id="aiBox">
@@ -363,6 +379,7 @@ const lines = arr => [...new Set((arr||[]).map(ln))].filter(r=>/^\d{1,3}[A-Z]?$/
 const layerName = l => l && l.startsWith("Tilapainen") ? "Liikennejärjestely" : "Kaivutyö";
 const title = l => (l.osoite||"").split(/,\s*/).slice(0,2).join(", ") || l.lupa_id;
 const purpose = l => (l.tarkoitus||"").split(/\s(?:LISÄYS|KORJAUS|MUUTOS|PÄIVITYS|Lisäys|Korjaus|Muutos)\b/)[0].replace(/\s+/g," ").trim().slice(0,160).replace(/^(Työstä vastaava )?[Vv]ar(ataan|aa) tila(a)? /,"").replace(/^kaivutyölle;?\s*/,"").replace(/^./,c=>c.toUpperCase()) || layerName(l.layer);
+const shortStreet = l => { const t = (l.osoite||l.lupa_id).split(/,\s*/)[0].replace(/\s+-\s+.*/,""); return t.length>34 ? t.slice(0,32)+"…" : t; };
 const onRoute = l => (l.segmentteja||0) > 0;
 async function get(view){
   const r = await fetch(API+view, {headers:{apikey:KEY, Authorization:"Bearer "+KEY}});
@@ -415,20 +432,22 @@ function renderBrief(){
   const up7R = up7.filter(onRoute);
   const lineSet = new Set(runR.flatMap(l=>lines(l.linjat)));
   const r = ranked().filter(x=>x.i && x.i.vehH > 0.05);
-  const parts = [];
-  parts.push(`Helsingissä on käynnissä <strong>${nf(run.length)} katutyötä</strong>, joista <strong>${nf(runR.length)}</strong> on bussi- tai ratikkareitin varrella. Niiden ohi kulkee ${nf(lineSet.size)} linjaa.`);
-  if(r.length){
-    const top = r.slice(0,2).map(x=>`<strong>${esc(title(x.l))}</strong> (${nf(x.i.vehH,1)} ajoneuvotuntia/vrk${x.i.s!=null?`, ${sgn(x.i.s)} per ohitus`:""})`);
-    parts.push(`Eniten aikaa vievät nyt ${top.join(" ja ")}.`);
-  } else {
-    parts.push(`Vaikutusmittaus tarkentuu sitä mukaa, kun pysäkkivälidataa kertyy. Ensimmäiset luvut näkyvät aamuruuhkan jälkeen.`);
-  }
-  if(up7.length) parts.push(`Seuraavan 7 päivän aikana alkaa ${nf(up7.length)} uutta työtä${up7R.length?`, joista ${nf(up7R.length)} reittien varrella`:""}.`);
   const cl = clashes();
-  if(cl.length) parts.push(`<a href="#/tyot">${cl.length} ${cl.length===1?"kasautuma":"kasautumaa"}</a>: uusi työ alkaa linjalle, jolla on jo toinen työ lähellä.`);
-  document.getElementById("brief").innerHTML = parts.join(" ");
+  const next = up7R.slice().sort((a,b)=>new Date(a.alkaa)-new Date(b.alkaa))[0] || up7.slice().sort((a,b)=>new Date(a.alkaa)-new Date(b.alkaa))[0];
+  // Otsikko: yksi lause, joka muuttuu datan mukana
+  let head;
+  if(r.length){ const t = r[0]; head = `<em>${esc(shortStreet(t.l))}</em> hidastaa joukkoliikennettä eniten${t.i.s!=null?`: ${sgn(t.i.s)} per ohitus`:""}.`; }
+  else head = `${nf(runR.length)} katutyötä bussi- ja ratikkareittien varrella. Vaikutusmittaus käynnistyy.`;
+  document.getElementById("brief").innerHTML = head;
+  // Kolme signaalia: suurin vaikutus, seuraavaksi alkava, kasautumat
+  const sig = [];
+  if(r[1]) sig.push(`<a class="sig" href="#/?l=${encodeURIComponent(r[1].l.lupa_id)}"><small>Toiseksi suurin</small><b>${esc(shortStreet(r[1].l))}</b><span>${r[1].i.s!=null?sgn(r[1].i.s)+" per ohitus · ":""}${esc(lines(r[1].l.linjat).slice(0,4).join(", "))}</span></a>`);
+  else sig.push(`<a class="sig" href="#/tyot"><small>Reittien varrella</small><b>${nf(runR.length)} käynnissä olevaa työtä</b><span>${nf(lineSet.size)} linjaa kulkee ohi</span></a>`);
+  if(next) sig.push(`<a class="sig ind" href="#/?l=${encodeURIComponent(next.lupa_id)}"><small>Seuraavaksi alkaa</small><b>${esc(shortStreet(next))}</b><span>${fmtDate(next.alkaa)}${lines(next.linjat).length?" · linjat "+esc(lines(next.linjat).slice(0,4).join(", ")):""}</span></a>`);
+  sig.push(`<a class="sig warn2" href="#/tyot"><small>Kasautumat</small><b>${cl.length ? `${cl.length} ${cl.length===1?"kohde":"kohdetta"}` : "Ei kasautumia"}</b><span>${cl[0] ? esc(shortStreet(cl[0].a))+" + "+esc(shortStreet(cl[0].b)) : "seuraavan 14 päivän aikana"}</span></a>`);
+  document.getElementById("signals").innerHTML = sig.join("");
   const upd = all.map(l=>l.paivitetty).filter(Boolean).sort().pop();
-  document.getElementById("briefWhen").textContent = "Laskettu automaattisesti mittaus- ja lupadatasta · päivitetty " + ago(upd);
+  document.getElementById("briefWhen").textContent = "Tilanne nyt · päivitetty " + ago(upd);
 
   const vehH = runR.reduce((s,l)=>s+(l.ajoneuvotunnit_24h>0?l.ajoneuvotunnit_24h:0),0);
   document.getElementById("kpis").innerHTML = [
@@ -773,12 +792,17 @@ function renderAI(){
     return;
   }
   const c = k.sisalto || {};
+  const first = t => { const m = String(t||"").match(/^.+?[.!?](?=\s|$)/); return m ? m[0] : t; };
+  const items = (c.kohdat||[]);
+  const li = (x, short) => `<li>${esc(short ? first(x.teksti) : x.teksti)}${x.lupa_id && S.byId[x.lupa_id]?` <a href="#/?l=${encodeURIComponent(x.lupa_id)}">${esc(shortStreet(S.byId[x.lupa_id]))} →</a>`:""}</li>`;
   el.innerHTML = `<div class="ai-body">
     <h3>${esc(c.otsikko||"")}</h3>
-    <ol>${(c.kohdat||[]).map(x=>`<li>${esc(x.teksti)}${x.lupa_id && S.byId[x.lupa_id]?`<a href="#/?l=${encodeURIComponent(x.lupa_id)}">${esc(x.lupa_id)} →</a>`:""}</li>`).join("")}</ol>
-    ${c.suositus?`<div class="ai-reco"><b>Suositus:</b> ${esc(c.suositus)}</div>`:""}
+    ${c.suositus?`<div class="ai-reco" style="margin-bottom:10px"><b>Suositus:</b> ${esc(c.suositus)}</div>`:""}
+    ${S.aiOpen ? `<ol>${items.map(x=>li(x,false)).join("")}</ol>` : `<ol class="ai-short">${items.slice(0,3).map(x=>li(x,true)).join("")}</ol>`}
+    ${items.length ? `<button class="ai-more" id="aiMore">${S.aiOpen ? "Näytä lyhyesti ↑" : `Lue koko katsaus (${items.length} kohtaa) ↓`}</button>` : ""}
     <div class="ai-meta">Kirjoittanut ${esc(k.malli||"Claude")} ${ago(k.luotu)} mitatuista luvuista. Tarkista luvut työmaan tiedoista ennen päätöksiä.</div>
   </div>`;
+  const mb = document.getElementById("aiMore"); if(mb) mb.onclick = ()=>{ S.aiOpen = !S.aiOpen; renderAI(); };
 }
 document.querySelectorAll("#aiRole button").forEach(b=>b.onclick=()=>{ S.aiRole=b.dataset.r; document.querySelectorAll("#aiRole button").forEach(x=>x.classList.toggle("on",x===b)); renderAI(); });
 async function ask(q){
