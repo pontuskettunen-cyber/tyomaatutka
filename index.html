@@ -216,8 +216,9 @@ function renderLog(l){
   const el = document.getElementById("log");
   if(!l.length){ el.textContent="–"; return; }
   el.innerHTML = l.slice(0,8).map(r=>{
-    const t = r.ts||r.aika||r.created_at||r.luotu;
-    const rest = Object.entries(r).filter(([k])=>!["ts","aika","created_at","luotu","id"].includes(k)).map(([,v])=>typeof v==="object"?JSON.stringify(v):v).join(" · ");
+    const tk = Object.keys(r).find(k=>typeof r[k]==="string" && /^\d{4}-\d\d-\d\dT/.test(r[k]));
+    const t = tk ? r[tk] : null;
+    const rest = Object.entries(r).filter(([k,v])=>k!==tk && k!=="id" && v!=null && v!=="").map(([,v])=>typeof v==="number"?v+" tapahtumaa":typeof v==="object"?JSON.stringify(v):v).join(" · ");
     return `<span style="color:var(--m)">${fmtT(t)}</span>  ${esc(rest)}`;
   }).join("\n");
 }
