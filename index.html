@@ -762,7 +762,7 @@ async function fn(body){
   const r = await fetch(FN, {method:"POST", headers:{apikey:KEY, Authorization:"Bearer "+KEY, "content-type":"application/json"}, body:JSON.stringify(body)});
   return r.json();
 }
-const linkLupa = t => esc(t).replace(/\[([A-Z]{2}\d{5,}(?:-\d+)?)\]/g, (m,id)=> S.byId[id] ? `<a href="#/?l=${encodeURIComponent(id)}">${esc(title(S.byId[id]))}</a>` : id);
+const linkLupa = t => esc(t).replace(/\*\*(.+?)\*\*/g,"<b>$1</b>").replace(/\[?\b([A-Z]{2}\d{5,}(?:-\d+)?)\b\]?/g, (m,id)=> S.byId[id] ? `<a href="#/?l=${encodeURIComponent(id)}">${esc(title(S.byId[id]))}</a>` : id);
 function renderAI(){
   const el = document.getElementById("aiBody"); if(!el) return;
   const k = S.katsaus[S.aiRole];

@@ -49,7 +49,7 @@ function centroid(g: any): [number, number] | null {
   try { walk(g.coordinates); } catch { /* */ }
   return n ? [sy / n, sx / n] : null;
 }
-const pvm = (t: string | null) => t ? new Date(t).toLocaleDateString("fi-FI", { timeZone: "Europe/Helsinki", day: "numeric", month: "numeric" }) : null;
+const pvm = (t: string | null) => t ? new Date(t).toLocaleDateString("fi-FI", { timeZone: "Europe/Helsinki", day: "numeric", month: "numeric", year: "numeric" }) : null;
 const vaihe = (l: any) => { const now = Date.now(), a = l.alkaa ? +new Date(l.alkaa) : 0, p = l.paattyy ? +new Date(l.paattyy) : 8e15;
   return now < a ? "tulossa" : now > p + DAY ? "paattynyt" : "kaynnissa"; };
 
@@ -90,6 +90,7 @@ async function faktat() {
     alkavat_14pv_reitilla: reitilla.filter((l) => vaihe(l) === "tulossa" && +new Date(l.alkaa) < Date.now() + 14 * DAY)
       .sort((a, b) => +new Date(a.alkaa) - +new Date(b.alkaa)).slice(0, 40).map(tiivis),
     kasautumat: kas.slice(0, 15),
+    raitiovaunulinjat: "Helsingin raitiovaunulinjat ovat 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 13 ja 15. Muut linjat ovat busseja (N-pääte = yöbussi).",
     huom: "lisaviive_s_per_ohitus = paljonko enemmän linja jää aikataulusta työmaan pysäkkiväleillä kuin saman linjan muilla väleillä samaan aikaan. null = ei vielä riittävästi dataa. Keruu aloitettu 2.11.2026.",
   };
 }
@@ -174,7 +175,7 @@ async function kysy(body: any) {
   } else {
     system = `Olet Työmaatutka-palvelun avustaja. Vastaat kysymyksiin Helsingin katutöiden vaikutuksesta busseihin ja ratikoihin.
 - Käytä VAIN annettua dataa. Jos vastausta ei löydy datasta, sano se ja kerro mitä data sisältää.
-- Vastaa suomeksi, selkeästi, enintään 120 sanaa. Mainitse luvut ja osoitteet. Viittaa lupiin muodossa [lupa_id].
+- Vastaa suomeksi, selkeästi, enintään 120 sanaa, ilman markdown-muotoilua (ei tähtiä tai otsikoita; lyhyt luettelo viivoilla on ok). Mainitse luvut ja osoitteet. Viittaa lupiin muodossa [lupa_id].
 - Älä anna oikeudellisia tai turvallisuusneuvoja.`;
     user = `Data: ${JSON.stringify({ ...f, valittu_lupa: lupa })}\n\nKysymys: ${kysymys}`;
   }
