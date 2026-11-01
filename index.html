@@ -523,7 +523,7 @@ function wireChart(el, c){
 async function renderDetail(){
   const l = S.byId[S.sel], box = document.getElementById("detail");
   if(!l){ box.innerHTML = `<div class="det"><div class="empty">Valitse työmaa kortista tai kartalta.</div></div>`; return; }
-  const ph = phase(l), im = impact(l), ls = (S.linjat[l.lupa_id]||[]).slice().sort((a,b)=>(b.ohitukset_24h||0)-(a.ohitukset_24h||0));
+  const ph = phase(l), im = impact(l), ls = (S.linjat[l.lupa_id]||[]).filter(r=>/^\d{1,3}[A-Z]?$/.test(ln(r.route))).slice().sort((a,b)=>(b.ohitukset_24h||0)-(a.ohitukset_24h||0));
   const segs = (S.segs[l.lupa_id]||[]);
   let facts;
   if(im) facts = [[sgn(im.s),"lisäviive per ohitus, linjojen keskiarvo"],[nf(im.vehH,1)+" h","ajoneuvotunteja / 24 h"],[nf(l.ohitukset_24h),"ohitusta / 24 h"]];
