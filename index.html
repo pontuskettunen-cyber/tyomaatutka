@@ -640,7 +640,7 @@ function startLive(){
     try{
       const p = JSON.parse(msg.toString()).VP; if(!p || p.lat==null) return;
       const parts = topic.split("/"), id = p.oper+"/"+p.veh, mode = parts[6];
-      LV.veh.set(id, {id, lat:p.lat, lon:p.long, line:p.desig, dl:p.dl, spd:p.spd, mode, head:decodeURIComponent(parts[11]||""), t:Date.now()});
+      LV.veh.set(id, {id, lat:p.lat, lon:p.long, line:(p.desi||ln(parts[9])), dl:p.dl, spd:p.spd, mode, head:decodeURIComponent(parts[11]||""), t:Date.now()});
     }catch(e){}
   });
   setInterval(drawLive, 1000);
