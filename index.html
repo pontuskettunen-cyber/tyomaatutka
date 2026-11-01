@@ -124,7 +124,7 @@ footer{max-width:1360px;margin:0 auto;padding:0 28px 32px;color:var(--m);font-si
 </head>
 <body>
 <div class="top"><div class="in">
-  <div class="brand"><span class="mark"><i></i></span>Työmaa<b>tutka</b></div>
+  <div class="brand"><span class="mark"><i></i></span><span>Työmaa<b>tutka</b></span></div>
   <div class="tag">Paljonko katutyöt hidastavat Helsingin busseja ja ratikoita, mitattuna HSL:n reaaliaikadatasta.</div>
   <div class="live" role="status"><span class="dot" id="dot"></span><span id="status">Yhdistetään…</span></div>
 </div></div>
@@ -188,6 +188,9 @@ const fmtShort = t => { const d = new Date(t); return `${d.getDate()}.${d.getMon
 const ago = t => { if(!t) return "–"; const s = Math.round((Date.now()-new Date(t))/1000); return s<60? s+" s sitten" : s<3600? Math.round(s/60)+" min sitten" : Math.round(s/3600)+" h sitten"; };
 const pct = x => x == null ? null : (x-1)*100;
 const pctTxt = p => p == null ? "–" : (p>0?"+":p<0?"−":"±")+nf(Math.abs(p),1)+" %";
+// HSL:n sisäinen linjatunnus → matkustajan näkemä numero (1002 → 2, 2194 → 194)
+const ln = id => { id = String(id||""); return /^\d{4}/.test(id) ? (id.slice(1).replace(/^0+/,"") || id) : id; };
+const lines = arr => [...new Set((arr||[]).map(ln))].sort((a,b)=>parseInt(a)-parseInt(b)||a.localeCompare(b));
 const shortName = n => String(n||"").split(" – ")[0];
 const purpose = s => s.tarkoitus || String(s.nimi||"").split(" – ")[1] || "";
 async function get(view){
@@ -252,7 +255,7 @@ function renderBrief(){
   }
   if(ov.length){
     const o = ov.sort((x,y)=>y.shared.length-x.shared.length)[0];
-    parts.push(`Huomio: ${esc(shortName(o.a.nimi))} ja ${esc(shortName(o.b.nimi))} ovat käynnissä yhtä aikaa ${fmtShort(o.lo)}–${fmtShort(o.hi)}, ja ${o.shared.length} linjaa (${o.shared.slice(0,4).map(esc).join(", ")}${o.shared.length>4?"…":""}) kulkee molempien ohi.`);
+    parts.push(`Huomio: ${esc(shortName(o.a.nimi))} ja ${esc(shortName(o.b.nimi))} ovat käynnissä yhtä aikaa ${fmtShort(o.lo)}–${fmtShort(o.hi)}, ja ${o.shared.length===1?"linja":o.shared.length+" linjaa"} (${lines(o.shared).slice(0,5).map(esc).join(", ")}${o.shared.length>5?"…":""}) kulkee molempien ohi.`);
   }
   document.getElementById("brief").innerHTML = parts.join(" ");
   const upd = sites.map(s=>s.paivitetty).filter(Boolean).sort().pop();
@@ -296,7 +299,7 @@ function renderMap(){
   S.segs.forEach(g=>{
     const sel = !S.sel || g.cell===S.sel;
     const line = L.polyline([[g.from_lat,g.from_lon],[g.to_lat,g.to_lon]],{color:segColor(g.indeksi_24h),weight:sel?5:3,opacity:sel?.9:.35,lineCap:"round"});
-    line.bindTooltip(`<b>Pysäkkiväli ${g.from_stop} → ${g.to_stop}</b><br>Linjat: ${esc((g.linjat||[]).join(", ")||"–")}<br>${nf(g.n_24h)} ajoa / 24 h · ajoaika ${pctTxt(pct(g.indeksi_24h))} vs. perustaso`,{sticky:true});
+    line.bindTooltip(`<b>Pysäkkiväli ${g.from_stop} → ${g.to_stop}</b><br>Linjat: ${esc(lines(g.linjat).join(", ")||"–")}<br>${nf(g.n_24h)} ajoa / 24 h · ajoaika ${pctTxt(pct(g.indeksi_24h))} vs. perustaso`,{sticky:true});
     line.on("click",()=>select(g.cell,false));
     line.addTo(Lsegs);
   });
@@ -323,7 +326,9 @@ function renderMap(){
 /* ---------- aikasarja ---------- */
 function chartSVG(cell){
   const site = S.sites.find(s=>s.cell===cell), ref = S.sites.find(s=>s.rooli==="vertailu");
-  const now = Date.now(), t0 = now - 7*DAY;
+  const now = Date.now();
+  const first = Math.min(...S.series.filter(r=>r.cell===cell).map(r=>+new Date(r.bucket)), now);
+  const t0 = Math.max(now - 7*DAY, Math.min(first - 6*3600e3, now - DAY));
   const pick = c => S.series.filter(r=>r.cell===c && +new Date(r.bucket) >= t0 && r.indeksi!=null).map(r=>({t:+new Date(r.bucket)+DAY/24, y:pct(r.indeksi), n:r.n})).sort((a,b)=>a.t-b.t);
   const A = pick(cell), B = ref && ref.cell!==cell ? pick(ref.cell) : [];
   const W=560, H=200, ml=40, mr=12, mt=14, mb=26, iw=W-ml-mr, ih=H-mt-mb;
@@ -332,7 +337,8 @@ function chartSVG(cell){
   const path = pts => { let d="", prev=null; pts.forEach(p=>{ const gap = prev && p.t-prev.t > 5*3600e3; d += (d===""||gap?"M":"L")+X(p.t).toFixed(1)+","+Y(p.y).toFixed(1); prev=p; }); return d; };
   let g = "";
   [ -ymax, -ymax/2, 0, ymax/2, ymax ].forEach(v=>{ g += `<line x1="${ml}" x2="${W-mr}" y1="${Y(v)}" y2="${Y(v)}" stroke="${v===0?"#B9BEB4":"#EEF0EB"}" stroke-width="1"/><text x="${ml-6}" y="${Y(v)+4}" text-anchor="end" font-size="10.5" fill="#6B737B" font-family="IBM Plex Mono">${v>0?"+":""}${v}%</text>`; });
-  for(let d=0; d<=7; d++){ const t = new Date(t0 + d*DAY); t.setHours(0,0,0,0); if(+t<t0) continue; g += `<line x1="${X(+t)}" x2="${X(+t)}" y1="${mt}" y2="${H-mb}" stroke="#F3F4F1"/><text x="${X(+t)}" y="${H-8}" text-anchor="middle" font-size="10.5" fill="#6B737B">${wd[t.getDay()]} ${t.getDate()}.</text>`; }
+  const span = now - t0, step = span > 3*DAY ? DAY : span > DAY ? DAY/2 : DAY/4;
+  for(let k=Math.ceil(t0/step)*step; k<=now; k+=step){ const t = new Date(k); g += `<line x1="${X(+t)}" x2="${X(+t)}" y1="${mt}" y2="${H-mb}" stroke="#F3F4F1"/><text x="${X(+t)}" y="${H-8}" text-anchor="middle" font-size="10.5" fill="#6B737B">${step>=DAY||t.getHours()===0?wd[t.getDay()]+" "+t.getDate()+".":"klo "+t.getHours()}</text>`; }
   // työn alku
   let startMark = "";
   if(site && site.alkaa){
@@ -394,7 +400,7 @@ function renderDetail(){
     <div class="addr">${esc(purpose(s))}${s.osoite?` · ${esc(s.osoite)}`:""}${s.alkaa&&s.rooli!=="vertailu"?` · ${fmtDate(s.alkaa)}–${s.paattyy?fmtDate(s.paattyy):""}`:""}</div>
     <div class="facts">${facts.map(f=>`<div><b>${f[0]}</b><small>${f[1]}</small></div>`).join("")}</div>
 
-    <div class="sec" style="display:flex;justify-content:space-between;align-items:center">Ajoaika suhteessa perustasoon · 7 vrk
+    <div class="sec" style="display:flex;justify-content:space-between;align-items:center">Ajoaika suhteessa perustasoon
       <span class="legend" style="text-transform:none;letter-spacing:0;font-weight:400"><span><i style="background:#C2410C"></i>${s.rooli==="vertailu"?"Vertailualue":"Työmaa"}</span>${ref&&ref.cell!==s.cell?`<span><i style="background:#8A9198"></i>Vertailualue</span>`:""}</span></div>
     <div class="chart" id="chart">${c.svg}</div>
     ${!c.A.length?`<div class="note" style="margin-top:6px">Vertailukelpoisia havaintoja ei vielä ole. Perustaso muodostuu, kun samasta kellonaikaikkunasta on kertynyt dataa.</div>`:""}
@@ -410,10 +416,10 @@ function renderDetail(){
     </div>`:""}
 
     <div class="sec">Ohi kulkevat linjat</div>
-    <div class="chips">${(s.linjat||[]).map(r=>`<span class="chip">${esc(r)}</span>`).join("") || `<span class="empty">Linjatieto kertyy, kun pysäkkivälejä on havaittu.</span>`}</div>
+    <div class="chips">${lines(s.linjat).map(r=>`<span class="chip">${esc(r)}</span>`).join("") || `<span class="empty">Linjatieto kertyy, kun pysäkkivälejä on havaittu.</span>`}</div>
 
     <div class="sec">Pysäkkivälit (${segs.length})</div>
-    ${segs.length?`<table class="segs"><tbody>${segs.slice(0,8).map(g=>`<tr><td><span class="mono">${g.from_stop} → ${g.to_stop}</span><br><span class="note">${esc((g.linjat||[]).slice(0,8).join(", "))}${(g.linjat||[]).length>8?"…":""}</span></td><td>${nf(g.n_24h)} ajoa<br><span style="color:${segColor(g.indeksi_24h)}">${pctTxt(pct(g.indeksi_24h))}</span></td></tr>`).join("")}</tbody></table>`:`<div class="empty">Pysäkkivälit tunnistetaan sitä mukaa kuin pysäkkien sijainnit kertyvät.</div>`}
+    ${segs.length?`<table class="segs"><tbody>${segs.slice(0,8).map(g=>`<tr><td><span class="mono">${g.from_stop} → ${g.to_stop}</span><br><span class="note">${esc(lines(g.linjat).slice(0,8).join(", "))}${(g.linjat||[]).length>8?"…":""}</span></td><td>${nf(g.n_24h)} ajoa<br><span style="color:${segColor(g.indeksi_24h)}">${pctTxt(pct(g.indeksi_24h))}</span></td></tr>`).join("")}</tbody></table>`:`<div class="empty">Pysäkkivälit tunnistetaan sitä mukaa kuin pysäkkien sijainnit kertyvät.</div>`}
     <div style="height:10px"></div>
   </div>`;
   wireChart(document.getElementById("chart"), c);
