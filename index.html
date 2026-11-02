@@ -112,6 +112,9 @@ a.tile:hover{border-color:#C9CDC4}
 .h2row{margin-bottom:8px}
 .now{margin-bottom:12px}
 .det{padding:14px 16px 6px}.det h3{font-size:19px}.facts{margin:10px 0}.sec{margin:14px 0 6px}
+.card .hd{gap:8px;align-items:flex-start}
+.card .hd .t{flex:1;min-width:0;-webkit-line-clamp:2}
+.cbig b{font:500 17px/1.15 "IBM Plex Mono";white-space:nowrap}
 /* KPI strip */
 .kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:18px}
 @media(max-width:860px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -539,19 +542,17 @@ function renderCards(){
   let items = ranked().slice(0,6).map(x=>x.l);
   const titleEl = document.getElementById("cardsTitle");
   const anyImpact = items.some(l=>impact(l)?.vehH > 0.05);
-  titleEl.textContent = anyImpact ? "Eniten vaikuttavat työt nyt" : "Vilkkaimpien reittien työt nyt";
+  titleEl.textContent = anyImpact ? "Eniten vaikuttavat työt nyt · lisäviive per ohitus" : "Vilkkaimpien reittien työt nyt";
   const el = document.getElementById("cards");
   el.innerHTML = items.map((l,i)=>{
     const ph = phase(l), im = impact(l);
     let big;
-    if(im && im.s != null) big = `<b class="${im.s>10?"slow":im.s<-10?"fast":""}">${sgn(im.s)}</b><span>lisäviive<br>per ohitus</span>`;
-    else big = `<b>${nf(l.ajoja_vrk)}</b><span>ajoa / vrk<br>ohi työmaan</span>`;
+    if(im && im.s != null) big = `<b class="${im.s>10?"slow":im.s<-10?"fast":""}" title="lisäviive per ohitus">${sgn(im.s)}</b>`;
+    else big = `<b title="ajoa / vrk ohi työmaan">${nf(l.ajoja_vrk)}<small style="font-size:11px;color:var(--m)"> ajoa</small></b>`;
     return `<button class="card ${S.sel===l.lupa_id?"sel":""}" data-id="${esc(l.lupa_id)}">
-      <div class="hd"><span class="num">${i+1}</span><span class="st ${ph.k}">${esc(ph.txt)}</span></div>
-      <div class="t">${esc(title(l))}</div>
+      <div class="hd"><span class="num">${i+1}</span><span class="t">${esc(shortStreet(l))}</span><span class="cbig">${big}</span></div>
       <div class="w">${esc(purpose(l))}</div>
       <div class="chips">${lines(l.linjat).filter(r=>!/N$/.test(r)).slice(0,3).map(r=>`<span class="chip">${esc(r)}</span>`).join("")}${lines(l.linjat).filter(r=>!/N$/.test(r)).length>3?`<span class="chip">+${lines(l.linjat).filter(r=>!/N$/.test(r)).length-3}</span>`:""}</div>
-      <div class="big">${big}</div>
     </button>`;
   }).join("") || `<div class="empty">Ei mitattavia töitä vielä.</div>`;
   el.querySelectorAll(".card").forEach(c=>c.onclick=()=>select(c.dataset.id,true));
