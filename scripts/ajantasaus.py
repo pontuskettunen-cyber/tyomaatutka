@@ -27,6 +27,7 @@ patterns = collections.Counter()          # (route, dir, pattern) -> trips
 esim = {}                                 # (route, dir, pattern) -> esimerkkivuoro (muodon hakuun)
 ajat = collections.defaultdict(list)      # (route, dir, pattern, jakso) -> [[min between tps], ...]
 tunti = collections.Counter()             # (route, dir, tunti) -> lähdöt yhtenä tavallisena arkipäivänä
+ajo_t = {}                                # trip -> (lähtö min, perillä min) vertailupäivän vuoroille (kääntöajat)
 
 # Yksi tavallinen arkipäivä (tiistai, 1–2 viikon päästä): mitkä vuorot ajetaan sinä päivänä (calendar + calendar_dates)
 def _rivit(z, nimi):
@@ -67,6 +68,7 @@ def flush(trip, rows):
     esim.setdefault(key, trip)
     if trip in aktiiviset:
         tunti[(route, d, int(start[:2]) % 24)] += 1
+        ajo_t[trip] = (rows[0][3], rows[-1][3])
     j = jakso(start)
     if j and dtype not in ("La", "Su"):       # arkipäivät
         # rajapisteet: ajantasauspysäkit + päätepysäkki (HSL:n ratikoilla ajantasaus on vain lähtöpäässä)
@@ -97,6 +99,31 @@ for (route, d, pat), n in patterns.items():
     if k not in best or n > best[k][1]:
         best[k] = (pat, n)
 
+# Viivevara (puskuri): HSL:n trips2.txt kertoo jokaiselle vuorolle max_delay (0–5 min) ja ratikoille autokierron (block_id).
+# Tarkistettu 2.11.2026: ratikoilla max_delay ≈ kääntöaika − 3–4 min (81 % vuoropareista), eli kuinka paljon vuoro voi
+# myöhästyä ennen kuin seuraava lähtö myöhästyy. Lasketaan päiväajan (7–18) vuoroista vertailupäivänä.
+puskuri = collections.defaultdict(list)    # (route, dir) -> [max_delay]
+kierrot = collections.defaultdict(list)    # (route_id_gtfs, block) -> [(lähtö, perillä, route, dir)]
+if "trips2.txt" in nimet:
+    with zipfile.ZipFile(path) as z:
+        for t in _rivit(z, "trips2.txt"):
+            tid = t["trip_id"]
+            if tid not in aktiiviset: continue
+            parts = tid.split("_")
+            if len(parts) < 5: continue
+            route, d, h = parts[0], parts[3], int(parts[4][:2])
+            if 7 <= h < 18 and t.get("max_delay", "") != "":
+                puskuri[(route, d)].append(int(t["max_delay"]))
+            if t.get("block_id") and tid in ajo_t:
+                kierrot[(t["route_id"], t["block_id"])].append((*ajo_t[tid], route, d))
+kaanto = collections.defaultdict(list)     # (route, dir) -> kääntöaika (min) tämän suunnan vuoron jälkeen, päiväaika
+for L in kierrot.values():
+    L.sort()
+    for a, c in zip(L, L[1:]):
+        k = c[0] - a[1]
+        if 0 <= k < 20 and 7 * 60 <= a[0] < 18 * 60:
+            kaanto[(a[2], a[3])].append(k)
+
 out = {}
 for k, (pat, n) in best.items():
     route, d = k.split("|")
@@ -107,6 +134,12 @@ for k, (pat, n) in best.items():
     if sum(th):
         e["arki_vrk"] = sum(th)
         e["arki_h"] = th
+    P = sorted(puskuri.get((route, d), []))
+    if P:
+        e["puskuri"] = {"md": statistics.median(P), "md10": P[len(P) // 10], "tiukka": round(sum(1 for x in P if x <= 1) / len(P), 2), "n": len(P)}
+        K = sorted(kaanto.get((route, d), []))
+        if len(K) >= 5:
+            e["puskuri"]["kaanto"] = round(statistics.median(K), 1)
     for j in ("aamu", "paiva", "ilta"):
         L = [x for x in ajat.get((route, d, pat, j), []) if x]
         if L:
@@ -176,5 +209,6 @@ with zipfile.ZipFile(path) as z, z.open("stops.txt") as f:
 os.makedirs("data", exist_ok=True)
 json.dump({"paivitetty": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%MZ"), "lahde": "HSL GTFS (CC BY 4.0)", "linjat": out, "pysakit": pys},
           open("data/ajantasaus.json", "w"), ensure_ascii=False, separators=(",", ":"))
+print("puskuri esim.", {k: out[k].get("puskuri") for k in ("1007|1", "1007|2", "1001|1", "1055|1", "1500|1") if k in out})
 print(f"linjasuuntia {len(out)}, ajantasauspysäkkejä {len(pys)}, suunnat {collections.Counter(k.split('|')[1] for k in out)}")
 print(json.dumps({k: out[k] for k in list(out)[:1]}, ensure_ascii=False)[:1500])
