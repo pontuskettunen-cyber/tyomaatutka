@@ -874,7 +874,12 @@ async function renderDetail(){
 function select(id, pan){
   S.sel = id; renderCards(); renderHomeMap(); renderDetail(); if(LV.on) syncSubs();
   const l = S.byId[id];
-  if(pan && l && l.geom){ const c = centroid(l.geom); if(c) M.home.flyTo(c, 16, {duration:.6}); }
+  if(pan && l && l.geom){
+    // kohdistetaan työmaahan ja sen pysäkkiväleihin, jotta koko vaikutusalue näkyy
+    const b = L.geoJSON(l.geom).getBounds();
+    (S.segs[l.lupa_id]||[]).forEach(g=>{ (Array.isArray(g.viiva)&&g.viiva.length>1 ? g.viiva : [[g.from_lat,g.from_lon],[g.to_lat,g.to_lon]]).forEach(p=>b.extend(p)); });
+    if(b.isValid()) M.home.flyToBounds(b, {padding:[30,30], maxZoom:17, duration:.6});
+  }
   setHash("", id);
 }
 
