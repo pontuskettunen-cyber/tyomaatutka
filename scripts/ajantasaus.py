@@ -4,7 +4,8 @@ Tuottaa data/ajantasaus.json:
   { "paivitetty": ..., "linjat": { "1004|1": { "pysakit": [[stop, tp], ...],      # yleisimmän ajoreitin pysäkit järjestyksessä, tp=1 ajantasauspysäkki
                                               "vuoroja": n,
                                               "ajat": { "aamu": [min, ...], "ilta": [...], "paiva": [...] } } } }
-  ajat = aikataulun mukainen ajoaika (min, mediaani) peräkkäisten ajantasauspysäkkien välillä arkipäivän vuoroissa.
+  ajat = aikataulun mukainen ajoaika (min, mediaani) peräkkäisten rajapisteiden (ajantasauspysäkit + päätepysäkki) välillä arkipäivän vuoroissa.
+  pysakit-merkintä: 1 = ajantasauspysäkki, 2 = päätepysäkki ilman ajantasausta, 0 = muu.
 Reittitunnus ja suunta luetaan trip_id:stä (muoto ROUTE_PVM_PÄIVÄTYYPPI_SUUNTA_LÄHTÖAIKA), samat kuin HFP:ssä.
 """
 import os, csv, io, json, statistics, sys, urllib.request, zipfile, datetime, collections
@@ -38,7 +39,8 @@ def flush(trip, rows):
     patterns[key] += 1
     j = jakso(start)
     if j and dtype not in ("La", "Su"):       # arkipäivät
-        tp = [r[3] for r in rows if r[2] == 1]
+        # rajapisteet: ajantasauspysäkit + päätepysäkki (HSL:n ratikoilla ajantasaus on vain lähtöpäässä)
+        tp = [r[3] for i, r in enumerate(rows) if r[2] == 1 or i == len(rows) - 1]
         if len(tp) >= 2:
             ajat[key + (j,)].append([round(tp[i + 1] - tp[i], 2) for i in range(len(tp) - 1)])
 
@@ -68,15 +70,16 @@ for (route, d, pat), n in patterns.items():
 out = {}
 for k, (pat, n) in best.items():
     route, d = k.split("|")
-    e = {"pysakit": [list(p) for p in pat], "vuoroja": n, "ajat": {}}
+    # merkintä: 1 = ajantasauspysäkki, 2 = päätepysäkki (ei ajantasausta), 0 = muu
+    e = {"pysakit": [[p[0], p[1] or (2 if i == len(pat) - 1 else 0)] for i, p in enumerate(pat)], "vuoroja": n, "ajat": {}}
     for j in ("aamu", "paiva", "ilta"):
-        L = ajat.get((route, d, pat, j))
+        L = [x for x in ajat.get((route, d, pat, j), []) if x]
         if L:
             e["ajat"][j] = [round(statistics.median(x[i] for x in L), 1) for i in range(len(L[0]))]
     out[k] = e
 
 # ajantasauspysäkkien nimet ja sijainnit (kartta ja agentin tekstit)
-tps = {p[0] for e in out.values() for p in e["pysakit"] if p[1] == 1}
+tps = {p[0] for e in out.values() for p in e["pysakit"] if p[1] >= 1}
 pys = {}
 with zipfile.ZipFile(path) as z, z.open("stops.txt") as f:
     for r in csv.DictReader(io.TextIOWrapper(f, encoding="utf-8-sig", newline="")):
