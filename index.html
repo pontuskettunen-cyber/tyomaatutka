@@ -302,6 +302,15 @@ footer{max-width:1360px;margin:0 auto;padding:0 28px 32px;color:var(--m);font-si
 .agentbar{display:flex;gap:12px;align-items:center;background:var(--p);border:1px dashed var(--l);border-radius:10px;padding:9px 14px;margin-bottom:14px;font-size:13px;color:var(--i2)}
 .nauha{margin:6px 0 4px}.nauha svg{width:100%;height:auto;display:block}
 @media(max-width:720px){.agentbar{flex-direction:column;align-items:flex-start;gap:4px}.suggrid{grid-template-columns:1fr}}
+/* Kartta ja viereinen paneeli yhtä korkeiksi: kumpikin täyttää näkymän, oikea vierii itsenäisesti */
+@media(min-width:1021px){
+  .split.fit{align-items:stretch;height:calc(100vh - 92px);min-height:520px}
+  .split.fit>.panel{position:static!important;display:flex;flex-direction:column;min-height:0}
+  .split.fit>.panel.mapp>.map{flex:1;height:auto;min-height:0}
+  .split.fit>.panel:not(.mapp){overflow-y:auto;overscroll-behavior:contain}
+  .split.fit>.panel:not(.mapp)>.list{flex:1;max-height:none;overflow-y:auto}
+}
+.leaflet-container{cursor:grab}.leaflet-dragging .leaflet-container{cursor:grabbing}
 </style>
 </head>
 <body>
@@ -337,8 +346,8 @@ footer{max-width:1360px;margin:0 auto;padding:0 28px 32px;color:var(--m);font-si
   </section>
   <div class="h2row"><h2 id="cardsTitle">Eniten vaikuttavat työt nyt</h2><a href="#/tyot">Kaikki työmaat →</a></div>
   <div class="cards" id="cards"></div>
-  <div class="split">
-    <div class="panel">
+  <div class="split fit">
+    <div class="panel mapp">
       <div class="ph"><h2>Kartta</h2>
         <label class="chk" style="padding:4px 10px;font-size:12.5px"><input type="checkbox" id="liveTgl"> Ajoneuvot livenä <span id="liveCount" class="note"></span></label>
         <div class="legend">
@@ -380,12 +389,12 @@ footer{max-width:1360px;margin:0 auto;padding:0 28px 32px;color:var(--m);font-si
     <label class="chk"><input type="checkbox" id="fTransit" checked> Vain joukkoliikenteen reiteillä</label>
     <input class="search" id="fQ" type="search" placeholder="Hae osoitteella, kaupunginosalla tai linjalla">
   </div>
-  <div class="split">
+  <div class="split fit">
     <div class="panel">
       <div class="ph"><h2 id="listTitle">Työt</h2><div class="legend"><span>Järjestys: alkamispäivä</span></div></div>
       <div class="list" id="list"></div>
     </div>
-    <div class="panel"><div class="map" id="map2"></div></div>
+    <div class="panel mapp"><div class="map" id="map2"></div></div>
   </div>
 </section>
 
@@ -529,7 +538,7 @@ const baseCover = l => Math.min(1, (l.perustaso_ikkunat||0)/12);
 
 /* ---------- kartat ---------- */
 function mkMap(id, extra){
-  const m = L.map(id,{zoomControl:true, scrollWheelZoom:false, preferCanvas:true, ...(extra||{})}).setView([60.18,24.94],13);
+  const m = L.map(id,{zoomControl:true, scrollWheelZoom:true, wheelPxPerZoomLevel:90, wheelDebounceTime:25, zoomSnap:0.25, zoomDelta:0.5, preferCanvas:true, ...(extra||{})}).setView([60.18,24.94],13);
   L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,className:"tiles",attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}).addTo(m);
   return m;
 }
