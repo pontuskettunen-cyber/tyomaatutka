@@ -333,7 +333,14 @@ Deno.serve(async (req) => {
   try {
     if (tila === "luokittele") { const r = await luokittele(); await db.from("tallennin_loki").insert({ funktio: "tekoaly-luokittele", rivit: r.luokiteltu }); return json({ ok: true, ...r }); }
     if (tila === "katsaus") { const r = await katsaus(); await db.from("tallennin_loki").insert({ funktio: "tekoaly-katsaus", rivit: r.kirjoitettu.length }); return json({ ok: true, ...r }); }
-    if (tila === "aikataulu-testi") return json({ ok: true, ...(await aikataulu(true)) });
+    if (tila === "aikataulu-testi") {
+      // kuluttaa kysymyskiintiötä, jotta julkinen kutsu ei voi ajaa mallia rajattomasti
+      const pv = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Helsinki" });
+      const { count } = await db.from("ai_kysely").select("id", { count: "exact", head: true }).eq("pv", pv);
+      if ((count ?? 0) >= PAIVARAJA_KYSY) return json({ virhe: "Päivän kiintiö täynnä." });
+      await db.from("ai_kysely").insert({ tyyppi: "aikataulu-testi" });
+      return json({ ok: true, ...(await aikataulu(true)) });
+    }
     if (tila === "aikataulu") { const r = await aikataulu(); await db.from("tallennin_loki").insert({ funktio: "tekoaly-aikataulu", rivit: r.kirjoitettu, virhe: (r as any).ohitettu ?? null }); return json({ ok: true, ...r }); }
     if (tila === "viikko") { const r = await viikko(); await db.from("tallennin_loki").insert({ funktio: "tekoaly-viikko", rivit: r.kirjoitettu.length }); return json({ ok: true, ...r }); }
     if (tila === "kysy") return json({ ok: true, ...(await kysy(body)) });
