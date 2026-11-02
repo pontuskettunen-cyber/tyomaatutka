@@ -534,7 +534,10 @@ html.hsl .top .omarow .btn{width:30px;height:30px;padding:0;border-radius:50%;fo
 html.hsl .top .in{gap:16px}
 html.hsl .top .live{flex:none}
 html.hsl .top .live #status{max-width:190px;overflow:hidden;text-overflow:ellipsis}
-@media(max-width:1250px){html.hsl .top .live #status{display:none}html.hsl .top .live{padding:7px}}
+html.hsl .top nav{flex:0 1 auto;min-width:0}
+html.hsl .top .omarow input{min-width:150px}
+@media(max-width:1600px){html.hsl .top .live #status{display:none}html.hsl .top .live::after{content:"Live";font-weight:700}}
+@media(max-width:1100px){html.hsl .top .live::after{content:none}html.hsl .top .live{padding:7px}}
 @media(max-width:860px){html.hsl .top .omalinja{display:none}}
 html.hsl #v-home .nowrow .headline{max-width:none}
 html.hsl #v-home .strip.s3 .tile{display:flex;align-items:center;gap:12px;padding:8px 14px;position:relative}
