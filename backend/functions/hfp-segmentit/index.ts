@@ -63,9 +63,10 @@ async function run() {
         // valotapahtuma kirjataan ajoneuvon käynnissä olevalle pysäkkivälille
         if (!p || p.oper == null || p.veh == null) return;
         const sv = st.get(`${p.oper}/${p.veh}`); if (!sv) return;
-        const rid = String(p.tlp_requestid ?? p.tst);
-        if (ev === "TLR") { (sv.vp ??= new Set()).add(rid); }
-        else { (sv.vp ??= new Set()).add(rid); if (p.tlp_decision === "ACK") sv.vok = (sv.vok ?? 0) + 1; else if (p.tlp_decision === "NAK") sv.vei = (sv.vei ?? 0) + 1; }
+        // kentät ovat muotoa "tlp-requestid"; risteys tunnistetaan sid:stä (sama pyyntö lähetetään jopa 4 kertaa)
+        const rid = String(p.sid ?? p["tlp-requestid"] ?? p.tst);
+        (sv.vp ??= new Set()).add(rid);
+        if (ev === "TLA") { const d = p["tlp-decision"]; if (d === "ACK") sv.vok = (sv.vok ?? 0) + 1; else if (d === "NAK") sv.vei = (sv.vei ?? 0) + 1; }
         return;
       }
       if (!p || p.stop == null || !p.tst || p.oper == null || p.veh == null || !p.route) return;
