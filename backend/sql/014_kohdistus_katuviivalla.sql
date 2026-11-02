@@ -22,10 +22,10 @@ begin
   from (select distinct from_stop, to_stop from segment_2h where bucket > now() - interval '7 days') p
   join pysakit pa on pa.stop = p.from_stop join pysakit pb on pb.stop = p.to_stop
   where abs(pa.lat-pb.lat) < 0.02 and abs(pa.lon-pb.lon) < 0.04;
-  create temp table _parikey on commit drop as
-  select distinct from_stop, to_stop, floor(la/0.004)::int ky, floor(lo/0.004)::int kx
-  from _pari, lateral (values (alat,alon),(blat,blon),((alat+blat)/2,(alon+blon)/2)) v(la,lo);
-  create index on _parikey (ky, kx);
+  -- rajauslaatikko (+~150 m) ja GiST-indeksi: piste löytää vain ne välit, joiden laatikkoon se osuu
+  alter table _pari add column bx box;
+  update _pari set bx = box(point(least(alon,blon)-0.0028, least(alat,blat)-0.0014), point(greatest(alon,blon)+0.0028, greatest(alat,blat)+0.0014));
+  create index on _pari using gist (bx);
 
   create temp table _lupa on commit drop as
   select distinct on (lupa_id) lupa_id, geom, alkaa, paattyy
@@ -41,12 +41,8 @@ begin
   create temp table _ehd on commit drop as
   select v.lupa_id, v.lat, v.lon, p.from_stop, p.to_stop, etaisyys_m(v.lat, v.lon, p.alat, p.alon, p.blat, p.blon) d_jana
   from _vert v
-  join _parikey k on k.ky between floor(v.lat/0.004)::int-1 and floor(v.lat/0.004)::int+1
-                 and k.kx between floor(v.lon/0.004)::int-1 and floor(v.lon/0.004)::int+1
-  join _pari p on p.from_stop = k.from_stop and p.to_stop = k.to_stop
-  where v.lat between least(p.alat,p.blat)-0.0014 and greatest(p.alat,p.blat)+0.0014
-    and v.lon between least(p.alon,p.blon)-0.0028 and greatest(p.alon,p.blon)+0.0028
-    and etaisyys_m(v.lat, v.lon, p.alat, p.alon, p.blat, p.blon) < 150;
+  join _pari p on p.bx @> point(v.lon, v.lat)
+  where etaisyys_m(v.lat, v.lon, p.alat, p.alon, p.blat, p.blon) < 150;
 
   -- 2) katuviivan osajanat vain ehdokkaiden pysäkkiväleille
   create temp table _jana on commit drop as
