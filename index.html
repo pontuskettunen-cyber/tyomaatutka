@@ -375,6 +375,11 @@ tr.best td{background:#F0F8F3}
 #enPanel{overflow-y:auto}
 .enpt{background:#fff;border:3px solid #C2410C;border-radius:50%;box-shadow:0 1px 3px rgba(0,0,0,.25);cursor:grab}
 .enpt:active{cursor:grabbing}
+.enq{background:#C2410C;color:#fff;border:2px solid #fff;border-radius:50%;font:700 13px/18px var(--sans,system-ui);text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.35);cursor:pointer}
+.enleg{background:rgba(255,255,255,.95);border:1px solid var(--l,#ddd);border-radius:8px;padding:7px 10px;font-size:12.5px;line-height:1.6;color:#1f2937;box-shadow:0 1px 4px rgba(0,0,0,.12)}
+.enleg i{display:inline-block;width:22px;vertical-align:middle;margin-right:7px;border-radius:3px}
+.enleg .w{height:9px;background:rgba(194,65,12,.55);border:2px solid #C2410C}
+.enleg .b{height:3px;background:#1D4ED8;opacity:.6}
 .altbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 10px}
 .altbar .share{margin-left:0}
 .vert{border:1px solid var(--l);border-radius:10px;padding:10px 12px;margin-bottom:12px;background:var(--g)}
@@ -529,7 +534,7 @@ tr.best td{background:#F0F8F3}
         <select id="enLupa" class="search" style="max-width:340px"><option value="">Valitse alkava lupa…</option></select>
         <div class="seg"><button id="enUndo" type="button">Kumoa piste</button><button id="enClear" type="button">Tyhjennä</button></div>
       </div>
-      <div class="note" style="padding:6px 16px 8px;border-bottom:1px solid var(--l)">Klikkaa kartalle pisteitä kadun suuntaisesti: työalue piirtyy niiden väliin. Pisteitä voi raahata. <b>Esc</b> tai <b>Ctrl+Z</b> peruu edellisen muutoksen. Vieritys zoomaa.</div>
+      <div class="note" id="enOhje" style="padding:6px 16px 8px;border-bottom:1px solid var(--l)"></div>
       <div class="map" id="mapE"></div>
     </div>
     <div class="panel" id="enPanel">
@@ -1011,6 +1016,10 @@ function haittaMalli(){
 function initEnnakko(l){
   if(!M.en){
     M.en = mkMap("mapE"); M.en.setView([60.172,24.94],14);
+    M.en.createPane("enLinjat").style.zIndex = 410; M.en.createPane("enTyo").style.zIndex = 450;
+    const leg = L.control({position:"bottomleft"});
+    leg.onAdd = ()=>{ const d = L.DomUtil.create("div","enleg"); d.innerHTML = `<div><i class="w"></i>Työalue</div><div><i class="b"></i>Linjojen pysäkkivälit, joihin työ osuu</div>`; return d; };
+    leg.addTo(M.en);
     M.en.on("click", e=>{ enTalleta(); if(EN.lupa){ EN.lupa = null; EN.pts = []; } document.getElementById("enLupa").value = ""; EN.pts.push([e.latlng.lat, e.latlng.lng]); drawEn(); laskeEn(); });
     document.getElementById("enUndo").onclick = ()=>enKumoa();
     document.getElementById("enClear").onclick = ()=>{ enTalleta(); EN.pts = []; EN.lupa = null; document.getElementById("enLupa").value = ""; drawEn(); laskeEn(); };
@@ -1024,6 +1033,7 @@ function initEnnakko(l){
   sel.innerHTML = `<option value="">Valitse alkava lupa (${up.length})…</option>` + up.map(x=>`<option value="${esc(x.lupa_id)}">${fmtShort(x.alkaa)} ${esc(shortStreet(x))}</option>`).join("");
   sel.value = cur;
   if(l && S.byId[l] && EN.lupa !== l) valitseLupaEn(l);
+  enOhje();
   setTimeout(()=>M.en.invalidateSize(), 60);
 }
 function valitseLupaEn(id){
@@ -1036,15 +1046,20 @@ function valitseLupaEn(id){
   const h = l.ai_vaikutus==="suuri" ? "suuri" : l.ai_vaikutus==="kohtalainen" ? "kohtalainen" : l.ai_vaikutus ? "pieni" : "kohtalainen";
   document.querySelector(`#enHaitta input[value="${h}"]`).checked = true;
   drawEn(); laskeEn();
-  const b = L.latLngBounds(EN.pts); if(b.isValid()) M.en.fitBounds(b.pad(1.2), {maxZoom:17});
+  const b = L.latLngBounds(EN.pts); if(b.isValid()) M.en.fitBounds(b.pad(0.8), {maxZoom:17, padding:[30,30]});
 }
 function drawEn(){
   if(EN.layer) EN.layer.remove();
   const l = EN.lupa && S.byId[EN.lupa];
   EN.layer = L.layerGroup().addTo(M.en);
-  if(l) L.geoJSON(l.geom,{style:{color:"#C2410C",weight:2,fillColor:"#C2410C",fillOpacity:.3}}).addTo(EN.layer);
+  enOhje();
+  if(l){
+    L.geoJSON(l.geom,{pane:"enTyo", style:{color:"#fff",weight:8,opacity:.9,fill:false}, interactive:false}).addTo(EN.layer);
+    L.geoJSON(l.geom,{pane:"enTyo", style:{color:"#C2410C",weight:4,fillColor:"#C2410C",fillOpacity:.45}, interactive:false}).addTo(EN.layer);
+  }
   else if(EN.pts.length){
-    const line = L.polyline(EN.pts,{color:"#C2410C",weight:10,opacity:.45,lineCap:"round",interactive:false}).addTo(EN.layer);
+    L.polyline(EN.pts,{pane:"enTyo",color:"#fff",weight:16,opacity:.85,lineCap:"round",interactive:false}).addTo(EN.layer);
+    var line = L.polyline(EN.pts,{pane:"enTyo",color:"#C2410C",weight:11,opacity:.6,lineCap:"round",interactive:false}).addTo(EN.layer);
     // pisteitä voi raahata; Esc kesken raahauksen palauttaa pisteen paikalleen
     EN.pts.forEach((p,i)=>{
       const m = L.marker(p,{draggable:true, icon:L.divIcon({className:"enpt", iconSize:[14,14]}), keyboard:false}).addTo(EN.layer);
@@ -1055,6 +1070,20 @@ function drawEn(){
       m.on("click", ev=>L.DomEvent.stopPropagation(ev));
     });
   }
+  // "?" työalueen kohdalla: kertoo mikä oranssi alue on
+  if(EN.pts.length){
+    const c = l ? (centroid(l.geom) || L.latLngBounds(EN.pts).getCenter()) : L.latLngBounds(EN.pts).getCenter();
+    const q = L.marker(c,{icon:L.divIcon({className:"enq", html:"?", iconSize:[22,22]}), keyboard:false, zIndexOffset:-100}).addTo(EN.layer);
+    q.bindPopup(l ? `<b>Työalue</b><br>${esc(shortStreet(l))}: luvan sijainti lupahakemuksesta.<br>Tutka laskee linjat, jotka kulkevat alle 40 m päästä.<br>Tyhjennä ja klikkaa kartalle, jos haluat piirtää oman alueen.`
+                  : `<b>Työalue</b><br>Itse piirretty alue.<br>Tutka laskee linjat, jotka kulkevat alle 40 m päästä.<br>Raahaa valkoisia pisteitä siirtääksesi aluetta.`, {maxWidth:260});
+    q.on("click", ev=>L.DomEvent.stopPropagation(ev));
+  }
+}
+function enOhje(){
+  const o = document.getElementById("enOhje"), l = EN.lupa && S.byId[EN.lupa];
+  o.innerHTML = l ? `Oranssi alue on <b>${esc(shortStreet(l))}</b> -luvan sijainti. Arvio laskettiin sen perusteella. Haluatko kokeilla toista sijaintia? <b>Tyhjennä</b> ja klikkaa kartalle oma alue.`
+    : EN.pts.length ? `Lisää pisteitä kadun suuntaisesti tai raahaa niitä. <b>Esc</b> tai <b>Ctrl+Z</b> peruu edellisen muutoksen. Vieritys zoomaa.`
+    : `Klikkaa kartalle kaksi tai useampia pisteitä kadun suuntaisesti: työalue piirtyy niiden väliin. Tai valitse alkava lupa yläpuolelta.`;
 }
 function laskeEn(){
   clearTimeout(EN.timer);
@@ -1081,8 +1110,8 @@ function naytaEn(){
   // välit kartalle
   const seen = new Set(); rows.forEach(g=>{ const k = g.from_stop+"|"+g.to_stop; if(seen.has(k)) return; seen.add(k);
     const pts = Array.isArray(g.viiva)&&g.viiva.length>1 ? g.viiva : [[g.from_lat,g.from_lon],[g.to_lat,g.to_lon]];
-    L.polyline(pts,{color:"#fff",weight:7,opacity:.9,interactive:false}).addTo(EN.segL);
-    L.polyline(pts,{color:"#1D4ED8",weight:4}).bindTooltip(`${esc(g.from_nimi||g.from_stop)} → ${esc(g.to_nimi||g.to_stop)}`,{sticky:true}).addTo(EN.segL); });
+    L.polyline(pts,{pane:"enLinjat",color:"#fff",weight:5,opacity:.7,interactive:false}).addTo(EN.segL);
+    L.polyline(pts,{pane:"enLinjat",color:"#1D4ED8",weight:3,opacity:.55}).bindTooltip(`${esc(g.from_nimi||g.from_stop)} → ${esc(g.to_nimi||g.to_stop)}`,{sticky:true}).addTo(EN.segL); });
   // linja × suunta × jakso: suurin ohitusmäärä alueen väleistä (sama vuoro ohittaa kaikki välit)
   const lj = new Map(); rows.forEach(r=>{ const k = ln(r.route)+"|"+r.dir+"|"+r.jakso; lj.set(k, Math.max(lj.get(k)||0, r.ohit_vrk)); });
   const linjat = new Map(); lj.forEach((v,k)=>{ const [n,d,j] = k.split("|"); const e = linjat.get(n+"|"+d) || {n, d, tram:TRAM.has(n), j:{}}; e.j[j] = v; linjat.set(n+"|"+d, e); });
