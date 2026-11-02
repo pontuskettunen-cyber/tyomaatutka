@@ -218,6 +218,13 @@ table.t .r{text-align:right;white-space:nowrap;font-family:"IBM Plex Mono"}
 .veh{display:grid;grid-template-columns:48px 1fr auto;gap:2px 10px;padding:9px 16px;border-bottom:1px solid var(--l2);font-size:13px;align-items:center}
 .badge{font:600 12px "IBM Plex Mono";text-align:center;padding:3px 0;border-radius:6px;color:#fff;background:#1D6FB8}
 .badge.tram{background:#00985F}
+.livebtn{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid rgba(0,0,0,.18);border-radius:999px;padding:7px 14px 7px 11px;font:600 13px/1.2 var(--sans,system-ui);color:#1f2937;box-shadow:0 1px 5px rgba(0,0,0,.18);cursor:pointer;white-space:nowrap}
+.livebtn:hover{background:#f6f7f8}
+.livebtn .dot{width:10px;height:10px;border-radius:50%;background:#9AA3AB;flex:none}
+.livebtn.on{background:#0E3B2A;color:#fff;border-color:#0E3B2A}
+.livebtn.on .dot{background:#34D399;box-shadow:0 0 0 0 rgba(52,211,153,.7);animation:livepulse 1.6s infinite}
+.livebtn small{font-weight:400;opacity:.8}
+@keyframes livepulse{0%{box-shadow:0 0 0 0 rgba(52,211,153,.7)}70%{box-shadow:0 0 0 8px rgba(52,211,153,0)}100%{box-shadow:0 0 0 0 rgba(52,211,153,0)}}
 .pinbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:9px 16px;border-bottom:1px solid var(--l);min-height:44px}
 .pchip{border:0;border-radius:6px;padding:3px 6px 3px 9px;font:600 12.5px "IBM Plex Mono";color:#fff;background:#1D6FB8;display:inline-flex;gap:6px;align-items:center}
 .pchip.tram{background:#00985F}
@@ -448,7 +455,6 @@ tr.best td{background:#F0F8F3}
   <div class="split fit">
     <div class="panel mapp">
       <div class="ph"><h2>Kartta</h2>
-        <label class="chk" style="padding:4px 10px;font-size:12.5px"><input type="checkbox" id="liveTgl"> Ajoneuvot livenä <span id="liveCount" class="note"></span></label>
         <div class="legend">
           <span><i style="background:#B42318;height:10px;width:12px;border-radius:2px;opacity:.55"></i>Työmaa hidastaa</span>
           <span><i style="background:#5B6770;height:10px;width:12px;border-radius:2px;opacity:.45"></i>Ei mitattua haittaa</span>
@@ -1274,6 +1280,13 @@ function renderHomeMap(){
     M.home.createPane("segs"); M.home.getPane("segs").style.zIndex = 450;
     M.home.createPane("stops"); M.home.getPane("stops").style.zIndex = 460;
     Lhome = L.layerGroup().addTo(M.home); LhomeSeg = L.layerGroup().addTo(M.home);
+    const lc = L.control({position:"topright"});
+    lc.onAdd = ()=>{ const b = L.DomUtil.create("button","livebtn"); b.type = "button"; b.id = "liveBtn";
+      b.innerHTML = `<span class="dot"></span><span>Bussit ja ratikat livenä <small id="liveCount"></small></span>`;
+      b.title = "Näytä tai piilota kaikki kartan alueella liikkuvat bussit ja ratikat reaaliajassa";
+      L.DomEvent.disableClickPropagation(b); b.onclick = ()=>{ liveSet(!LV.on); renderDetail(); }; return b; };
+    lc.addTo(M.home);
+    M.home.on("moveend", ()=>{ if(LV.on) syncSubs(); });
     M.home._segR = L.canvas({pane:"segs", tolerance: 8}); M.home._stopR = L.canvas({pane:"stops", tolerance: 6});
   }
   Lhome.clearLayers(); LhomeSeg.clearLayers();
@@ -1545,7 +1558,14 @@ function inShape(sh, lat, lon){
 }
 function nearSite(lat, lon){ for(const sh of LV.shapes.values()) if(inShape(sh, lat, lon)) return sh.l; return null; }
 function wantedCells(){
-  const c = new Set(BASE_CELLS);
+  const c = new Set();
+  // kaikki kartalla näkyvät 0,1° solut HSL-alueella (rajattu, ettei koko Suomea tilata)
+  if(M.home){ const b = M.home.getBounds();
+    const la0 = Math.max(60.0, b.getSouth()), la1 = Math.min(60.5, b.getNorth()), lo0 = Math.max(24.3, b.getWest()), lo1 = Math.min(25.5, b.getEast());
+    for(let la = Math.floor(la0*10)/10; la <= la1; la = +(la+0.1).toFixed(1))
+      for(let lo = Math.floor(lo0*10)/10; lo <= lo1; lo = +(lo+0.1).toFixed(1)) c.add(cellOf(la+0.05, lo+0.05));
+  }
+  if(!c.size) BASE_CELLS.forEach(x=>c.add(x));
   const l = S.byId[S.sel], ce = l && l.geom && centroid(l.geom);
   if(ce) c.add(cellOf(ce[0], ce[1]));
   return c;
@@ -1558,7 +1578,7 @@ function syncSubs(){
 }
 function liveSet(on){
   LV.on = on;
-  const t = document.getElementById("liveTgl"); if(t) t.checked = on;
+  const t = document.getElementById("liveBtn"); if(t){ t.classList.toggle("on", on); t.setAttribute("aria-pressed", on); }
   document.getElementById("pinbar").style.display = on ? "" : "none";
   if(on){
     if(!LV.layer) LV.layer = L.layerGroup().addTo(M.home);
@@ -1582,7 +1602,7 @@ function liveSet(on){
     const lc = document.getElementById("liveCount"); if(lc) lc.textContent = "";
     const np = document.getElementById("nowPass"); if(np) np.innerHTML = "";
   }
-  try{ localStorage.setItem("tt_live", on ? "1" : "0"); }catch(e){}
+  try{ localStorage.setItem("tt_live2", on ? "1" : "0"); }catch(e){}
 }
 const markers = new Map();
 function vehLabel(v, site, pinned){
@@ -1593,7 +1613,7 @@ function vehLabel(v, site, pinned){
 function togglePin(id){ LV.pinned.has(id) ? LV.pinned.delete(id) : LV.pinned.add(id); drawLive(); }
 function renderPinBar(){
   const el = document.getElementById("pinbar"); if(!el) return;
-  if(!LV.pinned.size){ el.innerHTML = `<span class="note">Valitse työmaa, niin sen pysäkkivälit piirtyvät katuja pitkin: punainen = hidastaa, harmaa = normaali, katkoviiva = vielä vähän mittauksia. Napauta bussia tai ratikkaa, niin sen tiedot jäävät näkyviin.</span>`; return; }
+  if(!LV.pinned.size){ el.innerHTML = `<span class="note"><b style="color:#1D6FB8">●</b> bussi · <b style="color:#00985F">●</b> ratikka · oranssi reunus = juuri nyt työmaan kohdalla. Napauta ajoneuvoa, niin sen tiedot jäävät näkyviin ja se pysyy seurannassa.</span>`; return; }
   el.innerHTML = `<span class="note">Seurannassa:</span> ${[...LV.pinned].map(id=>{ const v = LV.veh.get(id); return `<button class="pchip ${v&&v.mode==="tram"?"tram":""}" data-id="${esc(id)}" title="Keskitä kartta">${v?esc(v.line):"…"} <span aria-label="Lopeta seuranta" data-x="1">×</span></button>`; }).join("")} <button class="pclear" id="pclear">Tyhjennä</button>`;
   el.querySelectorAll(".pchip").forEach(b=>b.onclick=e=>{ const id=b.dataset.id; if(e.target.dataset.x){ togglePin(id); return; } const v=LV.veh.get(id); if(v) M.home.panTo([v.lat,v.lon]); });
   document.getElementById("pclear").onclick = ()=>{ LV.pinned.clear(); drawLive(); };
@@ -1621,7 +1641,7 @@ function drawLive(){
     if(pinned) m.bringToFront();
   }
   renderPinBar();
-  const lc = document.getElementById("liveCount"); if(lc) lc.textContent = n ? `· ${nf(n)} ajoneuvoa, ${nf(atSite)} työmaan kohdalla` : "· yhdistetään…";
+  const lc = document.getElementById("liveCount"); if(lc) lc.textContent = n ? `· ${nf(n)}, joista ${nf(atSite)} työmaalla` : "· yhdistetään…";
   const np = document.getElementById("nowPass");
   if(np) np.innerHTML = `<div class="sec">Ohittaa juuri nyt <span class="note" style="text-transform:none;letter-spacing:0;font-weight:400">livenä</span></div>` + (here.length
     ? here.sort((a,b)=>a.dl-b.dl).slice(0,6).map(v=>`<div class="veh" style="padding:7px 0"><span class="badge ${v.mode==="tram"?"tram":""}">${esc(v.line)}</span><div class="note">${v.head?"→ "+esc(v.head)+" · ":""}${nf((v.spd||0)*3.6)} km/h</div><div class="r mono ${v.dl<-120?"slow":""}">${v.dl<-30?"+"+nf(-v.dl/60,1)+" min":"ajallaan"}</div></div>`).join("")
@@ -1956,9 +1976,8 @@ function route(nav){
   if(!S.loaded) return;
   if(v==="home"){ const changed = l && S.byId[l] && S.sel!==l; if(changed) S.sel = l;
     renderBrief(); renderAI(); renderCards(); renderHomeMap(); renderDetail(); setTimeout(()=>M.home.invalidateSize(),50);
-    if(!S.liveInit){ S.liveInit = true; let pref = null; try{ pref = localStorage.getItem("tt_live"); }catch(e){}
+    if(!S.liveInit){ S.liveInit = true; let pref = null; try{ pref = localStorage.getItem("tt_live2"); }catch(e){}
       const on = S.forceLive || (pref ? pref==="1" : innerWidth >= 1021);
-      document.getElementById("liveTgl").onchange = e => { liveSet(e.target.checked); renderDetail(); };
       if(on){ liveSet(true); renderDetail(); } }
     else if(LV.on){ buildShapes(); syncSubs(); }
     if((changed || nav==="first") && S.byId[S.sel] && l){ const c = centroid(S.byId[S.sel].geom||{coordinates:[]}); if(c) M.home.setView(c,16); } }
