@@ -871,9 +871,13 @@ function lineIndex(){
       e.works.set(l.lupa_id, {l, dirs});
     });
   });
+  // vierekkäiset luvat (alle 300 m) jakavat samat pysäkkivälit -> lasketaan työmaa-alueittain suurin, ei summaa
+  if(!S._clMap || S._clKey !== S.luvat){ const on = S.luvat.filter(onRoute); const {cl} = clusters(on); S._clMap = new Map(on.map((l,i)=>[l.lupa_id, cl[i]])); S._clKey = S.luvat; }
   idx.forEach(e=>{
-    const tot = {};
-    e.works.forEach(w=>Object.entries(w.dirs).forEach(([d,x])=>{ if(x.s>0) tot[d]=(tot[d]||0)+x.s; }));
+    const tot = {}, best = {};
+    e.works.forEach(w=>Object.entries(w.dirs).forEach(([d,x])=>{ if(x.s>0){ const k = d+"|"+S._clMap.get(w.l.lupa_id); best[k] = Math.max(best[k]||0, x.s); } }));
+    Object.entries(best).forEach(([k,v])=>{ const d = k.split("|")[0]; tot[d] = (tot[d]||0) + v; });
+    e.sites = new Set([...e.works.keys()].map(id=>S._clMap.get(id))).size;
     e.tot = tot; e.max = Math.max(0, ...Object.values(tot));
     e.measured = [...e.works.values()].filter(w=>Object.keys(w.dirs).length).length;
   });
@@ -886,13 +890,13 @@ function renderLinjat(){
     .sort((a,b)=>b.max-a.max || b.works.size-a.works.size || parseInt(a.name)-parseInt(b.name));
   const worst = all.filter(e=>e.max>0).sort((a,b)=>b.max-a.max)[0];
   document.getElementById("linjatBrief").innerHTML = worst
-    ? `Katutyöt koskettavat nyt <strong>${nf(all.filter(e=>e.works.size).length)} linjaa</strong>. Eniten aikaa menettää <strong>${worst.tram?"ratikka":"bussi"} ${esc(worst.name)}</strong>: ${sgn(worst.max)} per suunta ${nf(worst.works.size)} työmaan kohdalla yhteensä.`
+    ? `Katutyöt koskettavat nyt <strong>${nf(all.filter(e=>e.works.size).length)} linjaa</strong>. Eniten aikaa menettää <strong>${worst.tram?"ratikka":"bussi"} ${esc(worst.name)}</strong>: ${sgn(worst.max)} per vuoro ${nf(worst.sites)} työmaa-alueen kohdalla yhteensä.`
     : `Katutyöt koskettavat nyt <strong>${nf(all.filter(e=>e.works.size).length)} linjaa</strong>. Linjakohtainen lisäaika tarkentuu, kun mittausdataa kertyy.`;
   document.getElementById("lTitle").textContent = `${nf(list.length)} linjaa`;
   const el = document.getElementById("lList");
   el.innerHTML = list.slice(0,200).map(e=>`<div class="lrow ${S.lSel===e.name?"sel":""}" data-n="${esc(e.name)}">
     <span class="lbadge ${e.tram?"tram":""}">${esc(e.name)}</span>
-    <div><b style="font-weight:500">${nf(e.works.size)} ${e.works.size===1?"työmaa":"työmaata"} reitillä</b><div class="m">${e.up.length?`${e.up.length} alkaa 14 pv sisällä · `:""}${e.measured} mitattu</div></div>
+    <div><b style="font-weight:500">${nf(e.sites)} ${e.sites===1?"työmaa-alue":"työmaa-aluetta"} reitillä</b><div class="m">${e.up.length?`${e.up.length} alkaa 14 pv sisällä · `:""}${e.measured} mitattu</div></div>
     <div class="x ${e.max>30?"slow":""}">${e.max>0?sgn(e.max):"–"}<small>per suunta</small></div></div>`).join("") || `<div class="empty" style="padding:14px 16px">Ei linjoja tällä haulla.</div>`;
   el.querySelectorAll(".lrow").forEach(d=>d.onclick=()=>{ S.lSel=d.dataset.n; renderLinjat(); if(innerWidth<1021) document.getElementById("lDet").scrollIntoView({behavior:"smooth"}); });
   if(!S.lSel && list[0]) S.lSel = list[0].name;
@@ -905,12 +909,12 @@ function renderLinjaDet(e){
   const dirs = Object.keys(e.tot).sort();
   box.innerHTML = `<div class="det">
     <div class="sup"><span class="lbadge ${e.tram?"tram":""}">${esc(e.name)}</span><span class="note">${e.tram?"Raitiovaunu":"Bussi"} · ${S.ik==="7d"?"7 vrk":"24 h"}</span></div>
-    <h3>${nf(e.works.size)} ${e.works.size===1?"työmaa":"työmaata"} reitin varrella</h3>
+    <h3>${nf(e.sites)} ${e.sites===1?"työmaa-alue":"työmaa-aluetta"} reitin varrella <span class="note" style="font-weight:400">(${nf(e.works.size)} lupaa)</span></h3>
     <div class="facts">
       ${dirs.length? dirs.slice(0,2).map(d=>`<div><b class="${e.tot[d]>30?"slow":""}">${sgn(e.tot[d])}</b><small>yhteensä suunnassa ${d}</small></div>`).join("") : `<div><b>–</b><small>lisäaika kertyy</small></div>`}
       <div><b>${nf(e.up.length)}</b><small>alkaa 14 pv sisällä</small></div>
     </div>
-    <div class="note" style="margin:-6px 0 8px">Yhteensä = hidastavien työmaiden lisäajat ajossa summattuna. Kertoo, paljonko yksi vuoro menettää koko reitillä katutöiden takia.</div>
+    <div class="note" style="margin:-6px 0 8px">Yhteensä = hidastavien työmaa-alueiden lisäajat summattuna. Alle 300 m päässä toisistaan olevat luvat lasketaan yhdeksi alueeksi, koska ne vaikuttavat samoihin pysäkkiväleihin. Kertoo, paljonko yksi vuoro menettää koko reitillä katutöiden takia.</div>
     <div class="sec">Työmaat reitillä</div>
     <table class="t"><thead><tr><th>Työmaa</th><th class="r">Suunta 1</th><th class="r">Suunta 2</th></tr></thead><tbody>
     ${ws.map(w=>`<tr><td><a href="#/?l=${encodeURIComponent(w.l.lupa_id)}">${esc(title(w.l))}</a><br><span class="note">${esc(purpose(w.l)).slice(0,70)}</span></td>${["1","2"].map(d=>`<td class="r ${w.dirs[d]&&w.dirs[d].s>10?"slow":""}">${w.dirs[d]?sgn(w.dirs[d].s):"–"}</td>`).join("")}</tr>`).join("")}
