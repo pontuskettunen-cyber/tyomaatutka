@@ -986,13 +986,15 @@ function laskeEn(){
   if(!EN.pts.length){ EN.res = null; if(EN.segL) EN.segL.clearLayers(); out.innerHTML = `<div class="empty">Piirrä työalue tai valitse lupa, niin arvio lasketaan.</div>`; return; }
   out.innerHTML = `<div class="empty">Lasketaan…</div>`;
   EN.timer = setTimeout(async ()=>{
-    const pts = EN.lupa ? EN.pts : tiheyta(EN.pts);
+    const pts = EN.lupa ? EN.pts : tiheyta(EN.pts), id = (EN.req = (EN.req||0) + 1);
     try{
       const r = await fetch(API+"rpc/ennakko_valit", {method:"POST", headers:{apikey:KEY, Authorization:"Bearer "+KEY, "content-type":"application/json"}, body:JSON.stringify({pts})});
-      EN.res = r.ok ? await r.json() : [];
+      const res = r.ok ? await r.json() : [];
+      if(id !== EN.req) return;   // uudempi laskenta on jo käynnissä: vanha tulos ei saa korvata sitä
+      EN.res = res;
       if(!EN.have){ try{ const kj = await get("rpc/kuormitus_jaksot"); EN.have = new Set(kj.map(x=>x.jakso||x)); }catch(e){ EN.have = new Set(["aamu","paiva","ilta","muu"]); } }
-    }catch(e){ EN.res = []; }
-    naytaEn();
+    }catch(e){ if(id !== EN.req) return; EN.res = []; }
+    if(id === EN.req) naytaEn();
   }, 250);
 }
 function naytaEn(){
