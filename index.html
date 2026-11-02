@@ -2061,20 +2061,16 @@ function lValitseVali(e, key){
 }
 /* Liikennevalot välillä: erotetaanko hidastus valoista vai työmaasta (HFP TLR/TLA, 7 vrk) */
 async function lValot(a, b){
-  const box = document.getElementById("lValot"); if(!box) return;
   const k = a+"|"+b; S._valot ||= {};
   if(!(k in S._valot)) S._valot[k] = await get(`v_vali_valot?from_stop=eq.${a}&to_stop=eq.${b}`).then(x=>x[0]||null).catch(()=>null);
-  const v = S._valot[k], box2 = document.getElementById("lValot"); if(!box2 || S.lVali !== k) return;
-  if(!v || !(v.n >= 5)){ box2.style.display = ""; box2.innerHTML = `<div><b>LIIKENNEVALOT</b> Valotietoa kerätään. Kun välillä on ajettu riittävästi, tähän tulee, kuinka paljon hidastuksesta selittyy liikennevaloilla.</div>`; return; }
-  if(!(v.n_valo > 0)){ box2.style.display = ""; box2.innerHTML = `<div><b>LIIKENNEVALOT</b> Välillä ei ole valoetuisuutta pyytäviä liikennevaloja (${nf(v.n)} ohitusta). Hidastus ei selity valoetuisuudella.</div>`; return; }
-  const ok = v.pyynnot ? Math.round(100*(v.myonnetty||0)/v.pyynnot) : null;
-  const ero = v.viive_evatty!=null && v.viive_ei_evatty!=null ? v.viive_evatty - v.viive_ei_evatty : null;
-  const tulkinta = v.n_evatty >= 5 && v.viive_ei_evatty!=null
-    ? (v.viive_ei_evatty > 10 ? `Myös silloin, kun valot antoivat etuisuuden, bussi jäi välillä aikataulusta keskimäärin ${sgn(v.viive_ei_evatty)}: hidastus ei selity pelkillä valoilla, työmaa on todennäköinen syy.`
-       : `Kun valot antoivat etuisuuden, bussi pysyi välillä lähes aikataulussa (${sgn(v.viive_ei_evatty)}). Hidastus syntyy pääosin silloin, kun valot eivät anna etuisuutta: syy on todennäköisemmin valoissa kuin työmaassa.`)
-    : `Evättyjä pyyntöjä on vielä liian vähän vertailuun.`;
-  box2.style.display = "";
-  box2.innerHTML = `<div><b>LIIKENNEVALOT</b> ${nf(v.n_valo)}/${nf(v.n)} ohituksessa bussi pyysi välillä valoetuisuutta. Pyynnöistä myönnettiin ${ok!=null?ok+" %":"–"}${v.n_evatty?`, evättiin ${nf(v.evatty)}`:""}.${ero!=null&&v.n_evatty>=5?` Kun etuisuus evättiin, bussi jäi välillä aikataulusta keskimäärin ${sgn(ero)} enemmän.`:""}</div><div class="note">${tulkinta}</div>`;
+  const v = S._valot[k], box = document.getElementById("lValot"); if(!box || S.lVali !== k) return;
+  box.style.display = "";
+  if(!v || !(v.n >= 5)){ box.innerHTML = `<div><b>LIIKENNEVALOT</b> Valotietoa kerätään (alkoi 2.11.). Kun välillä on ajettu riittävästi, tähän tulee valo-ohjattujen risteysten määrä.</div>`; return; }
+  const r = v.valoja_per_ohitus || 0;
+  box.innerHTML = r < 0.5
+    ? `<div><b>LIIKENNEVALOT</b> Välillä ei ole bussien etuisuutta pyytäviä liikennevaloja (${nf(v.n)} ohitusta). Hidastus ei selity valoilla.</div>`
+    : `<div><b>LIIKENNEVALOT</b> Välillä on noin ${nf(Math.round(r))} valo-ohjattu${Math.round(r)===1?"":"a"} risteys${Math.round(r)===1?"":"tä"}: bussi pyysi valoetuisuutta keskimäärin ${nf(r,1)} kertaa ohituksen aikana (${nf(v.n)} ohitusta).</div>
+       <div class="note">Arvio vertaa väliä linjan muihin väleihin, joten valoja tavallista enemmän sisältävällä välillä osa lisäajasta voi tulla valoista. Todennettu luku vertaa samaa väliä ennen ja jälkeen työn: valot ovat siinä molemmissa, joten niiden vaikutus kumoutuu.</div>`;
 }
 const valiPituus = pts => pts.reduce((a,p,i)=>i ? a + dmet(pts[i-1], p) : 0, 0);
 function etaisyysViivaan(c, pts){ let m = Infinity;
