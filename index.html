@@ -740,7 +740,7 @@ function renderBrief(){
   // Otsikko: yksi lause, joka muuttuu datan mukana
   let head;
   const rH = r.filter(x=>x.i.kind!=="v2" || x.i.n>=20);
-  if(rH.length){ const t = rH[0]; head = `<em>${esc(shortStreet(t.l))}</em> hidastaa joukkoliikennettä eniten${t.i.s!=null?`: ${sgn(t.i.s)} per ohitus`:""}${t.i.kind==="v2"&&!t.i.tod?' <span class="hnote">arvio</span>':""}.`; }
+  if(rH.length){ const t = rH[0]; head = `<em>${esc(shortStreet(t.l))}</em> hidastaa joukkoliikennettä eniten${t.i.s!=null?`: ${sgn(t.i.s)} per ohitus`:""}.${t.i.kind==="v2"&&!t.i.tod?' <span class="hnote">arvio</span>':""}`; }
   else head = `${nf(runR.length)} katutyötä bussi- ja ratikkareittien varrella. Vaikutusmittaus käynnistyy.`;
   document.getElementById("brief").innerHTML = head;
   // Kolme signaalia: suurin vaikutus, seuraavaksi alkava, kasautumat
@@ -933,7 +933,7 @@ async function renderDetail(){
     ${l.ai_vaikutus?`<div class="aibox"><span class="ai-badge"><i></i>TEKOÄLYN TULKINTA LUVASTA</span><div style="margin-top:4px"><span class="aitag ${esc(l.ai_vaikutus)}">vaikutus: ${esc(l.ai_vaikutus)}</span> ${(l.ai_sulkee||[]).map(x=>`<span class="aitag pieni">${esc(String(x).replace("_"," "))}</span>`).join(" ")} <span class="note">${esc(l.ai_perustelu||"")}</span></div></div>`:""}
     ${tiivis(l, im, ml)}
     <div class="facts">${facts.map(f=>`<div><b>${f[0]}</b><small>${f[1]}</small></div>`).join("")}</div>
-    ${(()=>{ const v = varmuus(l); return v ? `<div class="varm ${v.k}"><b>${esc(v.lyhyt[0].toUpperCase()+v.lyhyt.slice(1))}</b> ${esc(v.txt.replace(/^[^:]+:\s*/,""))}${im&&im.tod&&im.arvio!=null?` <span class="note">(Pelkkä vertailu linjan muihin väleihin antaisi ${sgn(im.arvio)}.)</span>`:""}</div>` : ""; })()}
+    ${(()=>{ const v = varmuus(l); return v ? `<div class="varm ${v.k}"><b>${esc(v.lyhyt[0].toUpperCase()+v.lyhyt.slice(1))}:</b> ${esc((t=>t[0].toUpperCase()+t.slice(1))(v.txt.replace(/^[^:]+:\s*/,"")))}${im&&im.tod&&im.arvio!=null?` <span class="note">(Pelkkä vertailu linjan muihin väleihin antaisi ${sgn(im.arvio)}.)</span>`:""}</div>` : ""; })()}
     ${onRoute(l) && ph.k==="kaynnissa" && LV.on ? `<div id="nowPass"></div>` : ""}
     ${im && im.kind==="ennen" ? `<div class="note" style="margin:-6px 0 8px">Ennen ja jälkeen: ajoaika ${sgn(im.pct,1," %")} perustasosta, yleinen ruuhka vähennetty.</div>`:""}
     ${im && im.kind==="v2" && im.prev!=null ? `<div class="note" style="margin:-6px 0 8px">Edellinen viikko: ${sgn(im.prev)} per ohitus · ${im.s-im.prev>3?'<span class="slow">kasvanut</span>':im.s-im.prev<-3?'<span class="ok">pienentynyt</span>':'ennallaan'}</div>`:""}
