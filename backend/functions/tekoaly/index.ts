@@ -58,14 +58,21 @@ async function faktat() {
     "lupa_id,layer,osoite,tarkoitus,kaupunginosa,alkaa,paattyy,segmentteja,linjat,ohitukset_24h,ajoja_vrk,lisaviive_s,ajoneuvotunnit_24h,indeksi_24h,perustaso_ikkunat,geom,ai_sijainti,ai_vaikutus,ai_sulkee");
   if (error) throw new Error(error.message);
   const luvat = (data ?? []) as any[];
+  const { data: mt } = await db.from("lupa_mitta").select("lupa_id,ikkuna,jakso,n,lisa_ajo,lisa_seis,ajoneuvotunnit_vrk").in("ikkuna", ["24h", "7d", "ed7d"]);
+  const M: Record<string, any> = {};
+  for (const r of mt ?? []) (M[r.lupa_id] ??= {})[`${r.ikkuna}|${r.jakso}`] = r;
+  const mm = (id: string, ik: string, j = "kaikki") => { const r = M[id]?.[`${ik}|${j}`]; return r && r.n >= 5 ? r : null; };
+  const rnd = (x: number | null | undefined) => x == null ? null : Math.round(x);
   const reitilla = luvat.filter((l) => (l.segmentteja ?? 0) > 0);
   const tiivis = (l: any) => ({
     id: l.lupa_id, osoite: (l.osoite ?? "").split(/,\s*/).slice(0, 2).join(", "), alue: l.kaupunginosa,
     tyo: (l.tarkoitus ?? "").split(/\s(?:LISÄYS|KORJAUS|MUUTOS)\b/)[0].slice(0, 160),
     alkaa: pvm(l.alkaa), paattyy: pvm(l.paattyy), vaihe: vaihe(l), linjat: lines(l.linjat),
     ajoja_vrk: l.ajoja_vrk != null ? Math.round(l.ajoja_vrk) : null,
-    lisaviive_s_per_ohitus: l.lisaviive_s != null ? Math.round(l.lisaviive_s) : null,
-    ajoneuvotunnit_24h: l.ajoneuvotunnit_24h != null ? Math.round(l.ajoneuvotunnit_24h * 10) / 10 : null,
+    mitattu_24h: mm(l.lupa_id, "24h") ? { lisaaika_ajossa_s: rnd(mm(l.lupa_id, "24h").lisa_ajo), lisaseisonta_s: rnd(mm(l.lupa_id, "24h").lisa_seis), havaintoja: mm(l.lupa_id, "24h").n, ajoneuvotunnit_vrk: Math.round((mm(l.lupa_id, "24h").ajoneuvotunnit_vrk ?? 0) * 10) / 10 } : null,
+    mitattu_7vrk: mm(l.lupa_id, "7d") ? { lisaaika_ajossa_s: rnd(mm(l.lupa_id, "7d").lisa_ajo), lisaseisonta_s: rnd(mm(l.lupa_id, "7d").lisa_seis), havaintoja: mm(l.lupa_id, "7d").n, ajoneuvotunnit_vrk: Math.round((mm(l.lupa_id, "7d").ajoneuvotunnit_vrk ?? 0) * 10) / 10,
+      aamuruuhka_s: rnd(mm(l.lupa_id, "7d", "aamu")?.lisa_ajo), iltaruuhka_s: rnd(mm(l.lupa_id, "7d", "ilta")?.lisa_ajo) } : null,
+    edellinen_viikko_lisaaika_ajossa_s: rnd(mm(l.lupa_id, "ed7d")?.lisa_ajo),
     tulkinta: l.ai_sijainti ? { sijainti: l.ai_sijainti, vaikutus: l.ai_vaikutus, sulkee: l.ai_sulkee } : null,
   });
   // kasautumat: alkava työ samalle linjalle, jolla on jo työ 0,3–2,5 km päässä
@@ -86,12 +93,12 @@ async function faktat() {
     yhteensa: { kaynnissa: luvat.filter((l) => vaihe(l) === "kaynnissa").length, reitilla_kaynnissa: reitilla.filter((l) => vaihe(l) === "kaynnissa").length,
       alkaa_7pv: luvat.filter((l) => vaihe(l) === "tulossa" && +new Date(l.alkaa) < Date.now() + 7 * DAY).length },
     kaynnissa_reitilla: reitilla.filter((l) => vaihe(l) === "kaynnissa")
-      .sort((a, b) => (b.ajoneuvotunnit_24h ?? -1) - (a.ajoneuvotunnit_24h ?? -1) || (b.ajoja_vrk ?? 0) - (a.ajoja_vrk ?? 0)).slice(0, 40).map(tiivis),
+      .sort((a, b) => (mm(b.lupa_id, "24h")?.ajoneuvotunnit_vrk ?? -1) - (mm(a.lupa_id, "24h")?.ajoneuvotunnit_vrk ?? -1) || (b.ajoja_vrk ?? 0) - (a.ajoja_vrk ?? 0)).slice(0, 40).map(tiivis),
     alkavat_14pv_reitilla: reitilla.filter((l) => vaihe(l) === "tulossa" && +new Date(l.alkaa) < Date.now() + 14 * DAY)
       .sort((a, b) => +new Date(a.alkaa) - +new Date(b.alkaa)).slice(0, 40).map(tiivis),
     kasautumat: kas.slice(0, 15),
     raitiovaunulinjat: "Helsingin raitiovaunulinjat ovat 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 13 ja 15. Muut linjat ovat busseja (N-pääte = yöbussi).",
-    huom: "lisaviive_s_per_ohitus = paljonko enemmän linja jää aikataulusta työmaan pysäkkiväleillä kuin saman linjan muilla väleillä samaan aikaan. null = ei vielä riittävästi dataa. Keruu aloitettu 2.11.2026.",
+    huom: "lisaaika_ajossa_s = mediaani: paljonko enemmän aikaa bussi/ratikka menettää AJOSSA työmaan pysäkkiväleillä kuin saman linjan muilla väleillä samaan aikaan (per ohitus). lisaseisonta_s = paljonko pidempään seistään pysäkillä. havaintoja = otoskoko; alle 30 havaintoa on epävarma. null = ei vielä riittävästi dataa. Keruu aloitettu 2.11.2026, tarkennettu keruu 2.11. klo 6.35.",
   };
 }
 
@@ -138,7 +145,8 @@ Säännöt:
 - Jokainen kohta viittaa yhteen lupaan (lupa_id) tai on yleinen (lupa_id null).
 - Kirjoita selkeää yleiskieltä suomeksi, ei jargonia. Linjat matkustajan numeroina (esim. "ratikka 4", "bussi 55").
 - Priorisoi: 1) mitattu suuri lisäviive, 2) kasautumat (uusi työ linjalle, jolla on jo työ), 3) alkavat työt vilkkailla linjoilla, joiden tulkinta on "suuri".
-Vastaa pelkällä JSONilla ilman johdantoa tai markdownia: {"hsl": K, "kaupunki": K}, jossa K = {"otsikko": max 12 sanaa, "kohdat": [{"teksti": max 40 sanaa, "lupa_id": string|null}] (3–5 kpl), "suositus": max 30 sanaa}.
+Vastaa pelkällä JSONilla ilman johdantoa tai markdownia: {"hsl": K, "kaupunki": K}, jossa K = {"otsikko": max 12 sanaa, "kohdat": [{"teksti": max 30 sanaa, "lupa_id": string|null}] (3–5 kpl), "suositus": max 25 sanaa}.
+Käytä ensisijaisesti mitattu_24h-lukuja (lisäaika ajossa erottaa työmaan vaikutuksen pysäkkiruuhkasta).
 - "hsl" on HSL:n liikennesuunnittelijalle: mitä linjoille tapahtuu ja mihin pitää varautua (poikkeusreitit, aikataulut, tiedotus).
 - "kaupunki" on kaupungin lupakäsittelijälle: mitkä luvat aiheuttavat joukkoliikenteelle eniten haittaa ja missä ajoitusta tai ehtoja kannattaisi tarkistaa.`;
   const t = await claude(MALLI_KIRJOITUS, system, JSON.stringify(f), 6000);
@@ -146,6 +154,20 @@ Vastaa pelkällä JSONilla ilman johdantoa tai markdownia: {"hsl": K, "kaupunki"
   const rivit = ["hsl", "kaupunki"].filter((r) => k?.[r]).map((r) => ({ rooli: r, sisalto: k[r], malli: MALLI_KIRJOITUS }));
   if (rivit.length) await db.from("ai_katsaus").insert(rivit);
   return { kirjoitettu: rivit.map((r) => r.rooli) };
+}
+
+/* ---------- 2b) viikkokatsaus (maanantaisin) ---------- */
+async function viikko() {
+  const { data: viim } = await db.from("ai_katsaus").select("luotu").eq("rooli", "viikko").order("luotu", { ascending: false }).limit(1);
+  if (viim?.[0] && Date.now() - +new Date(viim[0].luotu) < 6 * DAY) return { kirjoitettu: [] as string[], ohitettu: "viikkokatsaus on jo kirjoitettu" };
+  const f = await faktat();
+  const system = `Kirjoitat Työmaatutkan viikkokatsauksen HSL:n ja Helsingin kaupungin yhteiseen viikkopalaveriin. Saat valmiiksi lasketut luvut (mitattu_7vrk = viimeiset 7 vrk, edellinen_viikko_* = sitä edeltävä viikko).
+Säännöt: käytä VAIN annettuja lukuja; mainitse otoskoko kun se on alle 30; älä keksi syitä. Suomeksi, selkeää yleiskieltä, linjat matkustajan numeroina.
+Vastaa pelkällä JSONilla ilman johdantoa: {"otsikko": max 12 sanaa, "kohdat": [{"teksti": max 45 sanaa, "lupa_id": string|null}] (4–6 kpl: viikon suurimmat vaikutukset, mikä pahentui ja mikä helpotti edelliseen viikkoon verrattuna, ensi viikolla alkavat kasautumat), "suositus": max 35 sanaa, "tiivis": yksi lause max 20 sanaa}.`;
+  const t = await claude(MALLI_KIRJOITUS, system, JSON.stringify(f), 6000);
+  const k = parseJSON(t);
+  if (k?.otsikko) await db.from("ai_katsaus").insert({ rooli: "viikko", sisalto: k, malli: MALLI_KIRJOITUS });
+  return { kirjoitettu: k?.otsikko ? ["viikko"] : [] };
 }
 
 /* ---------- 3) kysy / viestiluonnos ---------- */
@@ -195,6 +217,7 @@ Deno.serve(async (req) => {
   try {
     if (tila === "luokittele") { const r = await luokittele(); await db.from("tallennin_loki").insert({ funktio: "tekoaly-luokittele", rivit: r.luokiteltu }); return json({ ok: true, ...r }); }
     if (tila === "katsaus") { const r = await katsaus(); await db.from("tallennin_loki").insert({ funktio: "tekoaly-katsaus", rivit: r.kirjoitettu.length }); return json({ ok: true, ...r }); }
+    if (tila === "viikko") { const r = await viikko(); await db.from("tallennin_loki").insert({ funktio: "tekoaly-viikko", rivit: r.kirjoitettu.length }); return json({ ok: true, ...r }); }
     if (tila === "kysy") return json({ ok: true, ...(await kysy(body)) });
     return json({ ok: false, virhe: "tuntematon tila" }, 400);
   } catch (e) {

@@ -81,3 +81,7 @@ grant select on v_lupa_mitta, v_lupa_mitta_linja to anon, authenticated;
 
 select cron.schedule('mittarit-10min', '6,16,26,36,46,56 * * * *', $$select paivita_mittarit()$$);
 select paivita_mittarit();
+
+-- viikkokatsaus maanantaisin klo 6.50 Helsingin aikaa (talviaika UTC+2)
+select cron.schedule('ai-viikko', '50 4 * * 1',
+  replace((select command from cron.job where jobname='hfp-aggregate-2min'), 'functions/v1/hfp-segmentit', 'functions/v1/tekoaly?tila=viikko'));
