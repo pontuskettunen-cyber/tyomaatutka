@@ -556,6 +556,7 @@ function phase(l){
 const MIN_N = 10;
 const mitta = (id, ik, j="kaikki") => (S.mitta[id]||{})[ik+"|"+j];
 function impact(l){
+  if(phase(l).k==="tulossa") return null;   // ennen alkua mitattu on pohjatasoa, ei työn vaikutusta
   const vk = S.vaik?.[l.lupa_id];
   const m = mitta(l.lupa_id, S.ik);
   const arvio = m && m.n >= MIN_N && m.lisa_ajo != null ? m.lisa_ajo : null;
