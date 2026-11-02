@@ -982,7 +982,7 @@ function laskentaHTML(){
   return `<ol class="calc-steps">
     <li><b>Mitataan.</b> Jokainen bussi ja ratikka, joka ajaa työmaan ohi (HSL:n avoin ajoneuvodata).</li>
     <li><b>Verrataan.</b> Sama linja muilla pysäkkiväleillä samaan aikaan, ettei ruuhka sotke lukua.</li>
-    <li><b>Lasketaan yhteen.</b> Esim. ${esc(shortStreet(x.l))}: <span class="mono">${nf(im.n)} ohitusta × ${sgn(im.s)} ≈ ${nf(raw,1)} h</span><br><span class="mono">${nf(bd.sites.length)} työmaa-aluetta yhteensä ${nf(bd.total,1)} h</span> · ${esc(per.full?"vuorokaudessa":"mitattu "+per.dur+" ajalta")}</li>
+    <li><b>Lasketaan yhteen.</b> Esim. ${esc(shortStreet(x.l))}: <span class="mono">${nf(im.n)} ohitusta × ${sgn(im.s)} ≈ ${nf(raw,1)} h</span>${Math.abs(x.vehH-raw)>0.5?`<br>Sivulla ${nf(x.vehH,1)} h, koska tarkka lasku tehdään linja kerrallaan.`:""}<br><span class="mono">${nf(bd.sites.length)} työmaa-aluetta yhteensä ${nf(bd.total,1)} h</span> · ${esc(per.full?"vuorokaudessa":"mitattu "+per.dur+" ajalta")}</li>
   </ol>
   <p class="note"><b>Luku on yläraja:</b> osa väleistä on hitaita ilman työmaatakin. Varmuus kasvaa, kun samaa väliä voidaan verrata aikaan ennen työtä.</p>
   <p class="note">Työvuorovertaus on havainnollistus: lisäaika ei aina vaadi lisäkuljettajaa, vaan se syö aikataulun väljyyttä.</p>
