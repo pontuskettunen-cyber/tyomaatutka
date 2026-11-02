@@ -978,13 +978,15 @@ function laskentaHTML(){
   const bd = breakdown(), per = period(), x = bd.sites[0];
   if(!x) return `<p>Lisäaika lasketaan, kun työmaiden ohi on ajettu vähintään ${MIN_N} kertaa.</p>`;
   const im = impact(x.l), raw = im.n * im.s / 3600;
+  const pax = Math.round(bd.total * 20 / 100) * 100;
   return `<ol class="calc-steps">
-    <li><b>Jokainen ohitus mitataan.</b> HSL:n avoin data kertoo, kun bussi tai ratikka lähtee pysäkiltä ja saapuu seuraavalle. Jokaiselle työmaan kohdan pysäkkivälille lasketaan, paljonko vuoro jäi tai kirii aikataulusta.</li>
-    <li><b>Verrataan saman linjan muihin väleihin.</b> Ruuhkassa kaikki hidastuu, joten työmaan välin lukua verrataan siihen, miten sama linja kulkee kaikilla muilla väleillä samassa 2 tunnin jaksossa. Erotus on <i>lisäaika per ohitus</i> (mediaani).</li>
-    <li><b>Kerrotaan ohitusten määrällä.</b> Esimerkki: ${esc(title(x.l))}<br><span class="mono">${nf(im.n)} ohitusta × ${sgn(im.s)} ≈ ${nf(raw,1)} h</span><br>Sivulla ${nf(x.vehH,1)} h, koska lasku tehdään linjoittain ja linjat, jotka kulkivat tavallista nopeammin, lasketaan nollana.</li>
-    <li><b>Lasketaan yhteen.</b> Mukana työmaat, joiden ohi on ajettu vähintään ${MIN_N} kertaa. Alle 300 m päässä toisistaan olevat luvat ovat yksi alue, jotta samaa viivettä ei lasketa kahdesti.<br><span class="mono">${nf(bd.sites.length)} aluetta yhteensä ${nf(bd.total,1)} h</span> · ${esc(per.full?"vuorokautta kohti":"mitattu "+per.dur)}</li>
+    <li><b>Mitataan.</b> Jokainen bussi ja ratikka, joka ajaa työmaan ohi (HSL:n avoin ajoneuvodata).</li>
+    <li><b>Verrataan.</b> Sama linja muilla pysäkkiväleillä samaan aikaan, ettei ruuhka sotke lukua.</li>
+    <li><b>Lasketaan yhteen.</b> Esim. ${esc(shortStreet(x.l))}: <span class="mono">${nf(im.n)} ohitusta × ${sgn(im.s)} ≈ ${nf(raw,1)} h</span><br><span class="mono">${nf(bd.sites.length)} työmaa-aluetta yhteensä ${nf(bd.total,1)} h</span> · ${esc(per.full?"vuorokaudessa":"mitattu "+per.dur+" ajalta")}</li>
   </ol>
-  <p class="note"><b>Mitä luku ei vielä todista:</b> se kertoo, paljonko työmaan kohdan välit ovat hitaampia kuin linjan muut välit. Osa väleistä on hitaita ilman työmaatakin (valot, keskustan ruuhka), joten luku on yläraja eikä todistettu syy. Varmuus kasvaa, kun samoja välejä voidaan verrata aikaan ennen työtä tai sen jälkeen. Ajoneuvotunti = bussien ja ratikoiden aikaa. Matkustajien aika on tätä moninkertainen.</p>`;
+  <p class="note"><b>Luku on yläraja:</b> osa väleistä on hitaita ilman työmaatakin. Varmuus kasvaa, kun samaa väliä voidaan verrata aikaan ennen työtä.</p>
+  <p class="note">Työvuorovertaus on havainnollistus: lisäaika ei aina vaadi lisäkuljettajaa, vaan se syö aikataulun väljyyttä.</p>
+  <p class="note">Matkustajille tämä tarkoittaa arviolta noin ${nf(pax)} tuntia, jos vuorossa on keskimäärin 20 matkustajaa (oletus, ei mitattu).</p>`;
 }
 function tile(val, label, key, bd, href){
   const sub = (label.match(/<span class="tsub">.*<\/span>$/)||[""])[0];
