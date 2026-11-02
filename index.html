@@ -479,7 +479,7 @@ tr.best td{background:#F0F8F3}
     <h3>Mitä tekoäly tekee ja mitä ei</h3>
     <table class="t roolit"><thead><tr><th>Tehtävä</th><th>Kuka tekee</th><th>Miksi näin</th></tr></thead><tbody>
       <tr><td>Kaikki luvut: lisäaika, ohitukset, todennettu vaikutus, ennakkoarvion laskelma, ajantasausvälit</td><td><b>Laskenta</b> (SQL, toistettava)</td><td>Luvut pitää pystyä tarkistamaan ja toistamaan. Kielimalli ei laske yhtään lukua.</td></tr>
-      <tr><td>Lupatekstin luku: sulkeeko työ kaistan, mikä on haitta luvan mukaan</td><td><b>Kielimalli</b> (Claude Haiku)</td><td>Luvan vapaa teksti on kirjavaa. Tulkinta näytetään erikseen merkittynä, eikä sitä käytetä mittauksessa.</td></tr>
+      <tr><td>Lupatekstin luku: sulkeeko työ kaistan, mikä on haitta luvan mukaan</td><td><b>Kielimalli</b> (Claude Haiku)</td><td>Luvan vapaa teksti on kirjavaa. Tulkinta näytetään erikseen merkittynä. Mittaukseen sitä ei käytetä, vain päällekkäisten töiden listasta jätetään pois työt, jotka luvan mukaan eivät haittaa ajoneuvoliikennettä.</td></tr>
       <tr><td>Tilannekatsaus, viikkokatsaus, vastaukset kysymyksiin</td><td><b>Kielimalli</b> (Claude Sonnet / Haiku)</td><td>Saa valmiiksi lasketut luvut. Ohje kieltää keksimästä lukuja, nimiä ja syitä.</td></tr>
       <tr><td>Aikataulun väljennysehdotus, lausunto- ja tiedoteluonnos</td><td><b>Agentti</b>: laskenta + kielimalli</td><td>Laskenta valitsee tapaukset ja luvut, kielimalli kirjoittaa perustelut. <b>Ihminen päättää</b>: agentti ei muuta mitään itse.</td></tr>
     </tbody></table>
