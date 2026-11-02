@@ -10,10 +10,10 @@ alter table vali_kuormitus enable row level security;
 create or replace function paivita_kuormitus() returns text
 language plpgsql security definer set search_path = public as $$
 begin
-  -- 2 h jaksot alkavat Helsingin parittomilla tunneilla: 7–9 aamu, 9–15 päivä (3 jaksoa), 15–17 ilta, muut 7 jaksoa
+  -- 2 h jaksot alkavat Helsingin parillisilla tunneilla: aamu 6–10 (2 jaksoa), päivä 10–14 (2), ilta 14–18 (2), muu 18–6 (6)
   create temp table _b on commit drop as
   select s.*, case extract(hour from s.bucket at time zone 'Europe/Helsinki')::int
-      when 7 then 'aamu' when 9 then 'paiva' when 11 then 'paiva' when 13 then 'paiva' when 15 then 'ilta' else 'muu' end jakso
+      when 6 then 'aamu' when 8 then 'aamu' when 10 then 'paiva' when 12 then 'paiva' when 14 then 'ilta' when 16 then 'ilta' else 'muu' end jakso
   from segment_2h s
   where s.bucket > now() - interval '8 days' and s.bucket < now() - interval '2 hours'
     and extract(isodow from s.bucket at time zone 'Europe/Helsinki') < 6;
@@ -23,7 +23,7 @@ begin
   delete from vali_kuormitus;
   insert into vali_kuormitus
   select x.from_stop, x.to_stop, x.route, x.dir, max(x.mode), x.jakso,
-    sum(x.n)::real / bn.b * case x.jakso when 'aamu' then 1 when 'paiva' then 3 when 'ilta' then 1 else 7 end
+    sum(x.n)::real / bn.b * case x.jakso when 'aamu' then 2 when 'paiva' then 2 when 'ilta' then 2 else 6 end
   from _b x join _bn bn using (jakso)
   group by x.from_stop, x.to_stop, x.route, x.dir, x.jakso, bn.b;
   return 'rivejä '||(select count(*) from vali_kuormitus);
