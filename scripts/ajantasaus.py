@@ -26,9 +26,32 @@ def jakso(start):
 patterns = collections.Counter()          # (route, dir, pattern) -> trips
 esim = {}                                 # (route, dir, pattern) -> esimerkkivuoro (muodon hakuun)
 ajat = collections.defaultdict(list)      # (route, dir, pattern, jakso) -> [[min between tps], ...]
-paiva = collections.Counter()             # (route, dir, pvm) -> arkipäivän vuorot (kaikki ajoreitit)
-tunti = collections.Counter()             # (route, dir, tunti) -> arkipäivien lähdöt yhteensä
-arkipvm = collections.defaultdict(set)    # (route, dir) -> arkipäivät, joina linja ajaa
+tunti = collections.Counter()             # (route, dir, tunti) -> lähdöt yhtenä tavallisena arkipäivänä
+
+# Yksi tavallinen arkipäivä (tiistai, 1–2 viikon päästä): mitkä vuorot ajetaan sinä päivänä (calendar + calendar_dates)
+def _rivit(z, nimi):
+    with z.open(nimi) as f:
+        rd = csv.reader(io.TextIOWrapper(f, encoding="utf-8-sig", newline=""))
+        h = next(rd)
+        for r in rd:
+            yield dict(zip(h, r))
+with zipfile.ZipFile(path) as z:
+    nimet = set(z.namelist())
+    paiva0 = datetime.date.today() + datetime.timedelta(days=7)
+    while paiva0.weekday() != 1:
+        paiva0 += datetime.timedelta(days=1)
+    pv = paiva0.strftime("%Y%m%d"); viikonpaiva = ["monday","tuesday","wednesday","thursday","friday","saturday","sunday"][paiva0.weekday()]
+    palvelut = set()
+    if "calendar.txt" in nimet:
+        for c in _rivit(z, "calendar.txt"):
+            if c.get(viikonpaiva) == "1" and c["start_date"] <= pv <= c["end_date"]:
+                palvelut.add(c["service_id"])
+    if "calendar_dates.txt" in nimet:
+        for c in _rivit(z, "calendar_dates.txt"):
+            if c["date"] == pv:
+                (palvelut.add if c["exception_type"] == "1" else palvelut.discard)(c["service_id"])
+    aktiiviset = {t["trip_id"] for t in _rivit(z, "trips.txt") if t["service_id"] in palvelut}
+print("vertailupäivä", pv, "vuoroja", len(aktiiviset), file=sys.stderr)
 
 def flush(trip, rows):
     if not trip or not rows:
@@ -42,10 +65,8 @@ def flush(trip, rows):
     key = (route, d, pat)
     patterns[key] += 1
     esim.setdefault(key, trip)
-    if dtype not in ("La", "Su"):
-        paiva[(route, d, parts[1])] += 1
+    if trip in aktiiviset:
         tunti[(route, d, int(start[:2]) % 24)] += 1
-        arkipvm[(route, d)].add(parts[1])
     j = jakso(start)
     if j and dtype not in ("La", "Su"):       # arkipäivät
         # rajapisteet: ajantasauspysäkit + päätepysäkki (HSL:n ratikoilla ajantasaus on vain lähtöpäässä)
@@ -82,10 +103,10 @@ for k, (pat, n) in best.items():
     # merkintä: 1 = ajantasauspysäkki, 2 = päätepysäkki (ei ajantasausta), 0 = muu
     e = {"pysakit": [[p[0], p[1] or (2 if i == len(pat) - 1 else 0)] for i, p in enumerate(pat)], "vuoroja": n, "ajat": {}}
     # arkipäivän vuoromäärä ja lähdöt tunneittain: poikkeusreitin tunnistukseen (odotetut vs. havaitut ohitukset)
-    pv = sorted(arkipvm.get((route, d), ()))
-    if pv:
-        e["arki_vrk"] = int(statistics.median(paiva[(route, d, x)] for x in pv))
-        e["arki_h"] = [round(tunti[(route, d, h)] / len(pv), 1) for h in range(24)]
+    th = [tunti[(route, d, h)] for h in range(24)]
+    if sum(th):
+        e["arki_vrk"] = sum(th)
+        e["arki_h"] = th
     for j in ("aamu", "paiva", "ilta"):
         L = [x for x in ajat.get((route, d, pat, j), []) if x]
         if L:
