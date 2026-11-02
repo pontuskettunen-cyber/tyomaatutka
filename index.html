@@ -461,7 +461,7 @@ function impact(l){
   return null;
 }
 function profile(l){
-  const J = [["aamu","Aamuruuhka 7–9"],["paiva","Päivä 9–15"],["ilta","Iltaruuhka 15–18"],["muu","Ilta, yö ja viikonloppu"]];
+  const J = [["aamu","Aamuruuhka 7–9"],["paiva","Päivä 9–15"],["ilta","Iltaruuhka 15–18"],["muu","Muu aika (ilta, yö, viikonloppu)"]];
   const rows = J.map(([k,t])=>({k,t,m:mitta(l.lupa_id,S.ik,k)})).filter(r=>r.m && r.m.n>=MIN_N && r.m.lisa_ajo!=null);
   if(!rows.length) return "";
   const mx = Math.max(20, ...rows.map(r=>Math.abs(r.m.lisa_ajo)));
