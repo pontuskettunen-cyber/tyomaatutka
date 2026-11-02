@@ -26,6 +26,7 @@ begin
   alter table _pari add column bx box;
   update _pari set bx = box(point(least(alon,blon)-0.0028, least(alat,blat)-0.0014), point(greatest(alon,blon)+0.0028, greatest(alat,blat)+0.0014));
   create index on _pari using gist (bx);
+  analyze _pari;
 
   create temp table _lupa on commit drop as
   select distinct on (lupa_id) lupa_id, geom, alkaa, paattyy
