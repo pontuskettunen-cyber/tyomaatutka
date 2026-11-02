@@ -384,7 +384,7 @@ tr.best td{background:#F0F8F3}
 .t.vt td,.t.vt th{vertical-align:top}.t.vt td:first-child{width:62%}
 .omalinja{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;background:var(--p);border:1px solid var(--l);border-radius:12px;padding:12px 16px;margin:0 0 16px}
 .omalinja label{font-size:14.5px}.omalinja .note{margin-left:6px}
-.omarow{display:flex;gap:8px}.omarow input{font:500 16px "IBM Plex Sans";width:170px;padding:8px 12px;border:1px solid var(--l);border-radius:9px}
+.omarow{display:flex;gap:8px}.omarow input{font:500 16px "IBM Plex Sans";width:220px;padding:8px 12px;border:1px solid var(--l);border-radius:9px}
 .omarow input:focus{outline:2px solid #F2D4C2;border-color:var(--a)}
 .navk{display:flex;align-items:center;padding:0 4px 0 14px;font:500 10.5px "IBM Plex Mono";letter-spacing:.05em;text-transform:uppercase;color:#A3A99F;white-space:nowrap;border-left:1px solid var(--l);margin-left:6px}
 .navsep{display:block;width:1px;background:var(--l);margin:14px 6px}
@@ -918,7 +918,7 @@ function renderBrief(){
   // Taso 2: kolme asiaa, joihin kannattaa reagoida
   const td = [];
   const top = rH[0] || r[0];
-  if(top) td.push(`<button class="todo red" data-sel="${esc(top.l.lupa_id)}"><small>Eniten lisäaikaa nyt</small><b>${esc(shortStreet(top.l))}</b><span>${top.i.vehH?`${nf(top.i.vehH,1)} h yhteensä · `:""}${top.i.s!=null?`${sgn(top.i.s)} per ohitus${top.i.tod?"":" (arvio)"}`:""}${lines(top.l.linjat).length?" · linjat "+esc(lines(top.l.linjat).filter(n=>!/N$/.test(n)).slice(0,5).join(", ")):""}</span><em>Näytä kartalla →</em></button>`);
+  if(top) td.push(`<button class="todo red" data-sel="${esc(top.l.lupa_id)}"><small>Eniten lisäaikaa nyt</small><b>${esc(shortStreet(top.l))}</b><span>${top.i.vehH?`${nf(top.i.vehH,1)} h yhteensä · `:""}${top.i.s!=null&&top.i.s>0?`${minuutteina(top.i.s)} jokaista ohitusta kohden${top.i.tod?"":" (arvio)"}`:""}${lines(top.l.linjat).length?" · linjat "+esc(lines(top.l.linjat).filter(n=>!/N$/.test(n)).slice(0,5).join(", ")):""}</span><em>Näytä kartalla →</em></button>`);
   if(next){ const vk = S.vaik?.[next.lupa_id]; td.push(`<button class="todo ind" data-sel="${esc(next.lupa_id)}"><small>Alkaa seuraavaksi · ${fmtDate(next.alkaa)}</small><b>${esc(shortStreet(next))}</b><span>${lines(next.linjat).length?"linjat "+esc(lines(next.linjat).filter(n=>!/N$/.test(n)).slice(0,5).join(", ")):"ei joukkoliikennettä vieressä"}${vk&&vk.pohja_n?` · ${nf(vk.pohja_n)} ohitusta mitattu jo ennen työtä vertailuksi`:""}</span><em>Näytä kartalla →</em></button>`); }
   if(cl[0]) td.push(`<a class="todo warn2" href="#/tyot"><small>Kaksi työtä samalla linjalla · ${fmtShort(cl[0].lo)}–${cl[0].hi<8e15?fmtShort(cl[0].hi):""}</small><b>${esc(shortStreet(cl[0].a))} + ${esc(shortStreet(cl[0].b))}</b><span>Molemmat linjoilla ${esc(cl[0].shared.slice(0,4).join(", "))}${cl[0].shared.length>4?"…":""}, ${nf(cl[0].dist/1000,1)} km välein: viiveet kasautuvat samalle matkustajalle.</span><em>Kaikki päällekkäiset työt (${cl.length}) →</em></a>`);
   document.getElementById("todo").innerHTML = td.join("");
