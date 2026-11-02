@@ -218,6 +218,15 @@ table.t .r{text-align:right;white-space:nowrap;font-family:"IBM Plex Mono"}
 .veh{display:grid;grid-template-columns:48px 1fr auto;gap:2px 10px;padding:9px 16px;border-bottom:1px solid var(--l2);font-size:13px;align-items:center}
 .badge{font:600 12px "IBM Plex Mono";text-align:center;padding:3px 0;border-radius:6px;color:#fff;background:#1D6FB8}
 .badge.tram{background:#00985F}
+.mleg{background:rgba(255,255,255,.96);border:1px solid rgba(0,0,0,.14);border-radius:9px;box-shadow:0 1px 5px rgba(0,0,0,.15);font-size:12px;line-height:1.35;color:#1f2937;max-width:250px}
+.mleg-h{all:unset;cursor:pointer;display:flex;justify-content:space-between;gap:10px;width:100%;box-sizing:border-box;padding:6px 10px;font-weight:600;font-size:12px}
+.mleg-h span{transition:transform .15s}.mleg.kiinni .mleg-h span{transform:rotate(-90deg)}
+.mleg-b{padding:0 10px 8px;max-height:46vh;overflow-y:auto}.mleg.kiinni .mleg-b{display:none}
+.mleg-b>div,.mleg-live>div{display:flex;align-items:center;gap:7px;margin:2px 0}
+.mleg-b i{display:inline-block;width:18px;height:11px;border-radius:3px;flex:none;box-sizing:border-box}
+.mleg-g{font:500 10.5px "IBM Plex Mono",monospace;letter-spacing:.05em;text-transform:uppercase;color:var(--m,#6B737B);margin-top:7px!important}
+.mleg-live{display:none!important;flex-direction:column;align-items:stretch!important}.mleg.live .mleg-live{display:flex!important}
+.mleg-n{color:var(--m,#6B737B);font-size:11.5px}
 .livebtn{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid rgba(0,0,0,.18);border-radius:999px;padding:7px 14px 7px 11px;font:600 13px/1.2 var(--sans,system-ui);color:#1f2937;box-shadow:0 1px 5px rgba(0,0,0,.18);cursor:pointer;white-space:nowrap}
 .livebtn:hover{background:#f6f7f8}
 .livebtn .dot{width:10px;height:10px;border-radius:50%;background:#9AA3AB;flex:none}
@@ -460,15 +469,7 @@ tr.best td{background:#F0F8F3}
   <div class="cards" id="cards"></div>
   <div class="split fit">
     <div class="panel mapp">
-      <div class="ph"><h2>Kartta</h2>
-        <div class="legend">
-          <span><i style="background:#B42318;height:10px;width:12px;border-radius:2px;opacity:.55"></i>Työmaa hidastaa</span>
-          <span><i style="background:#5B6770;height:10px;width:12px;border-radius:2px;opacity:.45"></i>Ei mitattua haittaa</span>
-          <span><i style="background:#D97706;height:10px;width:12px;border-radius:2px;opacity:.5"></i>Mittaus kesken</span>
-          <span><i style="background:#A3A99F;height:7px;width:7px;border-radius:50%"></i>Muu katutyö</span>
-          <span><i style="background:#00985F;height:8px;width:8px;border-radius:50%"></i>Ratikka</span>
-          <span><i style="background:#1D6FB8;height:8px;width:8px;border-radius:50%"></i>Bussi</span>
-        </div>
+      <div class="ph"><h2>Kartta</h2><span class="note">Selitteet kartan vasemmassa alakulmassa</span>
       </div>
       <div class="pinbar" id="pinbar" style="display:none"></div>
       <div class="map" id="map"></div>
@@ -1298,7 +1299,9 @@ function tiivis(l, im, ml){
   const top = (ml||[]).filter(r=>r.ohitukset>=MIN_N && r.lisa_ajo>10).sort((a,b)=>b.lisa_ajo-a.lisa_ajo)[0];
   const verbi = im.s > 10 ? `hidastaa joukkoliikennettä: bussi tai ratikka on työmaan kohdalla keskimäärin <b>${minuutteina(im.s)}</b> pidempään kuin muualla samalla linjalla` : im.s < -10 ? `ei hidasta: ohi pääsee jopa ${minuutteina(im.s)} nopeammin kuin muualla linjalla` : `ei hidasta merkittävästi: alle 10 sekuntia ohitusta kohden`;
   const ero = top && im.s > 0 && top.lisa_ajo > im.s*1.6 ? ` Linjoittain ero on suuri: linjalla <b>${esc(ln(top.route))}</b> hidastus on ${minuutteina(top.lisa_ajo)}. Linjat kulkevat työmaan ohi eri kohdista ja eri suuntiin, joten luku vaihtelee linjoittain. Ylempi luku on kaikkien linjojen keskiarvo.` : top ? ` Eniten hidastuu linja <b>${esc(ln(top.route))}</b> (${minuutteina(top.lisa_ajo)}).` : "";
-  return `<p class="tiivis">Työ ${verbi}${im.tod?"":" (arvio)"}.${ero} Laskelmassa on ${nf(im.n)} bussin ja ratikan ohitusta.</p>`;
+  const nSlow = (S.segs[l.lupa_id]||[]).filter(g=>(g.n_24h||0)>=MIN_N && g.lisaviive_s>10).length;
+  const kartta = im.s <= 10 && nSlow ? ` Kartalla punaisena näkyvät ne ${nSlow} pysäkkiväliä, joilla hidastus on selvä. Keskiarvossa muiden välien ja linjojen sujuvampi kulku tasoittaa ne.` : "";
+  return `<p class="tiivis">Työ ${verbi}${im.tod?"":" (arvio)"}.${ero}${kartta} Laskelmassa on ${nf(im.n)} bussin ja ratikan ohitusta.</p>`;
 }
 function siteKind(l){ const im = impact(l); if(!im || im.kind!=="v2") return "kesken"; return im.s > 10 ? "hidastaa" : "ei"; }
 function renderHomeMap(){
@@ -1311,6 +1314,30 @@ function renderHomeMap(){
       b.title = "Näytä tai piilota kaikki kartan alueella liikkuvat bussit ja ratikat reaaliajassa";
       L.DomEvent.disableClickPropagation(b); b.onclick = ()=>{ liveSet(!LV.on); renderDetail(); }; return b; };
     lc.addTo(M.home);
+    const lg = L.control({position:"bottomleft"});
+    lg.onAdd = ()=>{ const d = L.DomUtil.create("div","mleg"); d.id = "homeLeg"; L.DomEvent.disableClickPropagation(d); L.DomEvent.disableScrollPropagation(d);
+      const sw = (st)=>`<i style="${st}"></i>`;
+      d.innerHTML = `<button type="button" class="mleg-h" aria-expanded="true">Selitteet <span>▾</span></button><div class="mleg-b">
+        <div class="mleg-g">Työmaat</div>
+        <div>${sw("background:rgba(180,35,24,.35);border:1.5px solid #B42318")}Hidastaa busseja ja ratikoita</div>
+        <div>${sw("background:rgba(91,103,112,.3);border:1.5px solid #5B6770")}Ei mitattua haittaa</div>
+        <div>${sw("background:rgba(217,119,6,.3);border:1.5px solid #D97706")}Mittaus kesken</div>
+        <div>${sw("width:8px;height:8px;border-radius:50%;background:#A3A99F;margin:0 5px")}Muu katutyö, ei bussireitillä</div>
+        <div>${sw("width:13px;height:13px;border-radius:50%;border:2.5px solid #14181C;background:transparent")}Valittu työmaa</div>
+        <div class="mleg-g">Valitun työmaan pysäkkivälit</div>
+        <div>${sw("height:4px;background:#B42318")}Hidastuu selvästi</div>
+        <div>${sw("height:3px;background:#3F4850")}Normaali, ei hidastusta</div>
+        <div>${sw("height:0;border-top:3px dashed #8A939B")}Katkoviiva: vähän mittauksia tai reitti likimääräinen</div>
+        <div>${sw("width:8px;height:8px;border-radius:50%;background:#fff;border:1.5px solid #14181C;margin:0 4px")}Pysäkki</div>
+        <div class="mleg-live"><div class="mleg-g">Livenä</div>
+        <div>${sw("width:9px;height:9px;border-radius:50%;background:#1D6FB8;margin:0 4px")}Bussi &nbsp; ${sw("width:9px;height:9px;border-radius:50%;background:#00985F;margin:0 4px")}Ratikka</div>
+        <div>${sw("width:9px;height:9px;border-radius:50%;background:#1D6FB8;border:3px solid #EAB308;margin:0 2px")}Juuri nyt työmaan kohdalla</div>
+        <div class="mleg-n">Napauta ajoneuvoa: tiedot jäävät näkyviin.</div></div>
+      </div>`;
+      const h = d.querySelector(".mleg-h"); let auki = true; try{ auki = localStorage.getItem("tt_leg") !== "0"; }catch(e){}
+      const set = v=>{ auki = v; d.classList.toggle("kiinni", !v); h.setAttribute("aria-expanded", v); try{ localStorage.setItem("tt_leg", v?"1":"0"); }catch(e){} };
+      h.onclick = ()=>set(!auki); set(auki); return d; };
+    lg.addTo(M.home);
     M.home.on("moveend", ()=>{ if(LV.on) syncSubs(); });
     M.home._segR = M.home._stopR = M.home.options.renderer;   // yksi piirtotaso: päällekkäiset canvasit söivät toistensa klikkaukset
   }
@@ -1605,7 +1632,8 @@ function syncSubs(){
 function liveSet(on){
   LV.on = on;
   const t = document.getElementById("liveBtn"); if(t){ t.classList.toggle("on", on); t.setAttribute("aria-pressed", on); }
-  document.getElementById("pinbar").style.display = on ? "" : "none";
+  document.getElementById("pinbar").style.display = on && LV.pinned.size ? "" : "none";
+  const lg = document.getElementById("homeLeg"); if(lg) lg.classList.toggle("live", on);
   if(on){
     if(!LV.layer) LV.layer = L.layerGroup().addTo(M.home);
     buildShapes();
@@ -1633,13 +1661,14 @@ function liveSet(on){
 const markers = new Map();
 function vehLabel(v, site, pinned){
   const late = v.dl < -30 ? `<span class="${v.dl<-180?"slow":""}">+${nf(-v.dl/60,1)} min</span>` : v.dl > 30 ? `<span class="fast">etuajassa</span>` : `<span class="ok">ajallaan</span>`;
-  if(!pinned) return `${v.mode==="tram"?"Ratikka":"Bussi"} <b>${esc(v.line)}</b>${v.head?" → "+esc(v.head):""}<br>${late} · ${nf((v.spd||0)*3.6)} km/h${site?`<br><span style="color:#C2410C">Työmaa: ${esc(title(site))}</span>`:""}<br><span style="color:#6B737B">Napauta seurataksesi</span>`;
+  if(!pinned) return `${v.mode==="tram"?"Ratikka":"Bussi"} <b>${esc(v.line)}</b>${v.head?" → "+esc(v.head):""}<br>${late} · ${nf((v.spd||0)*3.6)} km/h${site?`<br><span style="color:#A16207">Työmaalla nyt: ${esc(title(site))}</span>`:""}<br><span style="color:#6B737B">Napauta seurataksesi</span>`;
   return `<b>${esc(v.line)}</b> ${late} · ${nf((v.spd||0)*3.6)} km/h${site?`<br><span style="color:#C2410C">⚠ ${esc(title(site))}</span>`:""}`;
 }
 function togglePin(id){ LV.pinned.has(id) ? LV.pinned.delete(id) : LV.pinned.add(id); drawLive(); }
 function renderPinBar(){
   const el = document.getElementById("pinbar"); if(!el) return;
-  if(!LV.pinned.size){ el.innerHTML = `<span class="note"><b style="color:#1D6FB8">●</b> bussi · <b style="color:#00985F">●</b> ratikka · oranssi reunus = juuri nyt työmaan kohdalla. Napauta ajoneuvoa, niin sen tiedot jäävät näkyviin ja se pysyy seurannassa.</span>`; return; }
+  el.style.display = LV.on && LV.pinned.size ? "" : "none";
+  if(!LV.pinned.size){ el.innerHTML = ""; return; }
   el.innerHTML = `<span class="note">Seurannassa:</span> ${[...LV.pinned].map(id=>{ const v = LV.veh.get(id); return `<button class="pchip ${v&&v.mode==="tram"?"tram":""}" data-id="${esc(id)}" title="Keskitä kartta">${v?esc(v.line):"…"} <span aria-label="Lopeta seuranta" data-x="1">×</span></button>`; }).join("")} <button class="pclear" id="pclear">Tyhjennä</button>`;
   el.querySelectorAll(".pchip").forEach(b=>b.onclick=e=>{ const id=b.dataset.id; if(e.target.dataset.x){ togglePin(id); return; } const v=LV.veh.get(id); if(v) M.home.panTo([v.lat,v.lon]); });
   document.getElementById("pclear").onclick = ()=>{ LV.pinned.clear(); drawLive(); };
@@ -1655,7 +1684,7 @@ function drawLive(){
     if(selShape && inShape(selShape, v.lat, v.lon)) here.push(v);
     let m = markers.get(id);
     const pinned = LV.pinned.has(id);
-    const style = {radius: pinned ? 8 : v.mode==="tram"?5:4, color: site?"#C2410C":pinned?"#14181D":"#fff", weight: site||pinned?2.5:1, fillColor: v.mode==="tram"?"#00985F":"#1D6FB8", fillOpacity:.9};
+    const style = {radius: pinned ? 8 : v.mode==="tram"?5:4, color: site?"#EAB308":pinned?"#14181D":"#fff", weight: site?3:pinned?2.5:1, fillColor: v.mode==="tram"?"#00985F":"#1D6FB8", fillOpacity:.9};
     if(!m){ m = L.circleMarker([v.lat,v.lon], {...style, bubblingMouseEvents:false}).addTo(LV.layer); markers.set(id, m); m.on("click", ()=>togglePin(id)); }
     else { m.setLatLng([v.lat,v.lon]); m.setStyle(style); }
     const html = vehLabel(v, site, pinned);
