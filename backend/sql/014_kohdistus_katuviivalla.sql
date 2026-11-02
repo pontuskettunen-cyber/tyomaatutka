@@ -4,12 +4,22 @@
 -- (esim. Kivelänkatu 1c-5 liitettiin Mannerheimintien linjoihin 431B ja 40).
 -- Nyt etäisyys lasketaan pysäkkivälin todellisesta katuviivasta (vali_viiva), kun se on olemassa,
 -- ja suoraa janaa käytetään vain varalla.
+-- Nopea, inline-kelpoinen etäisyys (m) pisteestä janaan. Helsingin leveydellä 1° lon ≈ 55 400 m.
+create or replace function etaisyys_m(plat float8, plon float8, alat float8, alon float8, blat float8, blon float8)
+returns float8 language sql immutable parallel safe as $f$
+  select sqrt(
+    (((alon-plon)*55400.0) + ((blon-alon)*55400.0) * s)^2 + (((alat-plat)*110540.0) + ((blat-alat)*110540.0) * s)^2)
+  from (select case when ((blon-alon)*55400.0)^2 + ((blat-alat)*110540.0)^2 = 0 then 0
+    else greatest(0, least(1, -(((alon-plon)*55400.0)*((blon-alon)*55400.0) + ((alat-plat)*110540.0)*((blat-alat)*110540.0))
+                              / (((blon-alon)*55400.0)^2 + ((blat-alat)*110540.0)^2))) end s) q
+$f$;
+
 create or replace function paivita_lupasegmentit() returns text
 language plpgsql security definer set search_path = public as $$
 begin
   create temp table _pari on commit drop as
   select p.from_stop, p.to_stop, pa.lat alat, pa.lon alon, pb.lat blat, pb.lon blon
-  from (select distinct from_stop, to_stop from segment_2h) p
+  from (select distinct from_stop, to_stop from segment_2h where bucket > now() - interval '7 days') p
   join pysakit pa on pa.stop = p.from_stop join pysakit pb on pb.stop = p.to_stop
   where abs(pa.lat-pb.lat) < 0.02 and abs(pa.lon-pb.lon) < 0.04;
   create temp table _parikey on commit drop as
@@ -29,12 +39,14 @@ begin
 
   -- 1) ehdokkaat kuten ennen, mutta väljällä rajalla suoraan janaan (katu voi kaartaa janasta sivuun)
   create temp table _ehd on commit drop as
-  select v.lupa_id, v.lat, v.lon, p.from_stop, p.to_stop, etaisyys_janaan(v.lat, v.lon, p.alat, p.alon, p.blat, p.blon) d_jana
+  select v.lupa_id, v.lat, v.lon, p.from_stop, p.to_stop, etaisyys_m(v.lat, v.lon, p.alat, p.alon, p.blat, p.blon) d_jana
   from _vert v
   join _parikey k on k.ky between floor(v.lat/0.004)::int-1 and floor(v.lat/0.004)::int+1
                  and k.kx between floor(v.lon/0.004)::int-1 and floor(v.lon/0.004)::int+1
   join _pari p on p.from_stop = k.from_stop and p.to_stop = k.to_stop
-  where etaisyys_janaan(v.lat, v.lon, p.alat, p.alon, p.blat, p.blon) < 150;
+  where v.lat between least(p.alat,p.blat)-0.0014 and greatest(p.alat,p.blat)+0.0014
+    and v.lon between least(p.alon,p.blon)-0.0028 and greatest(p.alon,p.blon)+0.0028
+    and etaisyys_m(v.lat, v.lon, p.alat, p.alon, p.blat, p.blon) < 150;
 
   -- 2) katuviivan osajanat vain ehdokkaiden pysäkkiväleille
   create temp table _jana on commit drop as
@@ -51,7 +63,7 @@ begin
   insert into lupa_segmentit (lupa_id, from_stop, to_stop, etaisyys_m)
   select lupa_id, from_stop, to_stop, min(d) from (
     select e.lupa_id, e.from_stop, e.to_stop,
-      coalesce((select min(etaisyys_janaan(e.lat, e.lon, j.alat, j.alon, j.blat, j.blon)) from _jana j where j.from_stop = e.from_stop and j.to_stop = e.to_stop), e.d_jana) d
+      coalesce((select min(etaisyys_m(e.lat, e.lon, j.alat, j.alon, j.blat, j.blon)) from _jana j where j.from_stop = e.from_stop and j.to_stop = e.to_stop), e.d_jana) d
     from _ehd e) x
   where d < 40
   group by lupa_id, from_stop, to_stop;
