@@ -351,7 +351,7 @@ footer{max-width:1360px;margin:0 auto;padding:0 28px 32px;color:var(--m);font-si
 .lc-dd:hover{background:#F6F6F3}
 .lc-k{padding:6px 14px;border-right:1px solid var(--l);min-width:0;flex:0 1 auto;display:flex;flex-direction:column;justify-content:center}
 .lc-k b{font:600 18px/1.15 "IBM Plex Mono";white-space:nowrap}.lc-k span{color:var(--m);font-size:11.5px;line-height:1.25;white-space:nowrap}
-.lc-k.up b{color:#6D28D9}.lc-k.live b{color:#0F7B4A}
+.lc-k.up b{color:#6D28D9}.lc-k.lclive b{color:#0F7B4A}
 .lc-tg{margin-left:auto;display:flex;align-items:center;padding:6px 12px;flex:none}
 .ldir{display:flex;gap:4px;flex-wrap:wrap}.ldir button{border:1px solid var(--l);background:#fff;border-radius:7px;padding:3px 9px;font:500 12px var(--sans,"IBM Plex Sans");cursor:pointer;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--i2)}
 .ldir button.on{background:#14181D;color:#fff;border-color:#14181D}
@@ -381,6 +381,10 @@ footer{max-width:1360px;margin:0 auto;padding:0 28px 32px;color:var(--m);font-si
 .ltab-b tr[data-site]{cursor:pointer}.ltab-b tr[data-site]:hover td{background:#FBF4EF}.ltab-b tr.valittu td{background:#FFF1E6}
 .lnauha svg circle{cursor:pointer}
 .lveh{position:absolute}
+@keyframes lhehku{0%,100%{stroke-opacity:.25;stroke-width:20px}50%{stroke-opacity:.6;stroke-width:28px}}
+path.lglow{animation:lhehku 1.6s ease-in-out infinite;filter:blur(2px)}
+@keyframes lrengas{0%{stroke-opacity:.7;transform:scale(.6)}100%{stroke-opacity:0;transform:scale(1.6)}}
+path.lpulse{transform-box:fill-box;transform-origin:center;animation:lrengas 1.4s ease-out infinite}
 @media(min-width:1021px){
   #v-linjat.on{display:flex;flex-direction:column;height:calc(100vh - var(--toph,76px) - 40px);min-height:560px}
   #v-linjat .lmain{flex:1;min-height:0}
@@ -1994,7 +1998,7 @@ function renderLinjaDet(e){
         : `<div class="lc-k"><b class="${(e.tot[d]||0)>30?"slow":""}">${e.tot[d]!=null?sgn(e.tot[d]):"–"}</b><span>työmaat yht. (arvio)</span></div>`}
     <div class="lc-k"><b>${nf(e.works.size)}</b><span>lupaa reitillä</span></div>
     <div class="lc-k up"><b>${nf(e.up.length)}</b><span>alkaa 14 pv sis.</span></div>
-    <div class="lc-k live"><b id="lLiveN">–</b><span>ajoneuvoa liikkeellä</span></div>
+    <div class="lc-k lclive"><b id="lLiveN">–</b><span>ajoneuvoa liikkeellä</span></div>
     <div class="lc-tg"><div class="seg" id="lIk">${ik("24h","24 h")}${ik("7d","7 vrk")}</div></div>`;
   S._lDirs = dirsAll.map(x=>{ const t = S.at?.linjat?.[`${raw}|${x}`]; const loppu = t ? pn(t.pysakit[t.pysakit.length-1][0]) : null; return {x, t: loppu ? `→ ${loppu}` : `Suunta ${x}`}; });
   document.getElementById("lDD").onclick = ()=>lPick(document.getElementById("lPick").hidden);
@@ -2151,7 +2155,8 @@ async function linjaKartta(e){
     LLay.vali.set(key, {g, pts, ids:[id]});
     L.polyline(pts,{color:"#fff", weight:9, opacity:.9, interactive:false}).addTo(base);
     const tip = `<b>${esc(stopName(g,"from"))} → ${esc(stopName(g,"to"))}</b><br>${sgn(g.lisaviive_s)} per ajo · ${nf(g.n_24h)} ajoa / 24 h<br><span style="color:#6B737B">Klikkaa: tiedot oikealle</span>`;
-    L.polyline(pts,{color:"#B42318", weight:6}).bindTooltip(tip,{sticky:true}).on("click", ()=>lValitseVali(e, key)).addTo(base);
+    const pl = L.polyline(pts,{color:"#B42318", weight:6}).bindTooltip(tip,{sticky:true}).on("click", ()=>lValitseVali(e, key)).addTo(base);
+    pl.on("mouseover", ()=>pl.setStyle({weight:10})).on("mouseout", ()=>pl.setStyle({weight:6}));
   }));
   ids.forEach(id=>{
     const l = S.byId[id]; if(!l || !l.geom) return;
@@ -2177,10 +2182,26 @@ const LLay = {base:null, sites:new Map(), ring:null, fitFor:null};
 function lKorosta(e){
   if(!M.linja) return;
   if(LLay.ring){ LLay.ring.remove(); LLay.ring = null; }
+  if(!M.linja._svgR) M.linja._svgR = L.svg({padding:.5});
+  const R = M.linja._svgR;
   const V = S.lVali && LLay.vali && LLay.vali.get(S.lVali);
-  if(V){ LLay.ring = L.layerGroup([L.polyline(V.pts,{color:"#14181C", weight:13, opacity:.85, interactive:false}), L.polyline(V.pts,{color:"#B42318", weight:7, interactive:false})]).addTo(M.linja); return; }
-  const l = S.lSite && S.byId[S.lSite], c = l && l.geom && centroid(l.geom);
-  if(c){ LLay.ring = L.layerGroup([L.circleMarker(c,{radius:16, weight:3, color:"#14181C", fill:false, interactive:false}), L.circleMarker(c,{radius:19, weight:2, color:"#fff", fill:false, opacity:.9, interactive:false})]).addTo(M.linja); }
+  const l = !V && S.lSite && S.byId[S.lSite], c = l && l.geom && centroid(l.geom);
+  // muut kohteet himmeämmiksi, kun jotain on valittu: valittu erottuu selvästi
+  const valittu = !!(V || c);
+  if(LLay.base) LLay.base.eachLayer(x=>{ if(!x.setStyle) return; if(x._o0 == null) x._o0 = {o:x.options.opacity ?? 1, f:x.options.fillOpacity ?? .2};
+    x.setStyle(valittu ? {opacity:x._o0.o*.35, fillOpacity:x._o0.f*.35} : {opacity:x._o0.o, fillOpacity:x._o0.f}); });
+  if(V){ LLay.ring = L.layerGroup([
+      L.polyline(V.pts,{renderer:R, className:"lglow", color:"#F97316", weight:24, opacity:.5, lineCap:"round", lineJoin:"round", interactive:false}),
+      L.polyline(V.pts,{renderer:R, color:"#fff", weight:12, opacity:1, lineCap:"round", lineJoin:"round", interactive:false}),
+      L.polyline(V.pts,{renderer:R, color:"#B42318", weight:7, opacity:1, lineCap:"round", lineJoin:"round", interactive:false}),
+      L.circleMarker(V.pts[0],{renderer:R, radius:5, weight:2, color:"#14181C", fillColor:"#fff", fillOpacity:1, interactive:false}),
+      L.circleMarker(V.pts[V.pts.length-1],{renderer:R, radius:5, weight:2, color:"#14181C", fillColor:"#fff", fillOpacity:1, interactive:false})]).addTo(M.linja);
+    return; }
+  if(c){ const sh = L.geoJSON(l.geom,{renderer:R, style:{color:"#F97316", weight:3, fillColor:"#F97316", fillOpacity:.25}, interactive:false});
+    LLay.ring = L.layerGroup([sh,
+      L.circleMarker(c,{renderer:R, className:"lpulse", radius:22, weight:4, color:"#F97316", fill:false, interactive:false}),
+      L.circleMarker(c,{renderer:R, radius:16, weight:3, color:"#14181C", fill:false, interactive:false}),
+      L.circleMarker(c,{renderer:R, radius:19, weight:2, color:"#fff", fill:false, opacity:.9, interactive:false})]).addTo(M.linja); }
 }
 /* Linjan ajoneuvot livenä: oma MQTT-tilaus vain valitun linjan reiteille */
 const LL = {client:null, veh:new Map(), layer:null, mk:new Map(), timer:null, routes:[], on:false};
