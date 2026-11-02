@@ -4,7 +4,8 @@
 -- Erottaa valojen ja työmaan vaikutuksen: verrataan ajoaikaa niillä ohituksilla, joilla etuisuus evättiin, niihin joilla ei.
 alter table seg_havainto add column if not exists valo_pyynto smallint, add column if not exists valo_ok smallint, add column if not exists valo_ei smallint;
 
-create or replace view v_vali_valot with (security_invoker = false) as
+drop view if exists v_vali_valot;
+create view v_vali_valot with (security_invoker = false) as
 select from_stop, to_stop,
   count(*) filter (where valo_pyynto is not null) n,
   count(*) filter (where valo_pyynto > 0) n_valo,
@@ -15,6 +16,6 @@ select from_stop, to_stop,
   count(*) filter (where valo_ei > 0) n_evatty,
   round(avg(ddl_ajo) filter (where valo_pyynto = 0)::numeric, 1) viive_ei_valoja
 from seg_havainto
-where t > now() - interval '7 days' and valo_pyynto is not null
+where t > greatest(now() - interval '7 days', '2026-11-02 15:55+00'::timestamptz) and valo_pyynto is not null
 group by from_stop, to_stop;
 grant select on v_vali_valot to anon, authenticated;
