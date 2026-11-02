@@ -639,8 +639,8 @@ tr.best td{background:#F0F8F3}
   <div id="clash"></div>
   <div class="toolbar">
     <div class="seg" id="fWhen">
-      <button data-v="tulossa" class="on">Alkavat 2 viikon sisällä</button>
-      <button data-v="kaynnissa">Käynnissä</button>
+      <button data-v="kaynnissa" class="on">Käynnissä</button>
+      <button data-v="tulossa">Alkavat 2 viikon sisällä</button>
       <button data-v="kaikki">Kaikki</button>
     </div>
     <label class="chk"><input type="checkbox" id="fTransit" checked> Vain joukkoliikenteen reiteillä</label>
@@ -648,7 +648,7 @@ tr.best td{background:#F0F8F3}
   </div>
   <div class="split fit">
     <div class="panel">
-      <div class="ph"><h2 id="listTitle">Työt</h2><div class="legend"><span>Järjestys: alkamispäivä</span></div></div>
+      <div class="ph"><h2 id="listTitle">Työt</h2><div class="legend"><span id="listOrder">Järjestys: haitta</span></div></div>
       <div class="list" id="list"></div>
     </div>
     <div class="panel mapp"><div class="map" id="map2"></div></div>
@@ -754,7 +754,7 @@ const API = "https://pdbmxnmeyhifksgivnky.supabase.co/rest/v1/";
 // Julkinen (publishable) avain: lukuoikeus vain koostenäkymiin, raakadata on RLS:n takana.
 const KEY = "sb_publishable_ZM_StZYcp6QJs5HdlqHbDA_gzQHPqVf";
 const DAY = 86400000;
-const S = { ik:"24h", mitta:{}, mlinja:{}, luvat:[], byId:{}, linjat:{}, segs:{}, pilot:[], tila:{}, sel:null, load:20, fWhen:"tulossa", fTransit:true, q:"", sel2:null, loaded:false };
+const S = { ik:"24h", mitta:{}, mlinja:{}, luvat:[], byId:{}, linjat:{}, segs:{}, pilot:[], tila:{}, sel:null, load:20, fWhen:"kaynnissa", fTransit:true, q:"", sel2:null, loaded:false };
 
 /* ---------- apurit ---------- */
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -1659,13 +1659,20 @@ function filtered(){
     if(S.fTransit && !onRoute(l)) return false;
     if(q){ const hay = [l.osoite,l.kaupunginosa,l.tarkoitus,l.lupa_id,...lines(l.linjat)].join(" ").toLowerCase(); if(!q.split(/\s+/).every(w=>hay.includes(w) || lines(l.linjat).includes(w))) return false; }
     return true;
-  }).sort((a,b)=> S.fWhen==="kaynnissa" ? ((b.ajoneuvotunnit_24h||0)-(a.ajoneuvotunnit_24h||0) || (b.ajoja_vrk||0)-(a.ajoja_vrk||0)) : new Date(a.alkaa)-new Date(b.alkaa));
+  }).sort((a,b)=>{
+    if(S.fWhen==="tulossa") return new Date(a.alkaa)-new Date(b.alkaa);
+    // käynnissä ja kaikki: eniten lisäaikaa aiheuttavat ensin, sitten alkavat päivämäärän mukaan
+    const ia = impact(a), ib = impact(b), ha = ia && ia.vehH > 0 ? ia.vehH : 0, hb = ib && ib.vehH > 0 ? ib.vehH : 0;
+    return (hb-ha) || ((ib&&ib.s||0)-(ia&&ia.s||0)) || (onRoute(b)-onRoute(a)) || new Date(a.alkaa)-new Date(b.alkaa);
+  });
 }
 let L2, L2fit=false;
 function renderTyot(){
   const all = S.luvat, up = all.filter(l=>phase(l).k==="tulossa" && +new Date(l.alkaa) < Date.now()+14*DAY), upR = up.filter(onRoute);
   const lineSet = new Set(upR.flatMap(l=>lines(l.linjat)));
-  document.getElementById("tyotBrief").innerHTML = `Seuraavan 14 päivän aikana alkaa <strong>${nf(up.length)} katutyötä</strong>. Niistä <strong>${nf(upR.length)}</strong> on bussi- tai ratikkareitin varrella, ja ne koskettavat ${nf(lineSet.size)} linjaa. Kaikki ${nf(all.filter(l=>phase(l).k==="kaynnissa").length)} käynnissä olevaa työtä löytyvät suodattimella <em>Käynnissä</em>.<br><span class="note">Listan oikea sarake: alkaville töille, montako bussin tai ratikan ohitusta samalta katuosuudelta on jo mitattu ennen työtä vertailuksi; käynnissä oleville, paljonko pidempään ohi ajaminen kestää. Klikkaa työtä nähdäksesi sen kartalla, tuplaklikkaa avataksesi tiedot.</span>`;
+  const runR = all.filter(l=>phase(l).k==="kaynnissa" && onRoute(l));
+  document.getElementById("listOrder").textContent = S.fWhen==="tulossa" ? "Järjestys: alkamispäivä" : "Järjestys: haitta, suurin ensin";
+  document.getElementById("tyotBrief").innerHTML = `Käynnissä on <strong>${nf(runR.length)} katutyötä</strong> bussi- tai ratikkareittien varrella. Lista on järjestetty haitan mukaan: ensimmäisenä työ, joka aiheuttaa busseille ja ratikoille eniten lisäaikaa yhteensä. Seuraavan 14 päivän aikana alkaa <strong>${nf(up.length)} katutyötä</strong>. Niistä <strong>${nf(upR.length)}</strong> on bussi- tai ratikkareitin varrella, ja ne koskettavat ${nf(lineSet.size)} linjaa. Ne löytyvät suodattimella <em>Alkavat 2 viikon sisällä</em>.<br><span class="note">Listan oikea sarake: käynnissä oleville, paljonko pidempään ohi ajaminen kestää ja paljonko lisäaikaa on kertynyt yhteensä; alkaville töille, montako ohitusta samalta katuosuudelta on jo mitattu ennen työtä vertailuksi. Klikkaa työtä nähdäksesi sen kartalla, tuplaklikkaa avataksesi tiedot.</span>`;
   const cl = clashes();
   document.getElementById("clash").innerHTML = cl.length ? `<div class="warn"><h4>Päällekkäiset työt samoilla linjoilla (${cl.length})</h4><div class="note" style="margin-bottom:6px">Uusi ajoneuvoliikennettä haittaava työ alkaa linjalle, jolla on jo toinen työ alle 1,5 km päässä. Viiveet kasautuvat samalle matkustajalle.</div><ul>${cl.slice(0,5).map(c=>`<li><b>${esc(title(c.a))}</b> alkaa ${fmtDate(c.a.alkaa)} linjoilla ${c.shared.slice(0,6).map(esc).join(", ")}${c.shared.length>6?"…":""}, joilla on jo työ ${nf(c.dist/1000,1)} km päässä (<b>${esc(title(c.b))}</b>). Käynnissä yhtä aikaa ${fmtShort(c.lo)}${c.hi<8e15?"–"+fmtShort(c.hi).replace(/\.$/,""):""}.</li>`).join("")}</ul></div>` : "";
   const items = filtered();
@@ -1674,7 +1681,7 @@ function renderTyot(){
   el.innerHTML = items.slice(0,300).map(l=>{
     const ph = phase(l), im = impact(l);
     const vm = varmuus(l);
-    const right = onRoute(l) ? (im && im.s!=null ? `<span class="${im.s>10?"slow":""}">${sgn(im.s)}</span><small>${im.tod?"todennettu":"arvio"} / ohitus</small>`
+    const right = onRoute(l) ? (im && im.s!=null ? `<span class="${im.s>10?"slow":""}">${sgn(im.s)}</span><small>${im.tod?"todennettu":"arvio"} / ohitus${im.vehH>0?` · ${nf(im.vehH,1)} h yht.`:""}</small>`
       : vm && vm.k==="pohja" ? `${nf(S.vaik[l.lupa_id].pohja_n||0)}<small>ohitusta mitattu ennen työtä</small>` : `${nf(l.ajoja_vrk)}<small>ajoa / vrk</small>`) : `<small>ei reitillä</small>`;
     return `<div class="li ${S.sel2===l.lupa_id?"sel":""}" data-id="${esc(l.lupa_id)}">
       <div class="d">${l.alkaa?fmtShort(l.alkaa):"–"}<small>${l.paattyy?"→ "+fmtShort(l.paattyy):""}</small></div>
@@ -1686,12 +1693,16 @@ function renderTyot(){
   el.querySelectorAll(".li").forEach(d=>d.onclick=()=>{ S.sel2 = d.dataset.id; el.querySelectorAll(".li").forEach(x=>x.classList.toggle("sel",x===d)); const l=S.byId[S.sel2]; const c=l&&l.geom&&centroid(l.geom); if(c) M.tyot.flyTo(c,16,{duration:.5}); });
   el.querySelectorAll(".li").forEach(d=>d.ondblclick=()=>{ location.hash = "#/?l="+encodeURIComponent(d.dataset.id); });
 
-  if(!M.tyot){ M.tyot = mkMap("map2"); L2 = L.layerGroup().addTo(M.tyot); }
+  if(!M.tyot){ M.tyot = mkMap("map2"); L2 = L.layerGroup().addTo(M.tyot);
+    const lg = L.control({position:"bottomleft"});
+    lg.onAdd = ()=>{ const d = L.DomUtil.create("div","mleg"); const sw = c=>`<i style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${c};border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.2);margin-right:5px;vertical-align:-1px"></i>`;
+      d.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:3px 12px;padding:7px 11px">${[["#B42318","hidastaa"],["#5B6770","ei mitattua haittaa"],["#D97706","mittaus kesken"],["#6D28D9","alkaa pian"],["#9AA097","ei bussireitillä"]].map(([c,t])=>`<span>${sw(c)}${t}</span>`).join("")}</div>`; return d; };
+    lg.addTo(M.tyot); }
   L2.clearLayers();
   const pts = [];
   items.forEach(l=>{
     if(!l.geom) return;
-    const r = onRoute(l), ph = phase(l).k, col = ph==="tulossa" ? "#3730A3" : "#C2410C";
+    const r = onRoute(l), ph = phase(l).k, col = ph==="tulossa" ? "#6D28D9" : SITE[siteKind(l)].c;
     let layer;
     const c0 = centroid(l.geom); if(!c0) return; pts.push(c0);
     if(r){ layer = L.featureGroup([L.geoJSON(l.geom,{style:{color:col,weight:1.5,fillColor:col,fillOpacity:.3}}), L.circleMarker(c0,{radius:6,weight:2,color:"#fff",fillColor:col,fillOpacity:1})]); }
