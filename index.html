@@ -1228,7 +1228,7 @@ function renderLinjaDet(e){
   box.innerHTML = `<div class="det">
     <div class="sup"><span class="lbadge ${e.tram?"tram":""}">${esc(e.name)}</span><span class="note">${e.tram?"Raitiovaunu":"Bussi"} · ${S.ik==="7d"?"7 vrk":"24 h"}</span></div>
     <h3>${nf(e.sites)} ${e.sites===1?"työmaa-alue":"työmaa-aluetta"} reitin varrella <span class="note" style="font-weight:400">(${nf(e.works.size)} lupaa)</span></h3>
-    <div class="lmap" id="lMap"></div><div class="note" style="margin:4px 0 10px">Reitti HSL:n avoimesta linjastosta. Työmaan väri: punainen = hidastaa tätä linjaa, harmaa = ei mitattua haittaa, oranssi = mittaus kesken. Punainen viiva = hidastava pysäkkiväli.</div>
+    <div class="lmap" id="lMap"></div><div class="note" style="margin:4px 0 10px">Reitti HSL:n avoimesta linjastosta. Työmaan väri: punainen = hidastaa tätä linjaa, harmaa = ei mitattua haittaa, oranssi = mittaus kesken, violetti = alkaa 14 päivän sisällä. Punainen viiva = hidastava pysäkkiväli. Klikkaa työmaata, niin se avautuu tilannekuvaan.</div>
     ${e.sug.map(sugCard).join("")}
     ${e.vt.length ? linjaVuorot(e) : `<div class="facts">
       ${dirs.length? dirs.slice(0,2).map(d=>`<div><b class="${e.tot[d]>30?"slow":""}">${sgn(e.tot[d])}</b><small>arvio suunnassa ${d}</small></div>`).join("") : `<div><b>–</b><small>lisäaika kertyy</small></div>`}
