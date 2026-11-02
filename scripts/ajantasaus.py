@@ -75,6 +75,18 @@ for k, (pat, n) in best.items():
             e["ajat"][j] = [round(statistics.median(x[i] for x in L), 1) for i in range(len(L[0]))]
     out[k] = e
 
-json.dump({"paivitetty": datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%MZ"), "lahde": "HSL GTFS (CC BY 4.0)", "linjat": out},
+# ajantasauspysäkkien nimet ja sijainnit (kartta ja agentin tekstit)
+tps = {p[0] for e in out.values() for p in e["pysakit"] if p[1] == 1}
+pys = {}
+with zipfile.ZipFile(path) as z, z.open("stops.txt") as f:
+    for r in csv.DictReader(io.TextIOWrapper(f, encoding="utf-8-sig", newline="")):
+        try:
+            sid = int(r["stop_id"])
+        except ValueError:
+            continue
+        if sid in tps:
+            pys[sid] = [r["stop_name"], round(float(r["stop_lat"]), 5), round(float(r["stop_lon"]), 5), r.get("stop_code") or ""]
+
+json.dump({"paivitetty": datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%MZ"), "lahde": "HSL GTFS (CC BY 4.0)", "linjat": out, "pysakit": pys},
           open("data/ajantasaus.json", "w"), ensure_ascii=False, separators=(",", ":"))
 print(f"linjasuuntia {len(out)}")
