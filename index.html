@@ -2251,13 +2251,14 @@ function lKierto(e, id, d){
   const segs = S.segs[id] || []; let odot = 0, hav = 0;
   [...e.raw].forEach(r=>{
     const lin = S.at.linjat[`${r}|${d}`]; if(!lin || !lin.arki_h) return;
-    const st = new Set(lin.pysakit.map(p=>String(p[0])));
-    if(!segs.some(g=>st.has(String(g.from_stop)) && st.has(String(g.to_stop)))) return;   // tämä suunta ei kulje työmaan välillä
+    const ix = new Map(lin.pysakit.map((p,i)=>[String(p[0]), i]));
+    // vain välit, jotka ovat tämän suunnan peräkkäisiä pysäkkejä aikataulussa
+    if(!segs.some(g=>{ const i = ix.get(String(g.from_stop)), j = ix.get(String(g.to_stop)); return i!=null && j===i+1; })) return;
     if(tunnit >= 24) odot += lin.arki_vrk * tunnit/24;
     else { for(let t = alku; t < +nyt; t += 3600000){ const h = +new Date(t).toLocaleString("en-GB",{timeZone:"Europe/Helsinki", hour:"2-digit", hour12:false}) % 24; odot += lin.arki_h[h] || 0; } }
     hav += (S.mlinja[id]||[]).filter(x=>x.ikkuna===S.ik && x.jakso==="kaikki" && x.route===r && String(x.dir)===d).reduce((a,x)=>a+(x.ohitukset||0),0);
   });
-  if(!(odot >= 12 && hav < odot*0.25)) return null;
+  if(!(odot >= 15 && hav < odot*0.25)) return null;
   // varmistus: saman linjan muilla työmailla ohituksia kertyy normaalisti -> kyse ei ole keruun katkoksesta
   const raws = [...e.raw];
   const muut = [...e.works.keys()].filter(x=>x!==id).map(x=>(S.mlinja[x]||[]).filter(y=>y.ikkuna===S.ik && y.jakso==="kaikki" && raws.includes(y.route) && String(y.dir)===d).reduce((a,y)=>a+(y.ohitukset||0),0));
