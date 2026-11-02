@@ -381,6 +381,11 @@ footer{max-width:1360px;margin:0 auto;padding:0 28px 32px;color:var(--m);font-si
 .ltab-b tr[data-site]{cursor:pointer}.ltab-b tr[data-site]:hover td{background:#FBF4EF}.ltab-b tr.valittu td{background:#FFF1E6}
 .lnauha svg circle{cursor:pointer}
 .lveh{position:absolute}
+.lnro{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 4px;border-radius:5px;color:#fff;font:600 11.5px/1 "IBM Plex Mono";border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.35);box-sizing:border-box}
+.lnro.iso{min-width:24px;height:24px;font-size:12.5px;cursor:pointer}
+.ltab-b .lnro{margin-right:7px;vertical-align:1px;border-width:1px;box-shadow:none}
+.lnromk{background:none;border:0}
+.lnromk.himmea{opacity:.35}
 @keyframes lhehku{0%,100%{stroke-opacity:.25;stroke-width:20px}50%{stroke-opacity:.6;stroke-width:28px}}
 path.lglow{animation:lhehku 1.6s ease-in-out infinite;filter:blur(2px)}
 @keyframes lrengas{0%{stroke-opacity:.7;transform:scale(.6)}100%{stroke-opacity:0;transform:scale(1.6)}}
@@ -1981,6 +1986,10 @@ const lWorks = e => [...e.works.values()];
 const lMaxS = w => Math.max(0, ...Object.values(w.dirs).map(x=>x.s));
 function lKind(e, id){ const w = e.works.get(id); if(!w) return "tulossa"; const ds = Object.values(w.dirs); return !ds.length ? "kesken" : ds.some(x=>x.s>10) ? "hidastaa" : "ei"; }
 const LKC = {hidastaa:"#B42318", ei:"#5B6770", kesken:"#D97706", tulossa:"#6D28D9"};
+function lNumerot(e){ const ws = lWorks(e).sort((a,b)=>lMaxS(b)-lMaxS(a)).map(w=>w.l.lupa_id);
+  const up = e.up.slice().sort((a,b)=>new Date(a.alkaa)-new Date(b.alkaa)).map(l=>l.lupa_id);
+  const m = new Map(); [...ws, ...up].forEach((id,i)=>{ if(!m.has(id)) m.set(id, m.size+1); }); return m; }
+const lNro = (n, kind, iso) => `<span class="lnro${iso?" iso":""}" style="background:${LKC[kind]}">${n}</span>`;
 function renderLinjaDet(e){
   const cock = document.getElementById("lCock");
   if(!e){ cock.innerHTML = `<div class="lc-sel"><div class="t"><b>Valitse linja</b></div><button class="lc-dd" id="lDD">Valitse linja ▾</button></div>`; document.getElementById("lDD").onclick = ()=>lPick(true); return; }
@@ -2081,10 +2090,10 @@ function lTabs(e){
   if(e.up.length) tabs.push(["up", `Alkaa pian (${e.up.length})`]);
   if(e.sug.length) tabs.push(["sug", `Agentin ehdotus (${e.sug.length})`]);
   if(!tabs.some(t=>t[0]===S.lTab)) S.lTab = "tyot";
-  const ws = lWorks(e).sort((a,b)=>lMaxS(b)-lMaxS(a));
+  const ws = lWorks(e).sort((a,b)=>lMaxS(b)-lMaxS(a)), NR = lNumerot(e);
   let body = "";
-  if(S.lTab==="tyot") body = `<table class="t"><thead><tr><th>Työmaa</th><th class="r">Suunta 1</th><th class="r">Suunta 2</th></tr></thead><tbody>
-    ${ws.map(w=>`<tr data-site="${esc(w.l.lupa_id)}" class="${S.lSite===w.l.lupa_id?"valittu":""}"><td><span style="display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px;background:${LKC[lKind(e,w.l.lupa_id)]}"></span>${esc(title(w.l))}<br><span class="note">${esc(purpose(w.l)).slice(0,64)}</span></td>${["1","2"].map(x=>`<td class="r ${w.dirs[x]&&w.dirs[x].s>10?"slow":""}">${w.dirs[x]?sgn(w.dirs[x].s):"–"}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+  if(S.lTab==="tyot") body = `<div class="note" style="margin:2px 0 4px">${nf(e.works.size)} käynnissä olevaa lupaa. Vierekkäiset luvat (alle 300 m) lasketaan yhteenvedossa yhdeksi työmaa-alueeksi, siksi alueita on ${nf(e.sites)}. Numero = sama kuin kartalla.</div><table class="t"><thead><tr><th>Työmaa</th><th class="r">Suunta 1</th><th class="r">Suunta 2</th></tr></thead><tbody>
+    ${ws.map(w=>`<tr data-site="${esc(w.l.lupa_id)}" class="${S.lSite===w.l.lupa_id?"valittu":""}"><td>${lNro(NR.get(w.l.lupa_id)||"", lKind(e,w.l.lupa_id))}${esc(title(w.l))}<br><span class="note">${esc(purpose(w.l)).slice(0,64)}</span></td>${["1","2"].map(x=>`<td class="r ${w.dirs[x]&&w.dirs[x].s>10?"slow":""}">${w.dirs[x]?sgn(w.dirs[x].s):"–"}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
   if(S.lTab==="ajat"){
     const all = (S.ltila[e.name]||[]).filter(r=>r.ikkuna===S.ik && r.dir===d);
     const k = all.find(r=>r.jakso==="kaikki");
@@ -2094,7 +2103,7 @@ function lTabs(e){
       : `<div class="note">Vuorokohtaista mittausta ei vielä ole tässä suunnassa. Arvio työmaiden yhteisvaikutuksesta: ${e.tot[d]!=null?sgn(e.tot[d]):"–"}.</div>`;
   }
   if(S.lTab==="at") body = atTaulu(e, d, (S.ltila[e.name]||[]).find(r=>r.ikkuna===S.ik && r.dir===d && r.jakso==="kaikki")||{}) || `<div class="note">Ajantasaustietoa ei löytynyt tälle linjalle.</div>`;
-  if(S.lTab==="up") body = `<table class="t"><tbody>${e.up.slice().sort((a,b)=>new Date(a.alkaa)-new Date(b.alkaa)).map(l=>`<tr data-site="${esc(l.lupa_id)}" class="${S.lSite===l.lupa_id?"valittu":""}"><td><span style="display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px;background:#6D28D9"></span>${esc(title(l))}<br><span class="note">${esc(purpose(l)).slice(0,64)}</span></td><td class="r">${fmtDate(l.alkaa)}</td></tr>`).join("")}</tbody></table>
+  if(S.lTab==="up") body = `<table class="t"><tbody>${e.up.slice().sort((a,b)=>new Date(a.alkaa)-new Date(b.alkaa)).map(l=>`<tr data-site="${esc(l.lupa_id)}" class="${S.lSite===l.lupa_id?"valittu":""}"><td>${lNro(NR.get(l.lupa_id)||"", "tulossa")}${esc(title(l))}<br><span class="note">${esc(purpose(l)).slice(0,64)}</span></td><td class="r">${fmtDate(l.alkaa)}</td></tr>`).join("")}</tbody></table>
     ${e.works.size ? `<div class="aibox" style="margin-top:10px">Linjalla on jo ${nf(e.works.size)} käynnissä olevaa työtä, ja ${nf(e.up.length)} uutta alkaa kahden viikon sisällä. Aikataulujen ja matkustajatiedotuksen tarkistaminen kannattaa aloittaa nyt.</div>`:""}`;
   if(S.lTab==="sug") body = e.sug.map(sugCard).join("");
   el.innerHTML = `<div class="ltab-h">${tabs.map(([t,n])=>`<button type="button" data-t="${t}" class="${S.lTab===t?"on":""}">${n}</button>`).join("")}</div><div class="ltab-b">${body}</div>`;
@@ -2123,14 +2132,16 @@ async function linjaKartta(e){
     lg.onAdd = ()=>{ const d = L.DomUtil.create("div","mleg"); L.DomEvent.disableClickPropagation(d);
       const sw = st=>`<i style="${st}"></i>`;
       d.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:3px 12px;padding:7px 11px;align-items:center">
-        <span>${sw("background:rgba(180,35,24,.35);border:1.5px solid #B42318;width:14px;height:10px;display:inline-block;border-radius:2px;vertical-align:-1px;margin-right:4px")}hidastaa</span>
-        <span>${sw("background:rgba(91,103,112,.3);border:1.5px solid #5B6770;width:14px;height:10px;display:inline-block;border-radius:2px;vertical-align:-1px;margin-right:4px")}ei haittaa</span>
-        <span>${sw("background:rgba(217,119,6,.3);border:1.5px solid #D97706;width:14px;height:10px;display:inline-block;border-radius:2px;vertical-align:-1px;margin-right:4px")}mittaus kesken</span>
-        <span>${sw("background:rgba(109,40,217,.3);border:1.5px dashed #6D28D9;width:14px;height:10px;display:inline-block;border-radius:2px;vertical-align:-1px;margin-right:4px")}alkaa pian</span>
-        <span>${sw("background:#B42318;width:16px;height:4px;display:inline-block;vertical-align:2px;margin-right:4px")}hidas pysäkkiväli</span>
+        <span>${lNro(1,"hidastaa")} ${lNro(2,"ei")} ${lNro(3,"kesken")} ${lNro(4,"tulossa")}&nbsp;työmaa: hidastaa · ei haittaa · mittaus kesken · alkaa pian (numero = järjestys listassa)</span>
+        <span>${sw("background:#B42318;width:16px;height:4px;display:inline-block;vertical-align:2px;margin-right:4px")}hidas pysäkkiväli (klikattava)</span>
+        <span>${sw("background:#14181C;border:2px solid #fff;box-shadow:0 0 0 1px #14181C;width:9px;height:9px;display:inline-block;margin-right:4px;vertical-align:0")}ajantasauspysäkki</span>
         <span>${sw("background:#1D6FB8;width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:4px")}ajoneuvo livenä</span>
         <span>${sw("background:#1D6FB8;border:3px solid #EAB308;width:13px;height:13px;border-radius:50%;display:inline-block;vertical-align:-3px;margin-right:4px;box-sizing:border-box")}työmaalla nyt</span></div>`; return d; };
     lg.addTo(M.linja);
+    const fit = L.control({position:"topright"});
+    fit.onAdd = ()=>{ const bt = L.DomUtil.create("button","lc-dd"); bt.type = "button"; bt.textContent = "⤢ Näytä koko reitti"; bt.style.boxShadow = "0 1px 4px rgba(0,0,0,.15)";
+      L.DomEvent.disableClickPropagation(bt); bt.onclick = ()=>{ if(LLay.bounds && LLay.bounds.isValid()) M.linja.flyToBounds(LLay.bounds,{padding:[20,20], duration:.5}); }; return bt; };
+    fit.addTo(M.linja);
   }
   const m = M.linja, key = e.name;
   setTimeout(()=>m.invalidateSize(), 30);
@@ -2158,18 +2169,21 @@ async function linjaKartta(e){
     const pl = L.polyline(pts,{color:"#B42318", weight:6}).bindTooltip(tip,{sticky:true}).on("click", ()=>lValitseVali(e, key)).addTo(base);
     pl.on("mouseover", ()=>pl.setStyle({weight:10})).on("mouseout", ()=>pl.setStyle({weight:6}));
   }));
+  LLay.nro = lNumerot(e);
   ids.forEach(id=>{
     const l = S.byId[id]; if(!l || !l.geom) return;
     const kind = lKind(e, id), col = LKC[kind], w = e.works.get(id), ds = w ? Object.entries(w.dirs) : [];
     const lay = L.geoJSON(l.geom,{style:{color:col, weight:1.5, fillColor:col, fillOpacity:.35, dashArray: kind==="tulossa"?"4 3":null}}).addTo(base);
     const c = centroid(l.geom); if(!c){ return; }
-    const mk = L.circleMarker(c,{radius:7, weight:2, color:"#fff", fillColor:col, fillOpacity:1})
-      .bindTooltip(`<b>${esc(title(l))}</b><br>${w?(ds.length?ds.map(([dd,x])=>`suunta ${dd}: ${sgn(x.s)}`).join(" · "):"mittaus kesken"):"alkaa "+fmtShort(l.alkaa)}<br><span style="color:#6B737B">Klikkaa: tiedot oikealle</span>`,{sticky:true})
+    const nro = LLay.nro.get(id) || "";
+    const mk = L.marker(c,{icon:L.divIcon({className:"lnromk", html:lNro(nro, kind, true), iconSize:[24,24], iconAnchor:[12,12]}), keyboard:false, riseOnHover:true})
+      .bindTooltip(`<b>${nro}. ${esc(title(l))}</b><br>${w?(ds.length?ds.map(([dd,x])=>`suunta ${dd}: ${sgn(x.s)}`).join(" · "):"mittaus kesken"):"alkaa "+fmtShort(l.alkaa)}<br><span style="color:#6B737B">Klikkaa: tiedot oikealle</span>`,{sticky:true})
       .on("click",()=>lValitse(e, id, false)).addTo(base);
     lay.on("click",()=>lValitse(e, id, false));
     LLay.sites.set(id, mk);
     if(!geom.length) b.extend(lay.getBounds());
   });
+  LLay.bounds = b;
   if(b.isValid() && LLay.fitFor !== key){ m.fitBounds(b,{padding:[20,20]}); LLay.fitFor = key; }
   lKorosta(e);
   const at = await loadAT(); if(S.lSel !== key || LLay.base !== base || !at) return;
@@ -2190,6 +2204,7 @@ function lKorosta(e){
   const valittu = !!(V || c);
   if(LLay.base) LLay.base.eachLayer(x=>{ if(!x.setStyle) return; if(x._o0 == null) x._o0 = {o:x.options.opacity ?? 1, f:x.options.fillOpacity ?? .2};
     x.setStyle(valittu ? {opacity:x._o0.o*.35, fillOpacity:x._o0.f*.35} : {opacity:x._o0.o, fillOpacity:x._o0.f}); });
+  LLay.sites.forEach((mk, id)=>{ const el = mk.getElement && mk.getElement(); if(el) el.classList.toggle("himmea", valittu && id !== S.lSite); });
   if(V){ LLay.ring = L.layerGroup([
       L.polyline(V.pts,{renderer:R, className:"lglow", color:"#F97316", weight:24, opacity:.5, lineCap:"round", lineJoin:"round", interactive:false}),
       L.polyline(V.pts,{renderer:R, color:"#fff", weight:12, opacity:1, lineCap:"round", lineJoin:"round", interactive:false}),
