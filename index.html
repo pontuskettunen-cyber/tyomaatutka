@@ -1089,14 +1089,15 @@ function vertailuHTML(){
   const nyk = EN.calc ? {nimi:"Nykyinen", calc:EN.calc, cur:true} : null;
   const rivit = [...EN.alt, ...(nyk && !EN.alt.some(a=>JSON.stringify(a.calc)===JSON.stringify(EN.calc)) ? [nyk] : [])];
   const h = a => a.calc.lisaaika_h_vrk, kesto = a => a.calc.kesto ? a.calc.lisaaika_h_vrk*a.calc.kesto : null;
-  const min = Math.min(...rivit.map(kesto).filter(x=>x!=null));
+  const ks = rivit.map(kesto).filter(x=>x!=null).sort((x,y)=>x-y), min = ks[0];
+  const selva = ks.length > 1 && ks[1] > 0 && (ks[1]-ks[0])/ks[1] >= 0.15;   // alle 15 % ero on arvion epävarmuuden sisällä
   return `<div class="vert"><div class="sec" style="margin-top:0">Vaihtoehtojen vertailu</div>
     <table class="t vt"><thead><tr><th>Vaihtoehto</th><th class="r">/ vrk</th><th class="r">Koko kesto</th><th></th></tr></thead><tbody>
-    ${rivit.map((a,i)=>{ const k = kesto(a); const paras = k!=null && k===min && rivit.length>1;
+    ${rivit.map((a,i)=>{ const k = kesto(a); const paras = selva && k!=null && k===min;
       return `<tr class="${paras?"best":""}"><td>${a.cur?'<span class="altdot" style="background:#C2410C">·</span> Nykyinen':`<span class="altdot" style="background:${ALTC[i]}">${a.nimi}</span> ${esc(a.calc.osoite?shortStreet({osoite:a.calc.osoite}):"piirretty alue")}`}<div class="note">${a.calc.alkaa?fmtShort(a.calc.alkaa):""}–${a.calc.paattyy?fmtShort(a.calc.paattyy):""} · ${esc(a.calc.haitta)} · ${nf(new Set(a.calc.linjat.map(x=>x.linja)).size)} linjaa · ${nf(a.calc.ohitukset_arkipaiva)} ohitusta · ${nf(a.calc.kasautumat.length)} kasautumaa</div></td>
         <td class="r">${nf(h(a),1)} h</td><td class="r"><b>${k!=null?nf(k,0)+" h":"–"}</b>${paras?'<br><span class="vchip tod" style="margin:2px 0 0">pienin</span>':""}</td>
         <td class="r" style="white-space:nowrap">${a.cur?"":`<button class="lnk" data-altload="${i}">avaa</button><br><button class="lnk" data-altdel="${i}">poista</button>`}</td></tr>`; }).join("")}
-    </tbody></table></div>`;
+    </tbody></table>${ks.length>1 && !selva ? `<div class="note" style="margin-top:6px">Ero vaihtoehtojen välillä on alle 15 %, eli arvion epävarmuuden sisällä. Joukkoliikenteen kannalta ne ovat käytännössä yhtä hyviä.</div>`:""}</div>`;
 }
 async function lausuntoEn(){
   const o = document.getElementById("enAiOut"); o.innerHTML = `<div class="answer note">Kirjoitetaan…</div>`;
