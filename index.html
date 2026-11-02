@@ -558,6 +558,18 @@ html.hsl #v-home .todo-sec{margin-top:16px}
 html.hsl #v-home .todo{padding:10px 14px}
 @media(max-width:1000px){html.hsl #v-home .nowrow{flex-direction:column;align-items:stretch}html.hsl #v-home .nowctl{justify-content:space-between}}
 .cunit{font:500 11px "IBM Plex Sans";color:var(--m);margin-left:3px;letter-spacing:0}
+.eurobox{margin:10px 0 12px;padding:12px 14px;border:1px solid var(--l);border-radius:var(--r);background:var(--g)}
+.eurobox .eh{display:flex;gap:8px;align-items:baseline;margin-bottom:8px}
+.eurobox .eg{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:8px}
+.eurobox .eg>div{background:var(--p);border:1px solid var(--l);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:2px}
+.eurobox .eg b{font:600 22px/1.1 "IBM Plex Mono";letter-spacing:-.02em}
+.eurobox .eg span{font-weight:600;font-size:13.5px}
+.eurobox .eg small{color:var(--m);font-size:12px;line-height:1.35}
+.eurobox .eg .saast{border-style:dashed;background:none}
+.eurobox .eg .saast b{font-size:15px;font-family:inherit}
+.eurobox>.note{font-size:11.5px}
+.rap-eur{background:var(--g);border-radius:8px;padding:10px 12px}
+@media(max-width:860px){.eurobox .eg{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -677,6 +689,7 @@ html.hsl #v-home .todo{padding:10px 14px}
       <tr><td>Ennusteen osuvuus</td><td>Ennakkoarvio vs. todennettu vaikutus samalle työlle</td><td>Oikea suuruusluokka valtaosassa töistä</td></tr>
       <tr><td>Haittakohteiden tunnistus</td><td>Tutkan 10 pahinta vs. suunnittelijoiden oma lista</td><td>Löytää kohteita, jotka muuten jäisivät huomaamatta</td></tr>
       <tr><td>Ajansäästö</td><td>Lausunnon valmisteluaika luonnoksen kanssa ja ilman</td><td>Selvä säästö ilman laadun heikkenemistä</td></tr>
+      <tr><td>Mitattu säästö euroina</td><td>Todennettu lisäajan muutos ennen ja jälkeen toimenpiteen × kuljettajan tuntikulu (50 €/h) ja matkustajien ajan arvo (5 €/h)</td><td>Jokaiselle muutetulle tai päättyneelle työlle euromääräinen tulos</td></tr>
       <tr><td>Käyttäjien arvio</td><td>Suunnittelijoiden lyhyt arvio viikoittain</td><td>Hyödyllinen omassa työssä</td></tr>
     </tbody></table>
     <p class="note">Pilotin tavoitteet sovitaan tiimin kanssa ennen aloitusta. Yllä olevat ovat ehdotus.</p>
@@ -845,6 +858,11 @@ const API = "https://pdbmxnmeyhifksgivnky.supabase.co/rest/v1/";
 // Julkinen (publishable) avain: lukuoikeus vain koostenäkymiin, raakadata on RLS:n takana.
 const KEY = "sb_publishable_ZM_StZYcp6QJs5HdlqHbDA_gzQHPqVf";
 const DAY = 86400000;
+/* Euromuunnos. Lähde: Väylävirasto, hankearvioinnin yksikköarvot 2022 (julkaisu 81/2024):
+   bussiliikenteen ajotunnin muuttuva kustannus 49,70 €/h = kuljettajan palkka ja palkan sivukulut.
+   Bussimatkustajan ajan arvo noin 5 €/h (vaihtelee matkan tarkoituksen mukaan; työmatkoilla enemmän, vapaa-ajalla vähemmän). */
+const EUR_AJO = 50, EUR_MATK = 5;
+const eur = v => { const a = Math.abs(v); const r = a >= 10000 ? Math.round(v/1000)*1000 : a >= 1000 ? Math.round(v/100)*100 : Math.round(v/10)*10; return nf(r)+" €"; };
 const S = { ik:"24h", mitta:{}, mlinja:{}, luvat:[], byId:{}, linjat:{}, segs:{}, pilot:[], tila:{}, sel:null, load:20, fWhen:"kaynnissa", fTransit:true, q:"", sel2:null, loaded:false };
 
 /* ---------- apurit ---------- */
@@ -986,7 +1004,8 @@ function laskentaHTML(){
   </ol>
   <p class="note"><b>Luku on yläraja:</b> osa väleistä on hitaita ilman työmaatakin. Varmuus kasvaa, kun samaa väliä voidaan verrata aikaan ennen työtä.</p>
   <p class="note">Työvuorovertaus on havainnollistus: lisäaika ei aina vaadi lisäkuljettajaa, vaan se syö aikataulun väljyyttä.</p>
-  <p class="note">Matkustajille tämä tarkoittaa arviolta noin ${nf(pax)} tuntia, jos vuorossa on keskimäärin 20 matkustajaa (oletus, ei mitattu).</p>`;
+  <p class="note">Matkustajille tämä tarkoittaa arviolta noin ${nf(pax)} tuntia, jos vuorossa on keskimäärin 20 matkustajaa (oletus, ei mitattu).</p>
+  <p class="note"><b>Euroina:</b> kuljettajien työaikaa noin ${eur(bd.total*EUR_AJO)} (${EUR_AJO} €/h) ja matkustajien aikaa noin ${eur(pax*EUR_MATK)} (${EUR_MATK} €/h). Yksikköhinnat: Väylävirasto 2022.</p>`;
 }
 function tile(val, label, key, bd, href){
   const sub = (label.match(/<span class="tsub">.*<\/span>$/)||[""])[0];
@@ -1073,6 +1092,15 @@ function renderBreakdown(){
     <div class="bdh"><b>Mistä ${nf(bd.total,1)} h koostuu</b><span class="note">${period().txt.replace(infoBtn("jakso"),"")}</span><button class="info txt" data-info="menetetty" type="button">Näin luku lasketaan</button>
       <div class="seg" id="bdTabs"><button data-t="tyomaat" class="${tab==="tyomaat"?"on":""}">Työmaittain</button><button data-t="linjat" class="${tab==="linjat"?"on":""}">Linjoittain</button><button data-t="tyypit" class="${tab==="tyypit"?"on":""}">Työtyypeittäin</button></div></div>
     ${bd.sites.length>=5 && tab==="tyomaat" ? `<div class="pareto">${bd.sites.length} työmaa-alueesta <b>5 suurinta aiheuttaa ${nf(top5/tot*100)} %</b> kaikesta työmaiden kohdan lisäajasta.</div>`:""}
+    <div class="eurobox">
+      <div class="eh"><b>Mitä tämä maksaa?</b> <span class="note">${esc(period().full?"vuorokaudessa":"mitatulta ajalta ("+period().dur+")")} · arvio</span></div>
+      <div class="eg">
+        <div><b>${eur(bd.total*EUR_AJO)}</b><span>kuljettajien työaikaa</span><small>${nf(bd.total,1)} h × ${EUR_AJO} €/h. Muuttuu HSL:n kuluksi, kun aikataulua pitää pidentää tai lisätä autoja.</small></div>
+        <div><b>${eur(bd.total*S.load*EUR_MATK)}</b><span>matkustajien menettämää aikaa</span><small>noin ${nf(Math.round(bd.total*S.load/100)*100)} h × ${EUR_MATK} €/h. Laskennallinen menetys matkustajille, ei kassasta lähtevää rahaa (${S.load} matkustajaa vuorossa, oletus).</small></div>
+        <div class="saast"><b>Säästetyt eurot</b><span>lasketaan mitatusta erosta</span><small>Kun työ päättyy tai järjestelyä muutetaan, tutka mittaa saman kohdan ennen ja jälkeen. Säästö = mitattu ero × samat yksikköhinnat.</small></div>
+      </div>
+      <div class="note">Yksikköhinnat: Väylävirasto, hankearvioinnin yksikköarvot 2022. Bussin ajotunnin kuljettajakulu 49,70 €/h, bussimatkustajan ajan arvo noin 5 €/h.</div>
+    </div>
     <div class="bdl">${rows || `<div class="note">Ei vielä riittävästi mitattua dataa.</div>`}</div>
     <div class="bdf"><div><b style="font-size:12px">Päivittäin</b> <span class="note">(valmiit vuorokaudet)</span>
       ${days.length ? `<div class="spark">${days.map(d=>`<i title="${fmtDate(d.pv)}: ${nf(d.ajoneuvotunnit,1)} h" style="height:${Math.max(3,(d.ajoneuvotunnit||0)/mxd*36)}px" class="${new Date(d.pv).setHours(0,0,0,0)===new Date().setHours(0,0,0,0)?"today":""}"></i>`).join("")}</div>`:""}</div>
@@ -1119,7 +1147,7 @@ function renderBrief(){
   const vehH = bd.total;
   const tr = trend();
   document.getElementById("kpis").innerHTML =
-    tile(nf(vehH,1)+" h" + (tr ? ` <span class="trend ${tr.cls}">${tr.txt}</span>` : ""), (per.full ? `busseille ja ratikoille kertynyt lisäaika työmaiden kohdalla vuorokaudessa${S.ik==="7d"?" (keskimäärin)":""}` : `busseille ja ratikoille kertynyt lisäaika työmaiden kohdalla, mitattu ${per.dur} ajalta`) + `<span class="tsub">vastaa noin ${nf(Math.round(vehH/8))} kuljettajan 8 tunnin työvuoroa · ${bd.nTod ? `todennettu ${nf(bd.totTod,1)} h, loput arviota` : "alustava arvio"}</span>`, "menetetty", "bd") +
+    tile(nf(vehH,1)+" h" + (tr ? ` <span class="trend ${tr.cls}">${tr.txt}</span>` : ""), (per.full ? `busseille ja ratikoille kertynyt lisäaika työmaiden kohdalla vuorokaudessa${S.ik==="7d"?" (keskimäärin)":""}` : `busseille ja ratikoille kertynyt lisäaika työmaiden kohdalla, mitattu ${per.dur} ajalta`) + `<span class="tsub">vastaa noin ${nf(Math.round(vehH/8))} kuljettajan työvuoroa, noin ${eur(vehH*EUR_AJO)} · ${bd.nTod ? `todennettu ${nf(bd.totTod,1)} h, loput arviota` : "alustava arvio"}</span>`, "menetetty", "bd") +
     tile(nf(runR.length), `katutyötä bussi- tai ratikkareitillä<span class="tsub">${nf(run.length)} käynnissä kaikkiaan · ${nf(lineSet.size)} linjaa</span>`, "reitilla", null, "#/tyot") +
     ((S.sug||[]).length ? `<a class="tile" href="#/linjat"><b>${S.sug.length}</b><small>aikatauluagentin ${S.sug.length===1?"ehdotus":"ehdotusta"}<span class="tsub">odottaa suunnittelijan päätöstä</span></small></a>`
       : tile(nf(up7.length), `katutyötä alkaa viikon sisällä<span class="tsub">${nf(up7R.length)} bussi- tai ratikkareitillä · mitataan jo ennen alkua</span>`, "alkaa", null, "#/tyot"));
@@ -1489,6 +1517,7 @@ function renderRaportti(id){
       <div><b>${yht!=null?nf(yht,0)+" h":"–"}</b><small>koko työn ajalta${kesto?` (${nf(kesto)} pv, luvan mukaan)`:""}</small></div>
       <div><b>${yht!=null?nf(yht*S.load,0)+" h":"–"}</b><small>matkustajille (${S.load} hlö/ajo, oletus)</small></div>
     </div>
+    ${yht!=null?`<p class="rap-eur"><b>Euroina koko työn ajalta:</b> kuljettajien työaikaa noin ${eur(yht*EUR_AJO)} (${EUR_AJO} €/h) ja matkustajien aikaa noin ${eur(yht*S.load*EUR_MATK)} (${EUR_MATK} €/h). ${tod?"Perustuu todennettuun vaikutukseen.":"Arvio: varmistuu, kun samaa väliä voidaan verrata aikaan ilman työtä."} <span class="note">Yksikköhinnat: Väylävirasto 2022.</span></p>`:""}
     ${lin.length?`<h3>Linjat</h3><table class="t"><thead><tr><th>Linja</th><th class="r">Ohituksia</th><th class="r">Lisäaika per ohitus</th></tr></thead><tbody>
       ${lin.slice(0,12).map(x=>`<tr><td><span class="chip">${esc(ln(x.route))}</span> <span class="note">suunta ${x.dir}</span></td><td class="r">${nf(x.n)}</td><td class="r ${x.s>10?"slow":""}">${sgn(x.s)}</td></tr>`).join("")}</tbody></table>`:""}
     ${tod && arvioS!=null ? `<h3>Arvio vs. todennettu</h3><p>Ennen todennettua lukua tutka arvioi lisäajaksi ${sgn(arvioS)} per ohitus. Todennettu vaikutus oli ${sgn(tod.vaikutus_s)}. ${Math.abs(arvioS)>5?`Arvio ${arvioS>tod.vaikutus_s?"yliarvioi":"aliarvioi"} vaikutusta ${nf(Math.abs(arvioS-tod.vaikutus_s)/Math.abs(arvioS)*100)} %.`:""} Tätä vertailua käytetään arvioiden kalibrointiin.</p>`:""}
@@ -1668,13 +1697,15 @@ async function renderDetail(){
     : ls.length?`<table class="t"><thead><tr><th>Linja</th><th class="r">Ohituksia / 24 h</th><th class="r">Lisäviive</th></tr></thead><tbody>${ls.slice(0,10).map(r=>`<tr><td><span class="chip">${esc(ln(r.route))}</span> <span class="note">suunta ${r.dir}</span></td><td class="r">${nf(r.ohitukset_24h)}</td><td class="r ${r.lisaviive_s>10?"slow":r.lisaviive_s<-10?"fast":""}">${sgn(r.lisaviive_s)}</td></tr>`).join("")}</tbody></table>`:`<div class="chips">${lines(l.linjat).map(r=>`<span class="chip">${esc(r)}</span>`).join("")}</div>`}
     <div class="sec">Lisäaika per ohitus kahden tunnin jaksoissa</div>
     <div class="chart" id="chart"><div class="empty">Ladataan…</div></div>`:`<div class="note" style="margin-top:6px">Luvan alueen ohi ei kulje bussi- tai ratikkareittejä (alle 40 m), joten työ ei vaikuta suoraan joukkoliikenteeseen.</div>`}
-    ${im && im.vehH > 0.05 ? `<div class="sec">Mitä tämä maksaa matkustajille</div>
+    ${im && im.vehH > 0.05 ? `<div class="sec">Mitä tämä maksaa</div>
     <div class="calc">
-      <div class="row"><span>Busseille ja ratikoille kertyvä lisäaika</span><b>${nf(im.vehH,1)} ajoneuvotuntia / vrk</b></div>
+      <div class="row"><span>Busseille ja ratikoille kertyvä lisäaika</span><b>${nf(im.vehH,1)} h · ${esc(period().dur)}</b></div>
+      <div class="row"><span>Kuljettajien työaikaa <span class="note">(${EUR_AJO} €/h)</span></span><b>${eur(im.vehH*EUR_AJO)}</b></div>
       <label class="row" for="load"><span>Matkustajia kyydissä keskimäärin <span class="note">(oletus)</span></span><b id="loadV">${S.load}</b></label>
       <input type="range" id="load" min="5" max="60" step="1" value="${S.load}">
-      <div class="row"><span>Matkustajille kertyvä lisäaika</span><b id="paxH">${nf(im.vehH*S.load,0)} h / vrk</b></div>
-      <div class="note">Arvio. HSL:n matkustajalaskentadatalla luku saadaan pysäkkiväli- ja vuorokohtaisesti tarkaksi.</div>
+      <div class="row"><span>Matkustajille kertyvä lisäaika</span><b id="paxH">${nf(im.vehH*S.load,0)} h</b></div>
+      <div class="row"><span>Matkustajien aika euroina <span class="note">(${EUR_MATK} €/h)</span></span><b id="paxE">${eur(im.vehH*S.load*EUR_MATK)}</b></div>
+      <div class="note">Arvio. Kuljettajien työaika muuttuu HSL:n kuluksi, kun aikataulua pidennetään. Matkustajien aika on laskennallinen menetys. Yksikköhinnat: Väylävirasto 2022. HSL:n matkustajalaskentadatalla luku saadaan tarkaksi.</div>
     </div>`:""}
     ${segs.length?`<div class="sec">Pysäkkivälit (${segs.length})</div>
     <table class="t"><tbody>${segs.slice().sort((a,b)=>(b.n_24h||0)-(a.n_24h||0)).slice(0,6).map(g=>`<tr><td><span class="stopn">${esc(stopName(g,"from"))} → ${esc(stopName(g,"to"))}</span><br><span class="note">${esc(lines(g.linjat).filter(r=>!/N$/.test(r)).slice(0,8).join(", "))}</span></td><td class="r">${nf(g.n_24h)} ajoa<br><span class="${g.lisaviive_s>10?"slow":g.lisaviive_s<-10?"fast":""}">${sgn(g.lisaviive_s)}</span></td></tr>`).join("")}</tbody></table>`:""}
@@ -1687,7 +1718,7 @@ async function renderDetail(){
   const sh = document.getElementById("shareBtn");
   if(sh) sh.onclick = ()=>{ const u = location.origin+location.pathname+"#/?l="+encodeURIComponent(l.lupa_id); (navigator.share ? navigator.share({title:"Työmaatutka: "+title(l), url:u}).catch(()=>{}) : navigator.clipboard?.writeText(u)); sh.textContent = navigator.share ? "Jaa" : "Kopioitu"; };
   const r = document.getElementById("load");
-  if(r) r.oninput = () => { S.load = +r.value; document.getElementById("loadV").textContent = S.load; document.getElementById("paxH").textContent = nf(im.vehH*S.load,0)+" h / vrk"; };
+  if(r) r.oninput = () => { S.load = +r.value; document.getElementById("loadV").textContent = S.load; document.getElementById("paxH").textContent = nf(im.vehH*S.load,0)+" h"; document.getElementById("paxE").textContent = eur(im.vehH*S.load*EUR_MATK); };
   if(onRoute(l)){
     try{
       const series = await get(`v_lupa_sarja?lupa_id=eq.${encodeURIComponent(l.lupa_id)}&order=bucket.asc`);
