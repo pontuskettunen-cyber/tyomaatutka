@@ -1022,7 +1022,6 @@ function haittaMalli(){
 function initEnnakko(l){
   if(!M.en){
     M.en = mkMap("mapE"); M.en.setView([60.172,24.94],14);
-    M.en.createPane("enLinjat").style.zIndex = 410; M.en.createPane("enTyo").style.zIndex = 450;
     const leg = L.control({position:"bottomleft"});
     leg.onAdd = ()=>{ const d = L.DomUtil.create("div","enleg"); d.innerHTML = `<div><i class="w"></i>Työalue</div><div><i class="b"></i>Linjojen pysäkkivälit, joihin työ osuu</div>`; return d; };
     leg.addTo(M.en);
@@ -1060,12 +1059,12 @@ function drawEn(){
   EN.layer = L.layerGroup().addTo(M.en);
   enOhje();
   if(l){
-    L.geoJSON(l.geom,{pane:"enTyo", style:{color:"#fff",weight:8,opacity:.9,fill:false}, interactive:false}).addTo(EN.layer);
-    L.geoJSON(l.geom,{pane:"enTyo", style:{color:"#C2410C",weight:4,fillColor:"#C2410C",fillOpacity:.45}, interactive:false}).addTo(EN.layer);
+    L.geoJSON(l.geom,{style:{color:"#fff",weight:8,opacity:.9,fill:false}, interactive:false}).addTo(EN.layer);
+    L.geoJSON(l.geom,{style:{color:"#C2410C",weight:4,fillColor:"#C2410C",fillOpacity:.45}, interactive:false}).addTo(EN.layer);
   }
   else if(EN.pts.length){
-    L.polyline(EN.pts,{pane:"enTyo",color:"#fff",weight:16,opacity:.85,lineCap:"round",interactive:false}).addTo(EN.layer);
-    var line = L.polyline(EN.pts,{pane:"enTyo",color:"#C2410C",weight:11,opacity:.6,lineCap:"round",interactive:false}).addTo(EN.layer);
+    L.polyline(EN.pts,{color:"#fff",weight:16,opacity:.85,lineCap:"round",interactive:false}).addTo(EN.layer);
+    var line = L.polyline(EN.pts,{color:"#C2410C",weight:11,opacity:.6,lineCap:"round",interactive:false}).addTo(EN.layer);
     // pisteitä voi raahata; Esc kesken raahauksen palauttaa pisteen paikalleen
     EN.pts.forEach((p,i)=>{
       const m = L.marker(p,{draggable:true, icon:L.divIcon({className:"enpt", iconSize:[14,14]}), keyboard:false}).addTo(EN.layer);
@@ -1116,8 +1115,9 @@ function naytaEn(){
   // välit kartalle
   const seen = new Set(); rows.forEach(g=>{ const k = g.from_stop+"|"+g.to_stop; if(seen.has(k)) return; seen.add(k);
     const pts = Array.isArray(g.viiva)&&g.viiva.length>1 ? g.viiva : [[g.from_lat,g.from_lon],[g.to_lat,g.to_lon]];
-    L.polyline(pts,{pane:"enLinjat",color:"#fff",weight:5,opacity:.7,interactive:false}).addTo(EN.segL);
-    L.polyline(pts,{pane:"enLinjat",color:"#1D4ED8",weight:3,opacity:.55}).bindTooltip(`${esc(g.from_nimi||g.from_stop)} → ${esc(g.to_nimi||g.to_stop)}`,{sticky:true}).addTo(EN.segL); });
+    L.polyline(pts,{color:"#fff",weight:5,opacity:.7,interactive:false}).addTo(EN.segL);
+    L.polyline(pts,{color:"#1D4ED8",weight:3,opacity:.55}).bindTooltip(`${esc(g.from_nimi||g.from_stop)} → ${esc(g.to_nimi||g.to_stop)}`,{sticky:true}).bindPopup(`<b>${esc(g.from_nimi||g.from_stop)} → ${esc(g.to_nimi||g.to_stop)}</b><br>Linjat: ${esc([...new Set(rows.filter(x=>x.from_stop===g.from_stop&&x.to_stop===g.to_stop).map(x=>ln(x.route)))].join(", "))}`).addTo(EN.segL); });
+  if(EN.layer) EN.layer.eachLayer(x=>x.bringToFront && x.bringToFront());
   // linja × suunta × jakso: suurin ohitusmäärä alueen väleistä (sama vuoro ohittaa kaikki välit)
   const lj = new Map(); rows.forEach(r=>{ const k = ln(r.route)+"|"+r.dir+"|"+r.jakso; lj.set(k, Math.max(lj.get(k)||0, r.ohit_vrk)); });
   const linjat = new Map(); lj.forEach((v,k)=>{ const [n,d,j] = k.split("|"); const e = linjat.get(n+"|"+d) || {n, d, tram:TRAM.has(n), j:{}}; e.j[j] = v; linjat.set(n+"|"+d, e); });
@@ -1277,8 +1277,6 @@ function siteKind(l){ const im = impact(l); if(!im || im.kind!=="v2") return "ke
 function renderHomeMap(){
   if(!M.home){
     M.home = mkMap("map", {renderer: L.canvas({tolerance: 8})});
-    M.home.createPane("segs"); M.home.getPane("segs").style.zIndex = 450;
-    M.home.createPane("stops"); M.home.getPane("stops").style.zIndex = 460;
     Lhome = L.layerGroup().addTo(M.home); LhomeSeg = L.layerGroup().addTo(M.home);
     const lc = L.control({position:"topright"});
     lc.onAdd = ()=>{ const b = L.DomUtil.create("button","livebtn"); b.type = "button"; b.id = "liveBtn";
@@ -1287,7 +1285,7 @@ function renderHomeMap(){
       L.DomEvent.disableClickPropagation(b); b.onclick = ()=>{ liveSet(!LV.on); renderDetail(); }; return b; };
     lc.addTo(M.home);
     M.home.on("moveend", ()=>{ if(LV.on) syncSubs(); });
-    M.home._segR = L.canvas({pane:"segs", tolerance: 8}); M.home._stopR = L.canvas({pane:"stops", tolerance: 6});
+    M.home._segR = M.home._stopR = M.home.options.renderer;   // yksi piirtotaso: päällekkäiset canvasit söivät toistensa klikkaukset
   }
   Lhome.clearLayers(); LhomeSeg.clearLayers();
   S.luvat.filter(l=>phase(l).k==="kaynnissa" || l.lupa_id===S.sel).forEach(l=>{
@@ -1316,15 +1314,16 @@ function renderHomeMap(){
     const vahva = (g.n_24h||0) >= MIN_N, slow = vahva && g.lisaviive_s > 10;
     const col = slow ? "#B42318" : "#3F4850", dash = (!vahva || !g.viiva) ? "6 6" : null;
     const tip = `<b>${esc(stopName(g,"from"))} → ${esc(stopName(g,"to"))}</b><br>Linjat: ${esc(lines(g.linjat).join(", "))}<br>${nf(g.n_24h)} ajoa / 24 h · lisäviive ${g.lisaviive_s==null?"–":sgn(g.lisaviive_s)}${vahva?"":"<br><span style='color:#6B737B'>Alle "+MIN_N+" ajoa: ei vielä luotettava</span>"}`;
-    L.polyline(pts,{pane:"segs", renderer:M.home._segR, color:"#fff", weight: slow?8:6, opacity:.9, lineCap:"round", lineJoin:"round", interactive:false}).addTo(LhomeSeg);
-    L.polyline(pts,{pane:"segs", renderer:M.home._segR, color:col, weight: slow?5:3.5, opacity: vahva?.95:.55, dashArray:dash, lineCap:"round", lineJoin:"round"}).bindTooltip(tip,{sticky:true}).addTo(LhomeSeg);
+    L.polyline(pts,{renderer:M.home._segR, color:"#fff", weight: slow?8:6, opacity:.9, lineCap:"round", lineJoin:"round", interactive:false}).addTo(LhomeSeg);
+    L.polyline(pts,{renderer:M.home._segR, color:col, weight: slow?5:3.5, opacity: vahva?.95:.55, dashArray:dash, lineCap:"round", lineJoin:"round"}).bindTooltip(tip,{sticky:true}).bindPopup(tip,{maxWidth:280}).addTo(LhomeSeg);
     [["from",pts[0]],["to",pts[pts.length-1]]].forEach(([w,p])=>{ const id = w==="from"?g.from_stop:g.to_stop; if(!stops.has(id)) stops.set(id,{p, name:stopName(g,w)}); });
   });
   // valitun työmaan tunnistusrengas: pienikin lupa-alue erottuu loitonnettuna
   const selL = S.byId[S.sel], selC = selL && selL.geom && centroid(selL.geom);
-  if(selC){ L.circleMarker(selC,{pane:"stops", renderer:M.home._stopR, radius:13, weight:3, color:"#14181C", fill:false, interactive:false}).addTo(LhomeSeg);
-            L.circleMarker(selC,{pane:"stops", renderer:M.home._stopR, radius:16, weight:2, color:"#fff", fill:false, opacity:.9, interactive:false}).addTo(LhomeSeg); }
-  stops.forEach(v=>L.circleMarker(v.p,{pane:"stops", renderer:M.home._stopR, radius:3.5, weight:1.5, color:"#14181C", fillColor:"#fff", fillOpacity:1}).bindTooltip(esc(v.name),{direction:"top"}).addTo(LhomeSeg));
+  if(selC){ L.circleMarker(selC,{renderer:M.home._stopR, radius:13, weight:3, color:"#14181C", fill:false, interactive:false}).addTo(LhomeSeg);
+            L.circleMarker(selC,{renderer:M.home._stopR, radius:16, weight:2, color:"#fff", fill:false, opacity:.9, interactive:false}).addTo(LhomeSeg); }
+  stops.forEach(v=>L.circleMarker(v.p,{renderer:M.home._stopR, radius:3.5, weight:1.5, color:"#14181C", fillColor:"#fff", fillOpacity:1}).bindTooltip(esc(v.name),{direction:"top"}).bindPopup(`<b>Pysäkki</b><br>${esc(v.name)}`).addTo(LhomeSeg));
+  if(LV.layer) LV.layer.eachLayer(m=>m.bringToFront());
   if(!homeFitted){ M.home.setView([60.172,24.94],14); homeFitted = true; }
 }
 
