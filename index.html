@@ -1127,7 +1127,7 @@ function renderLinjat(){
     .sort((a,b)=>b.max-a.max || b.works.size-a.works.size || parseInt(a.name)-parseInt(b.name));
   const worst = all.filter(e=>e.max>0).sort((a,b)=>b.max-a.max)[0];
   document.getElementById("linjatBrief").innerHTML = worst
-    ? `Katutyöt koskettavat nyt <strong>${nf(all.filter(e=>e.works.size).length)} linjaa</strong>. Eniten aikaa menettää <strong>${worst.tram?"ratikka":"bussi"} ${esc(worst.name)}</strong>: tavallinen vuoro ${sgn(worst.max)}${worst.p90?`, huonoin kymmenesosa ${sgn(worst.p90)}`:""} työmaiden kohdalla.`
+    ? `Katutyöt koskettavat nyt <strong>${nf(all.filter(e=>e.works.size).length)} linjaa</strong>. Eniten aikaa menettää <strong>${worst.tram?"ratikka":"bussi"} ${esc(worst.name)}</strong>: ${worst.vt.length?`tavallinen vuoro ${sgn(worst.max)}, huonoin kymmenesosa ${sgn(worst.p90)} työmaiden kohdalla (mitattu vuoroittain).`:`arviolta ${sgn(worst.max)} per vuoro työmaa-alueiden kohdalla yhteensä.`}`
     : `Katutyöt koskettavat nyt <strong>${nf(all.filter(e=>e.works.size).length)} linjaa</strong>. Linjakohtainen lisäaika tarkentuu, kun mittausdataa kertyy.`;
   renderSug();
   document.getElementById("lTitle").textContent = `${nf(list.length)} linjaa`;
