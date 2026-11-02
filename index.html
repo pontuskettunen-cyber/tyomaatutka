@@ -255,8 +255,9 @@ table.t .r{text-align:right;white-space:nowrap;font-family:"IBM Plex Mono"}
 .btn.ghost{background:var(--p);color:var(--i);border:1px solid var(--l)}
 .ask-ex{display:flex;flex-wrap:wrap;gap:6px;padding:0 18px 12px}
 .ask-ex button{border:1px solid var(--l);background:var(--p);border-radius:999px;padding:4px 10px;font-size:12.5px;color:var(--i2)}
-.answer{margin:0 18px 16px;padding:12px 14px;background:var(--g);border-radius:10px;font-size:14.5px;line-height:1.55;white-space:pre-wrap}
-.answer a{font-family:"IBM Plex Mono";font-size:12.5px}
+.answer{margin:0 18px 16px;padding:12px 16px;background:var(--g);border-radius:10px;font-size:14.5px;line-height:1.55}
+.answer p{margin:0 0 8px}.answer ul{margin:0 0 8px;padding-left:20px}.answer li{margin:3px 0}
+.answer a.lref{font:500 11.5px/1 "IBM Plex Sans";padding:2px 7px;border-radius:999px;border:1px solid #F2D4C2;text-decoration:none;white-space:nowrap;vertical-align:1px}
 .aitag{font:500 11px "IBM Plex Mono";padding:1px 6px;border-radius:4px;white-space:nowrap}
 .aitag.suuri{background:#FDECEA;color:var(--slow)}.aitag.kohtalainen{background:#FFF4E5;color:#9A5B00}.aitag.pieni,.aitag.ei{background:var(--l2);color:var(--m)}
 .aibox{background:#FFFAF6;border:1px solid #F6DCCB;border-radius:10px;padding:10px 12px;margin:10px 0;font-size:13.5px}
@@ -329,6 +330,7 @@ footer{max-width:1360px;margin:0 auto;padding:0 28px 32px;color:var(--m);font-si
 .varm{font-size:13px;line-height:1.45;padding:9px 12px;border-radius:9px;margin:-4px 0 12px;background:var(--l2);color:var(--i2)}
 .varm b{margin-right:4px}.varm.tod{background:#E7F3EC}.varm.pohja{background:#EEF0FB}.varm.arvio{background:#FFF7ED}
 .tiivis{font-size:14.5px;line-height:1.5;margin:6px 0 10px;color:var(--i)}
+.hnote{font:500 12px/1 "IBM Plex Sans";color:var(--m);background:var(--l2);padding:4px 8px;border-radius:6px;vertical-align:5px;margin-left:4px}
 </style>
 </head>
 <body>
@@ -612,7 +614,8 @@ function laskentaHTML(){
   <p class="note"><b>Mitä luku ei vielä todista:</b> se kertoo, paljonko työmaan kohdan välit ovat hitaampia kuin linjan muut välit. Osa väleistä on hitaita ilman työmaatakin (valot, keskustan ruuhka), joten luku on yläraja eikä todistettu syy. Varmuus kasvaa, kun samoja välejä voidaan verrata aikaan ennen työtä tai sen jälkeen. Ajoneuvotunti = bussien ja ratikoiden aikaa. Matkustajien aika on tätä moninkertainen.</p>`;
 }
 function tile(val, label, key, bd, href){
-  const inner = `<b>${val}</b><small>${label} ${key?infoBtn(key):""}</small>`;
+  const sub = (label.match(/<span class="tsub">.*<\/span>$/)||[""])[0];
+  const inner = `<b>${val}</b><small>${label.replace(sub,"")} ${key?infoBtn(key):""}${sub}</small>`;
   if(bd) return `<div class="tile tbtn ${S.bdOpen?"open":""}" data-bd="1" role="button" tabindex="0" aria-expanded="${!!S.bdOpen}">${inner}<span class="tmore">${S.bdOpen?"Piilota erittely ↑":"Mistä koostuu ↓"}</span></div>`;
   return href ? `<a class="tile" href="${href}">${inner}</a>` : `<div class="tile">${inner}</div>`;
 }
@@ -723,7 +726,7 @@ function renderBrief(){
   // Otsikko: yksi lause, joka muuttuu datan mukana
   let head;
   const rH = r.filter(x=>x.i.kind!=="v2" || x.i.n>=20);
-  if(rH.length){ const t = rH[0]; head = `<em>${esc(shortStreet(t.l))}</em> hidastaa joukkoliikennettä eniten${t.i.s!=null?`: ${sgn(t.i.s)} per ohitus`:""}.`; }
+  if(rH.length){ const t = rH[0]; head = `<em>${esc(shortStreet(t.l))}</em> hidastaa joukkoliikennettä eniten${t.i.s!=null?`: ${sgn(t.i.s)} per ohitus`:""}${t.i.kind==="v2"&&!t.i.tod?' <span class="hnote">arvio</span>':""}.`; }
   else head = `${nf(runR.length)} katutyötä bussi- ja ratikkareittien varrella. Vaikutusmittaus käynnistyy.`;
   document.getElementById("brief").innerHTML = head;
   // Kolme signaalia: suurin vaikutus, seuraavaksi alkava, kasautumat
@@ -743,7 +746,7 @@ function renderBrief(){
   document.getElementById("kpis").innerHTML =
     tile(nf(run.length), "katutyötä käynnissä", "kaynnissa", null, "#/tyot") +
     tile(nf(runR.length), "reittien varrella", "reitilla", null, "#/tyot") +
-    tile(nf(vehH,1)+" h" + (tr ? ` <span class="trend ${tr.cls}">${tr.txt}</span>` : ""), (per.full ? `lisäaika työmaiden kohdilla / vrk${S.ik==="7d"?" (ka.)":""}` : `lisäaika työmaiden kohdilla · ${per.dur}`) + `<span class="tsub">${bd.nTod ? `todennettu ${nf(bd.totTod,1)} h · arvio ${nf(bd.total-bd.totTod,1)} h` : "kaikki vielä arviota"}</span>`, "menetetty", "bd") +
+    tile(nf(vehH,1)+" h" + (tr ? ` <span class="trend ${tr.cls}">${tr.txt}</span>` : ""), (per.full ? `lisäaika työmailla / vrk${S.ik==="7d"?" (ka.)":""}` : `lisäaika työmailla · ${per.dur}`) + `<span class="tsub">${bd.nTod ? `todennettu ${nf(bd.totTod,1)} h · arvio ${nf(bd.total-bd.totTod,1)} h` : "kaikki vielä arviota"}</span>`, "menetetty", "bd") +
     ((S.sug||[]).length ? `<a class="tile sigB" href="#/linjat" style="border-left-color:var(--a)"><small>Aikatauluagentti</small><b class="txt">${S.sug.length} ${S.sug.length===1?"ehdotus":"ehdotusta"}</b></a>` : tile(nf(up7.length), "alkaa 7 päivän sisällä", "alkaa", null, "#/tyot")) + sigNext + sigCl;
   document.querySelectorAll("#kpis [data-bd]").forEach(x=>{ const t = e=>{ if(e.target.closest(".info")) return; S.bdOpen = !S.bdOpen; renderBrief(); }; x.onclick = t; x.onkeydown = e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); t(e); } }; });
   wireInfo(document.querySelector(".now"));
@@ -753,12 +756,13 @@ function renderCards(){
   let items = ranked().slice(0,6).map(x=>x.l);
   const titleEl = document.getElementById("cardsTitle");
   const anyImpact = items.some(l=>impact(l)?.vehH > 0.05);
-  titleEl.textContent = anyImpact ? "Eniten vaikuttavat työt nyt · lisäviive per ohitus" : "Vilkkaimpien reittien työt nyt";
+  const anyTod = items.some(l=>impact(l)?.tod);
+  titleEl.textContent = anyImpact ? `Eniten vaikuttavat työt nyt · lisäaika per ohitus${anyTod?"":" (arvio)"}` : "Vilkkaimpien reittien työt nyt";
   const el = document.getElementById("cards");
   el.innerHTML = items.map((l,i)=>{
     const ph = phase(l), im = impact(l);
     let big;
-    if(im && im.s != null) big = `<b class="${im.s>10?"slow":im.s<-10?"fast":""}" title="lisäviive per ohitus${im.n?", n="+im.n:""}">${sgn(im.s)}</b>${im.tod?'<span class="vchip tod">todennettu</span>':'<span class="vchip">arvio</span>'}`;
+    if(im && im.s != null) big = `<b class="${im.s>10?"slow":im.s<-10?"fast":""}" title="lisäviive per ohitus${im.n?", n="+im.n:""}">${sgn(im.s)}</b>${im.tod?'<span class="vchip tod">todennettu</span>':""}`;
     else big = `<b title="ajoa / vrk ohi työmaan">${nf(l.ajoja_vrk)}<small style="font-size:11px;color:var(--m)"> ajoa</small></b>`;
     return `<button class="card ${S.sel===l.lupa_id?"sel":""}" data-id="${esc(l.lupa_id)}">
       <div class="hd"><span class="num">${i+1}</span><span class="t">${esc(shortStreet(l))}</span></div>
@@ -1019,7 +1023,7 @@ let L2, L2fit=false;
 function renderTyot(){
   const all = S.luvat, up = all.filter(l=>phase(l).k==="tulossa" && +new Date(l.alkaa) < Date.now()+14*DAY), upR = up.filter(onRoute);
   const lineSet = new Set(upR.flatMap(l=>lines(l.linjat)));
-  document.getElementById("tyotBrief").innerHTML = `Seuraavan 14 päivän aikana alkaa <strong>${nf(up.length)} katutyötä</strong>. Niistä <strong>${nf(upR.length)}</strong> on bussi- tai ratikkareitin varrella, ja ne koskettavat ${nf(lineSet.size)} linjaa. Kaikki ${nf(all.filter(l=>phase(l).k==="kaynnissa").length)} käynnissä olevaa työtä löytyvät suodattimella <em>Käynnissä</em>.`;
+  document.getElementById("tyotBrief").innerHTML = `Seuraavan 14 päivän aikana alkaa <strong>${nf(up.length)} katutyötä</strong>. Niistä <strong>${nf(upR.length)}</strong> on bussi- tai ratikkareitin varrella, ja ne koskettavat ${nf(lineSet.size)} linjaa. Kaikki ${nf(all.filter(l=>phase(l).k==="kaynnissa").length)} käynnissä olevaa työtä löytyvät suodattimella <em>Käynnissä</em>.<br><span class="note">Listan oikea sarake: alkaville töille, montako ohitusta samalta väliltä on jo mitattu ilman työtä (pohjataso), käynnissä oleville lisäaika per ohitus. Klikkaa työtä nähdäksesi sen kartalla, tuplaklikkaa avataksesi tiedot.</span>`;
   const cl = clashes();
   document.getElementById("clash").innerHTML = cl.length ? `<div class="warn"><h4>Kasautuvat työt samoilla linjoilla (${cl.length})</h4><div class="note" style="margin-bottom:6px">Uusi ajoneuvoliikennettä haittaava työ alkaa linjalle, jolla on jo toinen työ alle 1,5 km päässä. Viiveet kasautuvat samalle matkustajalle.</div><ul>${cl.slice(0,5).map(c=>`<li><b>${esc(title(c.a))}</b> alkaa ${fmtDate(c.a.alkaa)} linjoilla ${c.shared.slice(0,6).map(esc).join(", ")}${c.shared.length>6?"…":""}, joilla on jo työ ${nf(c.dist/1000,1)} km päässä (<b>${esc(title(c.b))}</b>). Yhtä aikaa ${fmtShort(c.lo)}–${c.hi<8e15?fmtShort(c.hi):""}.</li>`).join("")}</ul></div>` : "";
   const items = filtered();
@@ -1309,6 +1313,15 @@ function renderLinjat(){
   if(!S.lSel && list[0]) S.lSel = list[0].name;
   renderLinjaDet(all.find(e=>e.name===S.lSel));
 }
+function linjaTiivis(e){
+  const nimi = `${e.tram?"Ratikka":"Bussi"} ${esc(e.name)}`;
+  const kaikki = (S.ltila?.[e.name]||[]).filter(r=>r.ikkuna===S.ik && r.jakso==="kaikki" && r.vuoroja>=5).sort((a,b)=>b.p90-a.p90)[0];
+  const ws = [...e.works.values()].map(w=>({l:w.l, s:Math.max(0,...Object.values(w.dirs).map(x=>x.s))})).filter(x=>x.s>10).sort((a,b)=>b.s-a.s);
+  const suurin = ws[0] ? ` Suurin yksittäinen hidastaja on <b>${esc(shortStreet(ws[0].l))}</b> (${sgn(ws[0].s)}).` : "";
+  if(kaikki) return `<p class="tiivis">${nimi}: tavallinen vuoro saa työmailla <b>${sgn(kaikki.med)}</b> lisäaikaa koko reitillä, ja joka kymmenes vuoro yli <b>${sgn(kaikki.p90)}</b>.${suurin}</p>`;
+  if(ws.length) return `<p class="tiivis">${nimi} kulkee ${nf(e.sites)} työmaa-alueen ohi, joista ${ws.length} hidastaa sitä (arvio).${suurin}</p>`;
+  return `<p class="tiivis">${nimi} kulkee ${nf(e.sites)} työmaa-alueen ohi. Selvää hidastusta ei ole mitattu.</p>`;
+}
 function renderLinjaDet(e){
   const box = document.getElementById("lDet");
   if(!e){ box.innerHTML = `<div class="det"><div class="empty">Valitse linja.</div></div>`; return; }
@@ -1316,6 +1329,7 @@ function renderLinjaDet(e){
   const dirs = Object.keys(e.tot).sort();
   box.innerHTML = `<div class="det">
     <div class="sup"><span class="lbadge ${e.tram?"tram":""}">${esc(e.name)}</span><span class="note">${e.tram?"Raitiovaunu":"Bussi"} · ${S.ik==="7d"?"7 vrk":"24 h"}</span></div>
+    ${linjaTiivis(e)}
     <h3>${nf(e.sites)} ${e.sites===1?"työmaa-alue":"työmaa-aluetta"} reitin varrella <span class="note" style="font-weight:400">(${nf(e.works.size)} lupaa)</span></h3>
     <div class="lmap" id="lMap"></div><div class="note" style="margin:4px 0 10px">Reitti HSL:n avoimesta aikataulu-datasta. Työmaan väri: punainen = hidastaa tätä linjaa, harmaa = ei mitattua haittaa, oranssi = mittaus kesken, violetti = alkaa 14 päivän sisällä. Punainen viiva = hidastava pysäkkiväli. Klikkaa työmaata, niin se avautuu tilannekuvaan.</div>
     ${e.sug.map(sugCard).join("")}
@@ -1398,7 +1412,17 @@ async function fn(body){
   const r = await fetch(FN, {method:"POST", headers:{apikey:KEY, Authorization:"Bearer "+KEY, "content-type":"application/json"}, body:JSON.stringify(body)});
   return r.json();
 }
-const linkLupa = t => esc(t).replace(/\*\*(.+?)\*\*/g,"<b>$1</b>").replace(/\[?\b([A-Z]{2}\d{5,}(?:-\d+)?)\b\]?/g, (m,id)=> S.byId[id] ? `<a href="#/?l=${encodeURIComponent(id)}">${esc(title(S.byId[id]))}</a>` : id);
+// lupatunnus -> pieni "näytä"-linkki (nimi on jo tekstissä); viivaluettelo -> lista
+const linkLupa = t => {
+  const inl = x => esc(x).replace(/\*\*(.+?)\*\*/g,"<b>$1</b>").replace(/\s*\[?\b([A-Z]{2}\d{5,}(?:-\d+)?)\b\]?/g, (m,id)=> S.byId[id] ? ` <a class="lref" href="#/?l=${encodeURIComponent(id)}" title="${esc(title(S.byId[id]))}">näytä ›</a>` : "");
+  return String(t).trim().split(/\n\s*\n/).map(par=>{
+    const ls = par.split("\n").map(x=>x.trim()).filter(Boolean);
+    const li = ls.filter(x=>/^[-•–]\s/.test(x));
+    if(li.length && li.length===ls.length) return `<ul>${li.map(x=>`<li>${inl(x.replace(/^[-•–]\s/,""))}</li>`).join("")}</ul>`;
+    if(li.length) return ls.map(x=>/^[-•–]\s/.test(x)?`<ul><li>${inl(x.replace(/^[-•–]\s/,""))}</li></ul>`:`<p>${inl(x)}</p>`).join("");
+    return `<p>${inl(ls.join(" "))}</p>`;
+  }).join("");
+};
 function renderAI(){
   const el = document.getElementById("aiBody"), tt = document.getElementById("aiTitle"), mb = document.getElementById("aiMore"); if(!el) return;
   const k = S.katsaus[S.aiRole];

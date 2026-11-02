@@ -75,6 +75,8 @@ async function faktat() {
   for (const r of mt ?? []) (M[r.lupa_id] ??= {})[`${r.ikkuna}|${r.jakso}`] = r;
   const mm = (id: string, ik: string, j = "kaikki") => { const r = M[id]?.[`${ik}|${j}`]; return r && r.n >= 5 ? r : null; };
   const rnd = (x: number | null | undefined) => x == null ? null : Math.round(x);
+  const vk = await kaikki(() => db.from("lupa_vaikutus").select("lupa_id,tila,vertailu,pohja_n,aikana_n,vaikutus_s,ajoneuvotunnit_vrk").order("lupa_id"));
+  const V: Record<string, any> = Object.fromEntries(vk.map((r: any) => [r.lupa_id, r]));
   const reitilla = luvat.filter((l) => (l.segmentteja ?? 0) > 0);
   const tiivis = (l: any) => ({
     id: l.lupa_id, osoite: (l.osoite ?? "").split(/,\s*/).slice(0, 2).join(", "), alue: l.kaupunginosa,
@@ -85,6 +87,9 @@ async function faktat() {
     mitattu_7vrk: mm(l.lupa_id, "7d") ? { lisaaika_ajossa_s: rnd(mm(l.lupa_id, "7d").lisa_ajo), lisaseisonta_s: rnd(mm(l.lupa_id, "7d").lisa_seis), havaintoja: mm(l.lupa_id, "7d").n, ajoneuvotunnit_vrk: Math.round((mm(l.lupa_id, "7d").ajoneuvotunnit_vrk ?? 0) * 10) / 10,
       aamuruuhka_s: rnd(mm(l.lupa_id, "7d", "aamu")?.lisa_ajo), iltaruuhka_s: rnd(mm(l.lupa_id, "7d", "ilta")?.lisa_ajo) } : null,
     edellinen_viikko_lisaaika_ajossa_s: rnd(mm(l.lupa_id, "ed7d")?.lisa_ajo),
+    // mitattu_* = arvio (vertailu linjan muihin väleihin); todennettu = sama väli työn aikana vs. ilman työtä
+    todennettu: V[l.lupa_id]?.tila === "todennettu" ? { vaikutus_s: rnd(V[l.lupa_id].vaikutus_s), vertailu: V[l.lupa_id].vertailu === "ennen" ? "ennen työn alkua" : "työn päätyttyä", ohituksia: V[l.lupa_id].aikana_n } : null,
+    mittauksen_tila: V[l.lupa_id]?.tila ?? null,
     tulkinta: l.ai_sijainti ? { sijainti: l.ai_sijainti, vaikutus: l.ai_vaikutus, sulkee: l.ai_sulkee } : null,
   });
   // kasautumat: alkava työ samalle linjalle, jolla on jo työ 0,3–2,5 km päässä
@@ -314,7 +319,10 @@ async function kysy(body: any) {
   } else {
     system = `Olet Työmaatutka-palvelun avustaja. Vastaat kysymyksiin Helsingin katutöiden vaikutuksesta busseihin ja ratikoihin.
 - Käytä VAIN annettua dataa. Jos vastausta ei löydy datasta, sano se ja kerro mitä data sisältää.
-- Vastaa suomeksi, selkeästi, enintään 120 sanaa, ilman markdown-muotoilua (ei tähtiä tai otsikoita; lyhyt luettelo viivoilla on ok). Mainitse luvut ja osoitteet. Viittaa lupiin muodossa [lupa_id].
+- Kirjoita ihmiselle, joka ei ole analyytikko: aloita yhdellä lauseella, joka vastaa kysymykseen suoraan. Sen jälkeen enintään 4 lyhyttä kohtaa viivoilla, yksi asia per kohta.
+- Suomeksi, enintään 110 sanaa, ilman markdownia (ei tähtiä tai otsikoita). Kerro luvut sekunteina per ohitus ja sano, onko luku arvio (vertailu linjan muihin väleihin) vai todennettu (sama väli ilman työtä).
+- Nimeä työ lyhyesti kadunnimellä ja lisää perään lupatunnus hakasulkeissa, esim. "Kinaporinkatu 11 [KP2602835-2]". Älä toista luvan pitkää nimeä.
+- Jos data on vielä ohutta (alle 30 ohitusta), sano se lyhyesti.
 - Älä anna oikeudellisia tai turvallisuusneuvoja.`;
     user = `Data: ${JSON.stringify({ ...f, valittu_lupa: lupa })}\n\nKysymys: ${kysymys}`;
   }
