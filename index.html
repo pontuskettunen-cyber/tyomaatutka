@@ -792,9 +792,13 @@ async function getAll(view, order){
   return out;
 }
 async function get(view){
-  const r = await fetch(API+view, {headers:{apikey:KEY, Authorization:"Bearer "+KEY}});
-  if(!r.ok) throw new Error(view.split("?")[0]+" "+r.status);
-  return r.json();
+  // tunnin välein ajettava raskas päivitys voi hetkeksi hidastaa kantaa: yritetään uudelleen ennen virheilmoitusta
+  for(let yritys = 0; ; yritys++){
+    const r = await fetch(API+view, {headers:{apikey:KEY, Authorization:"Bearer "+KEY}}).catch(()=>null);
+    if(r && r.ok) return r.json();
+    if(yritys >= 3 || (r && r.status < 500)) throw new Error(view.split("?")[0]+" "+(r?r.status:"verkko"));
+    await new Promise(res=>setTimeout(res, 1500*(yritys+1)));
+  }
 }
 function phase(l){
   const now = Date.now(), a = l.alkaa && +new Date(l.alkaa), p = l.paattyy && +new Date(l.paattyy);
