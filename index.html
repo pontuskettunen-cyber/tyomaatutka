@@ -556,6 +556,7 @@ html.hsl #v-home .layer-k{display:none}
 html.hsl #v-home .todo-sec{margin-top:16px}
 html.hsl #v-home .todo{padding:10px 14px}
 @media(max-width:1000px){html.hsl #v-home .nowrow{flex-direction:column;align-items:stretch}html.hsl #v-home .nowctl{justify-content:space-between}}
+.cunit{font:500 11px "IBM Plex Sans";color:var(--m);margin-left:3px;letter-spacing:0}
 </style>
 </head>
 <body>
@@ -1115,7 +1116,7 @@ function renderBrief(){
   const vehH = bd.total;
   const tr = trend();
   document.getElementById("kpis").innerHTML =
-    tile(nf(vehH,1)+" h" + (tr ? ` <span class="trend ${tr.cls}">${tr.txt}</span>` : ""), (per.full ? `lisäaika työmailla / vrk${S.ik==="7d"?" (ka.)":""}` : `bussien ja ratikoiden lisäaika työmailla yhteensä · ${per.dur}`) + `<span class="tsub">${bd.nTod ? `todennettu ${nf(bd.totTod,1)} h · alustava arvio ${nf(bd.total-bd.totTod,1)} h` : "alustava arvio · työmaan vaikutusta ei vielä varmistettu"}</span>`, "menetetty", "bd") +
+    tile(nf(vehH,1)+" h" + (tr ? ` <span class="trend ${tr.cls}">${tr.txt}</span>` : ""), (per.full ? `busseille ja ratikoille kertynyt lisäaika työmaiden kohdalla vuorokaudessa${S.ik==="7d"?" (keskimäärin)":""}` : `busseille ja ratikoille kertynyt lisäaika työmaiden kohdalla, mitattu ${per.dur} ajalta`) + `<span class="tsub">vastaa noin ${nf(Math.round(vehH/8))} kuljettajan 8 tunnin työvuoroa · ${bd.nTod ? `todennettu ${nf(bd.totTod,1)} h, loput arviota` : "alustava arvio"}</span>`, "menetetty", "bd") +
     tile(nf(runR.length), `katutyötä bussi- tai ratikkareitillä<span class="tsub">${nf(run.length)} käynnissä kaikkiaan · ${nf(lineSet.size)} linjaa</span>`, "reitilla", null, "#/tyot") +
     ((S.sug||[]).length ? `<a class="tile" href="#/linjat"><b>${S.sug.length}</b><small>aikatauluagentin ${S.sug.length===1?"ehdotus":"ehdotusta"}<span class="tsub">odottaa suunnittelijan päätöstä</span></small></a>`
       : tile(nf(up7.length), `katutyötä alkaa viikon sisällä<span class="tsub">${nf(up7R.length)} bussi- tai ratikkareitillä · mitataan jo ennen alkua</span>`, "alkaa", null, "#/tyot"));
@@ -1137,12 +1138,12 @@ function renderCards(){
   const titleEl = document.getElementById("cardsTitle");
   const anyImpact = items.some(l=>impact(l)?.vehH > 0.05);
   const anyTod = items.some(l=>impact(l)?.tod);
-  titleEl.textContent = anyImpact ? `Eniten vaikuttavat työt nyt · lisäaika per ohitus${anyTod?"":" (arvio)"}` : "Vilkkaimpien reittien työt nyt";
+  titleEl.textContent = anyImpact ? `Eniten vaikuttavat työt nyt · paljonko jokainen ohi ajava bussi tai ratikka hidastuu${anyTod?"":" (arvio)"}` : "Vilkkaimpien reittien työt nyt";
   const el = document.getElementById("cards");
   el.innerHTML = items.map((l,i)=>{
     const ph = phase(l), im = impact(l);
     let big;
-    if(im && im.s != null) big = `<b class="${im.s>10?"slow":im.s<-10?"fast":""}" title="lisäaika per ohitus${im.n?", n="+im.n:""}">${sgn(im.s)}</b>${im.tod?'<span class="vchip tod">todennettu</span>':""}`;
+    if(im && im.s != null) big = `<b class="${im.s>10?"slow":im.s<-10?"fast":""}" title="Jokainen ohi ajava bussi tai ratikka on tällä kohdalla keskimäärin ${Math.abs(Math.round(im.s))} sekuntia ${im.s>=0?"hitaampi":"nopeampi"} kuin muualla samalla linjalla${im.n?" ("+nf(im.n)+" ohitusta)":""}">${sgn(im.s)}<small class="cunit">/ ohitus</small></b>${im.tod?'<span class="vchip tod">todennettu</span>':""}`;
     else big = `<b title="ajoa / vrk ohi työmaan">${nf(l.ajoja_vrk)}<small style="font-size:11px;color:var(--m)"> ajoa</small></b>`;
     return `<button class="card ${S.sel===l.lupa_id?"sel":""}" data-id="${esc(l.lupa_id)}">
       <div class="hd"><span class="num">${i+1}</span><span class="t">${esc(shortStreet(l))}</span></div>
