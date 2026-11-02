@@ -333,6 +333,20 @@ footer{max-width:1360px;margin:0 auto;padding:0 28px 32px;color:var(--m);font-si
 .hnote{font:500 12px/1 "IBM Plex Sans";color:var(--m);background:var(--l2);padding:4px 8px;border-radius:6px;vertical-align:5px;margin-left:4px}
 .luenae{background:var(--p);border:1px solid var(--l);border-radius:12px;padding:14px 18px;margin:12px 0 20px}
 .luenae ol{margin:6px 0 0;padding-left:20px}.luenae li{margin:6px 0;line-height:1.5}
+.strip.s3{grid-template-columns:1.3fr 1fr 1fr}
+.strip.s3 .tile{padding:12px 14px}.strip.s3 .tile b{font-size:26px}
+.todo-sec{margin:0 0 16px}
+.todos{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.todo{display:flex;flex-direction:column;gap:3px;text-align:left;font:inherit;color:inherit;text-decoration:none;cursor:pointer;background:var(--p);border:1px solid var(--l);border-left:4px solid var(--a);border-radius:10px;padding:12px 14px;min-width:0}
+.todo:hover{border-color:#C9CDC4;box-shadow:0 2px 8px rgba(20,24,29,.06)}
+.todo.red{border-left-color:#B42318}.todo.ind{border-left-color:var(--ind)}.todo.warn2{border-left-color:#B45309}
+.todo small{color:var(--m);font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+.todo b{font-size:16px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.todo span{color:var(--i2);font-size:13.5px;line-height:1.45}
+.todo em{font-style:normal;color:var(--a);font-size:13px;margin-top:auto;padding-top:4px}
+.layer-k{font:500 11.5px "IBM Plex Mono";letter-spacing:.05em;text-transform:uppercase;color:var(--m);margin:22px 0 8px;padding-top:14px;border-top:1px solid var(--l)}
+@media(max-width:1180px){.strip.s3{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:860px){.todos{grid-template-columns:1fr}.strip.s3{grid-template-columns:1fr 1fr}.strip.s3 .tile:first-child{grid-column:1/-1}}
 </style>
 </head>
 <body>
@@ -357,15 +371,20 @@ footer{max-width:1360px;margin:0 auto;padding:0 28px 32px;color:var(--m);font-si
       <h1 class="headline" id="brief">Ladataan tilannekuvaa…</h1></div>
       <div class="seg ik" id="ikSel"><button data-ik="24h" class="on">24 h</button><button data-ik="7d">7 vrk</button></div>
     </div>
-    <div class="strip" id="kpis"></div>
+    <div class="strip s3" id="kpis"></div>
     <div id="breakdown"></div>
   </div>
+  <section class="todo-sec">
+    <div class="h2row"><h2>Tänään huomioitavaa</h2><span class="note">Kolme asiaa, joihin kannattaa reagoida nyt</span></div>
+    <div class="todos" id="todo"></div>
+  </section>
   <section class="ai aic" id="aiBox">
     <div class="aih" id="aiHead"><span class="ai-badge"><i></i>TEKOÄLY</span><span class="ait" id="aiTitle">Ladataan…</span>
       <div class="seg" id="aiRole"><button data-r="hsl" class="on">HSL</button><button data-r="kaupunki">Kaupunki</button><button data-r="viikko" id="aiWeekBtn" style="display:none">Viikko</button></div>
       <button class="ai-more" id="aiMore" aria-expanded="false">Avaa ↓</button></div>
     <div id="aiBody"></div>
   </section>
+  <div class="layer-k">Kartta ja työmaat</div>
   <div class="h2row"><h2 id="cardsTitle">Eniten vaikuttavat työt nyt</h2><a href="#/tyot">Kaikki työmaat →</a></div>
   <div class="cards" id="cards"></div>
   <div class="split fit">
@@ -759,10 +778,18 @@ function renderBrief(){
   const vehH = bd.total;
   const tr = trend();
   document.getElementById("kpis").innerHTML =
-    tile(nf(run.length), "katutyötä käynnissä", "kaynnissa", null, "#/tyot") +
-    tile(nf(runR.length), "reittien varrella", "reitilla", null, "#/tyot") +
     tile(nf(vehH,1)+" h" + (tr ? ` <span class="trend ${tr.cls}">${tr.txt}</span>` : ""), (per.full ? `lisäaika työmailla / vrk${S.ik==="7d"?" (ka.)":""}` : `lisäaika työmailla · ${per.dur}`) + `<span class="tsub">${bd.nTod ? `todennettu ${nf(bd.totTod,1)} h · arvio ${nf(bd.total-bd.totTod,1)} h` : "kaikki vielä arviota"}</span>`, "menetetty", "bd") +
-    ((S.sug||[]).length ? `<a class="tile sigB" href="#/linjat" style="border-left-color:var(--a)"><small>Aikatauluagentti</small><b class="txt">${S.sug.length} ${S.sug.length===1?"ehdotus":"ehdotusta"}</b></a>` : tile(nf(up7.length), "alkaa 7 päivän sisällä", "alkaa", null, "#/tyot")) + sigNext + sigCl;
+    tile(nf(runR.length), `katutyötä bussi- tai ratikkareitillä<span class="tsub">${nf(run.length)} käynnissä kaikkiaan · ${nf(lineSet.size)} linjaa</span>`, "reitilla", null, "#/tyot") +
+    ((S.sug||[]).length ? `<a class="tile" href="#/linjat"><b>${S.sug.length}</b><small>aikatauluagentin ${S.sug.length===1?"ehdotus":"ehdotusta"}<span class="tsub">odottaa suunnittelijan päätöstä</span></small></a>`
+      : tile(nf(up7.length), `alkaa 7 päivän sisällä<span class="tsub">${nf(up7R.length)} reitillä · pohjataso mitataan jo</span>`, "alkaa", null, "#/tyot"));
+  // Taso 2: kolme asiaa, joihin kannattaa reagoida
+  const td = [];
+  const top = rH[0] || r[0];
+  if(top) td.push(`<button class="todo red" data-sel="${esc(top.l.lupa_id)}"><small>Hidastaa eniten nyt</small><b>${esc(shortStreet(top.l))}</b><span>${top.i.s!=null?`${sgn(top.i.s)} per ohitus${top.i.tod?"":" (arvio)"}`:""}${lines(top.l.linjat).length?" · linjat "+esc(lines(top.l.linjat).filter(n=>!/N$/.test(n)).slice(0,5).join(", ")):""}</span><em>Näytä kartalla →</em></button>`);
+  if(next){ const vk = S.vaik?.[next.lupa_id]; td.push(`<button class="todo ind" data-sel="${esc(next.lupa_id)}"><small>Alkaa seuraavaksi · ${fmtDate(next.alkaa)}</small><b>${esc(shortStreet(next))}</b><span>${lines(next.linjat).length?"linjat "+esc(lines(next.linjat).filter(n=>!/N$/.test(n)).slice(0,5).join(", ")):"ei joukkoliikennettä vieressä"}${vk&&vk.pohja_n?` · pohjataso ${nf(vk.pohja_n)} ohitusta mitattu`:""}</span><em>Näytä kartalla →</em></button>`); }
+  if(cl[0]) td.push(`<a class="todo warn2" href="#/tyot"><small>Kasautuma · ${fmtShort(cl[0].lo)}–${cl[0].hi<8e15?fmtShort(cl[0].hi):""}</small><b>${esc(shortStreet(cl[0].a))} + ${esc(shortStreet(cl[0].b))}</b><span>Molemmat linjoilla ${esc(cl[0].shared.slice(0,4).join(", "))}${cl[0].shared.length>4?"…":""}, ${nf(cl[0].dist/1000,1)} km välein: viiveet kasautuvat samalle matkustajalle.</span><em>Kaikki kasautumat (${cl.length}) →</em></a>`);
+  document.getElementById("todo").innerHTML = td.join("");
+  document.querySelectorAll("#todo [data-sel]").forEach(b=>b.onclick=()=>{ select(b.dataset.sel,true); document.querySelector("#v-home .split.fit").scrollIntoView({behavior:"smooth", block:"start"}); });
   document.querySelectorAll("#kpis [data-bd]").forEach(x=>{ const t = e=>{ if(e.target.closest(".info")) return; S.bdOpen = !S.bdOpen; renderBrief(); }; x.onclick = t; x.onkeydown = e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); t(e); } }; });
   wireInfo(document.querySelector(".now"));
   renderBreakdown();
