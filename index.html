@@ -401,6 +401,7 @@ tr.best td{background:#F0F8F3}
 #enPanel{overflow-y:auto}
 @keyframes valkky{0%,100%{background:transparent}30%{background:#FFF1E6}}
 #enOhje.valkkyy{animation:valkky 1.2s}
+.enmove{background:#C2410C;color:#fff;border:2px solid #fff;border-radius:50%;font:700 14px/20px system-ui;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.35);cursor:move}
 .enmid{background:rgba(255,255,255,.85);border:2px solid #C2410C;border-radius:50%;cursor:copy;opacity:.75}
 .enmid:hover{opacity:1}
 .enpt{background:#fff;border:3px solid #C2410C;border-radius:50%;box-shadow:0 1px 3px rgba(0,0,0,.25);cursor:grab}
@@ -1114,7 +1115,16 @@ function drawEn(){
     const casing = L.polygon(EN.rings,{color:"#fff",weight:8,opacity:.9,fill:false,interactive:false}).addTo(EN.layer);
     const fill = L.polygon(EN.rings,{color:"#C2410C",weight:3,fillColor:"#C2410C",fillOpacity:.4,interactive:false}).addTo(EN.layer);
     const paivita = ()=>{ casing.setLatLngs(EN.rings); fill.setLatLngs(EN.rings); };
-    EN.rings.forEach((ring, ri)=>{
+    // koko alueen siirto: yksi kahva keskellä (pienillä alueilla ainoa kahva, koska kulmat olisivat päällekkäin)
+    const bb = L.latLngBounds(EN.rings.flat()), pieni = M.en.distance(bb.getSouthWest(), bb.getNorthEast()) < 18;
+    const mv = L.marker(bb.getCenter(),{draggable:true, icon:L.divIcon({className:"enmove", html:"✥", iconSize:[24,24]}), keyboard:false})
+      .bindTooltip("Raahaa siirtääksesi koko aluetta",{direction:"top", offset:[0,-10]}).addTo(EN.layer);
+    let alku = null, orig = null;
+    mv.on("dragstart", ()=>{ enTalleta(); EN.drag = {m:mv}; alku = mv.getLatLng(); orig = kopioRenkaat(EN.rings); });
+    mv.on("drag", ()=>{ const ll = mv.getLatLng(), dla = ll.lat-alku.lat, dlo = ll.lng-alku.lng; EN.rings.forEach((ring,ri)=>ring.forEach((p,i)=>{ ring[i] = [orig[ri][i][0]+dla, orig[ri][i][1]+dlo]; })); paivita(); });
+    mv.on("dragend", ()=>{ if(!EN.drag) return; EN.drag = null; EN.muok = true; syncRenkaat(); drawEn(); laskeEn(); });
+    mv.on("click", ev=>L.DomEvent.stopPropagation(ev));
+    if(!pieni) EN.rings.forEach((ring, ri)=>{
       ring.forEach((p, i)=>{
         const m = piste(p, "enpt", 14, "Raahaa siirtääksesi · oikea klikkaus poistaa · Esc peruu");
         m.on("dragstart", ()=>{ enTalleta(); EN.drag = {m}; });
@@ -1155,7 +1165,7 @@ function drawEn(){
 }
 function enOhje(){
   const o = document.getElementById("enOhje"), l = EN.lupa && S.byId[EN.lupa];
-  o.innerHTML = l ? `Oranssi alue on <b>${esc(shortStreet(l))}</b> ${EN.muok?"<b>muokattuna</b>":"sellaisenaan kuin se on luvassa"}. Jos suunnitelma muuttuu, raahaa kulmapisteitä. Pienestä välipisteestä saa uuden kulman, oikea klikkaus poistaa. <b>Ctrl+Z</b> peruu. Kokonaan uusi alue: <b>Tyhjennä</b>.`
+  o.innerHTML = l ? `Oranssi alue on <b>${esc(shortStreet(l))}</b> ${EN.muok?"<b>muokattuna</b>":"sellaisenaan kuin se on luvassa"}. Jos suunnitelma muuttuu, siirrä aluetta keskikahvasta ✥ tai raahaa kulmapisteitä. Pienestä välipisteestä saa uuden kulman, oikea klikkaus poistaa kulman. <b>Ctrl+Z</b> peruu. Kokonaan uusi alue: <b>Tyhjennä</b>.`
     : EN.pts.length ? `Lisää pisteitä kadun suuntaisesti tai raahaa niitä. <b>Esc</b> tai <b>Ctrl+Z</b> peruu edellisen muutoksen. Vieritys zoomaa.`
     : `Klikkaa kartalle kaksi tai useampia pisteitä kadun suuntaisesti: työalue piirtyy niiden väliin. Tai valitse alkava lupa yläpuolelta.`;
 }
