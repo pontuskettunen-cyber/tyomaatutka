@@ -9,7 +9,7 @@ create table if not exists hsl_hairiot (
 alter table hsl_hairiot enable row level security;
 
 create or replace view v_hairiot with (security_invoker = false) as
-select id, otsikko, kuvaus, vaikutus, syy, vakavuus, alkaa, paattyy, reitit
+select id, otsikko, kuvaus, vaikutus, syy, vakavuus, alkaa, paattyy, reitit, pysakit
 from hsl_hairiot
 where poistunut is null and (paattyy is null or paattyy > now() - interval '1 day');
 grant select on v_hairiot to anon, authenticated;
