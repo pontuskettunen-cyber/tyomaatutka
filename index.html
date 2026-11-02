@@ -2495,7 +2495,7 @@ async function load(){
     S.ltila = {}; lt.forEach(r=>{ r.dir = String(r.dir); (S.ltila[ln(r.route)] ||= []).push(r); });
     S.nauha = {}; lnh.forEach(r=>{ (S.nauha[ln(r.route)+"|"+r.dir] ||= []).push(r); });
     S.sug = sug;
-    get("v_hairiot").then(h=>{ S.hairiot = h||[]; }).catch(()=>{ S.hairiot = []; });
+    get("v_hairiot").then(h=>{ S.hairiot = Array.isArray(h) && h.length ? h : null; }).catch(()=>{ S.hairiot = null; });
     S.vaik = {}; (await getAll("v_lupa_vaikutus","lupa_id").catch(()=>[])).forEach(r=>S.vaik[r.lupa_id]=r);
     S.mitta = {}; mt.forEach(r=>{ (S.mitta[r.lupa_id] ||= {})[r.ikkuna+"|"+r.jakso] = r; });
     S.mlinja = {}; mlj.forEach(r=>(S.mlinja[r.lupa_id] ||= []).push(r));
