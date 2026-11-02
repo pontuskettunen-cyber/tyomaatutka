@@ -331,6 +331,8 @@ footer{max-width:1360px;margin:0 auto;padding:0 28px 32px;color:var(--m);font-si
 .varm b{margin-right:4px}.varm.tod{background:#E7F3EC}.varm.pohja{background:#EEF0FB}.varm.arvio{background:#FFF7ED}
 .tiivis{font-size:14.5px;line-height:1.5;margin:6px 0 10px;color:var(--i)}
 .hnote{font:500 12px/1 "IBM Plex Sans";color:var(--m);background:var(--l2);padding:4px 8px;border-radius:6px;vertical-align:5px;margin-left:4px}
+.luenae{background:var(--p);border:1px solid var(--l);border-radius:12px;padding:14px 18px;margin:12px 0 20px}
+.luenae ol{margin:6px 0 0;padding-left:20px}.luenae li{margin:6px 0;line-height:1.5}
 </style>
 </head>
 <body>
@@ -433,6 +435,16 @@ footer{max-width:1360px;margin:0 auto;padding:0 28px 32px;color:var(--m);font-si
 <section class="view" id="v-menetelma">
   <div class="prose">
     <h2>Tietoa Työmaatutkasta</h2>
+    <div class="luenae">
+      <h3 style="margin-top:0">Lue näin (1 minuutti)</h3>
+      <ol>
+        <li><b>Tilannekuva</b> vastaa kysymykseen: mikä katutyö hidastaa busseja ja ratikoita eniten juuri nyt? Isoin luku on bussien ja ratikoiden yhteenlaskettu lisäaika työmaiden kohdilla.</li>
+        <li><b>Lisäaika per ohitus</b> kertoo, paljonko yksi bussi tai ratikka hidastuu työmaan kohdalla. +30 s tarkoittaa, että tavallinen ohitus kestää puoli minuuttia pidempään kuin muualla samalla linjalla.</li>
+        <li><b>Arvio vai todennettu?</b> <i>Arvio</i> vertaa työmaan väliä saman linjan muihin väleihin, ja on yläraja. <i>Todennettu</i> vertaa samaa väliä ilman työtä, ennen työn alkua tai sen päätyttyä, ja kertoo työmaan oman vaikutuksen. Sivu kertoo aina, kumpi luku on kyseessä.</li>
+        <li><b>Työmaat</b> näyttää, mitä on tulossa. <b>Linjat</b> näyttää saman linjan kannalta: missä kohtaa reittiä hidastus syntyy ja pitäisikö aikataulua väljentää.</li>
+        <li><b>ⓘ</b> sivun luvuissa avaa selityksen. <b>Kysy tutkalta</b> vastaa vapaisiin kysymyksiin sivun omilla luvuilla.</li>
+      </ol>
+    </div>
     <p>Työmaatutka on itsenäinen konsepti ja toimiva demo HSL:lle. Se näyttää, miten tekoäly ja avoin data voivat tuoda katutöiden vaikutuksen joukkoliikenteeseen näkyviin, mitattuna eikä arvioituna, ja varoittaa ennen kuin haitta kasautuu samalle linjalle.</p>
     <div class="flow" style="grid-template-columns:repeat(3,1fr)">
       <div><b>Kenelle</b>HSL:n liikennesuunnittelu ja matkustajainformaatio sekä kaupungin katulupien käsittely.</div>
@@ -453,13 +465,14 @@ footer{max-width:1360px;margin:0 auto;padding:0 28px 32px;color:var(--m);font-si
       <div><b>1. Luvat</b>Kaivuilmoitukset ja liikennejärjestelyt kaupungin rajapinnasta joka yö.</div>
       <div><b>2. Ajoneuvot</b>Kaikkien bussien ja ratikoiden lähdöt pysäkeiltä 2 min välein.</div>
       <div><b>3. Yhdistäminen</b>Luvan alueen ohi kulkevat pysäkkivälit (alle 40 m).</div>
-      <div><b>4. Mittari</b>Lisäviive linjoittain, ajoneuvotunnit ja tilannekatsaus.</div>
+      <div><b>4. Mittari</b>Lisäaika linjoittain (arvio ja todennettu), ajoneuvotunnit ja tilannekatsaus.</div>
     </div>
     <h3 id="sanasto">Mitä luvut tarkoittavat</h3>
     <dl class="gloss" id="gloss"></dl>
-    <h3>Kaksi mittaria</h3>
-    <p><b>Aikataulusta jääminen.</b> Jokainen ajoneuvo ilmoittaa jokaisella pysäkillä, paljonko se on aikataulusta jäljessä. Kun tämä luku kasvaa työmaan kohdalla enemmän kuin saman linjan muilla pysäkkiväleillä samaan aikaan, erotus on työmaan lisäviive. Mittari toimii heti myös jo käynnissä oleville töille.</p>
-    <p><b>Ennen ja jälkeen.</b> Alkaville töille kerätään perustaso: saman pysäkkivälin, linjan, suunnan, kellonajan ja päivätyypin ajoaika ennen työn alkua. Työn alettua ajoaikaa verrataan tähän perustasoon, ja yleinen ruuhka tai sää vähennetään vertailualueen (Ruskeasuo) avulla. Tämä on tarkempi mittari, mutta se vaatii muutaman päivän perustason.</p>
+    <h3>Kaksi lukua: arvio ja todennettu</h3>
+    <p><b>Arvio.</b> Jokainen bussi ja ratikka ilmoittaa pysäkeillä, paljonko se on aikataulusta jäljessä. Jos jääminen kasvaa työmaan pysäkkivälillä enemmän kuin saman linjan muilla väleillä samaan aikaan, erotus on lisäaika. Ruuhka ja sää vaikuttavat kaikkiin väleihin, joten ne kumoutuvat. Luku toimii heti myös jo käynnissä oleville töille, mutta se on yläraja: osa väleistä on hitaita ilman työtäkin (liikennevalot, keskustan ruuhka).</p>
+    <p><b>Todennettu.</b> Samaa pysäkkiväliä verrataan itseensä: työn aikana vs. ilman työtä, samalla vuorokaudenjaksolla. Ilman työtä -tieto saadaan ennen työn alkua (tutka mittaa myös 60 päivän sisällä alkavien töiden välejä) tai työn päätyttyä (välejä seurataan vielä 14 vrk). Välin pysyvä hitaus kumoutuu, ja jäljelle jää työmaan oma vaikutus. Väli lasketaan, kun molemmilta puolilta on vähintään 3 ohitusta ja linja, kun vähintään 10.</p>
+    <p class="note">Tuotannossa HSL:n oma ajoneuvodatan arkisto antaisi pohjatason heti myös jo käynnissä oleville töille. Arkisto ei ole avoimesti saatavilla, joten demossa käynnissä olevat työt saavat todennetun luvun vasta päättyessään.</p>
     <h3>Matkustajavaikutus</h3>
     <p>Menetetyt ajoneuvotunnit ovat mitattu luku. Matkustajatunnit saadaan kertomalla ne matkustajamäärällä, joka on sivulla toistaiseksi säädettävä oletus, koska ajantasaista avointa kuormitusdataa ei ole. HSL:n oman automaattisen matkustajalaskennan kanssa luku olisi tarkka pysäkkiväli- ja vuorokohtaisesti.</p>
     <h3>Rajoitukset</h3>
@@ -468,9 +481,10 @@ footer{max-width:1360px;margin:0 auto;padding:0 28px 32px;color:var(--m);font-si
       <li>Lupa kertoo, missä työ <em>saa</em> olla, ei sitä, onko kaivinkone paikalla juuri tänään. Siksi mittaus perustuu toteutuneisiin ajoaikoihin eikä lupaan itseensä.</li>
       <li>Pysäkkiväli voidaan liittää useampaan lupaan, jos työt ovat vierekkäin. Silloin vaikutus näkyy kaikilla.</li>
       <li>Keruu on aloitettu 2.11.2026, joten historia on lyhyt ja luvut tarkentuvat päivä päivältä.</li>
+      <li>Jos kaksi työtä on samalla välillä, todennettu luku kertoo niiden yhteisvaikutuksen.</li>
     </ul>
     <h3>Tietosuoja ja vastuullisuus</h3>
-    <p>Työmaatutka ei käsittele henkilötietoja. Ajoneuvodatasta tallennetaan vain kahden tunnin koosteita pysäkkiväleittäin. Lupien hakijoiden ja urakoitsijoiden nimiä ei tallenneta, koska tavoite on koordinointi eikä syyllisten osoittaminen. Kaikki laskenta on avointa ja toistettavaa, ja lähdekoodi on julkinen.</p>
+    <p>Työmaatutka ei käsittele henkilötietoja. Ajoneuvodatasta tallennetaan kahden tunnin koosteita pysäkkiväleittäin sekä työmaiden pysäkkiväleiltä yksittäiset ohitukset ilman ajoneuvon tunnistetta, 21 vuorokauden ajan. Lupien hakijoiden ja urakoitsijoiden nimiä ei tallenneta, koska tavoite on koordinointi eikä syyllisten osoittaminen. Kaikki laskenta on avointa ja toistettavaa, ja lähdekoodi on julkinen.</p>
     <h3>Lähteet</h3>
     <ul>
       <li>HSL High-frequency positioning (HFP v2), <code>mqtt.hsl.fi</code>, CC BY 4.0</li>
