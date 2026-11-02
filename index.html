@@ -315,7 +315,7 @@ footer{max-width:1360px;margin:0 auto;padding:0 28px 32px;color:var(--m);font-si
 @media(min-width:1021px){
   .split.fit{align-items:stretch;height:calc(100vh - var(--toph,76px) - 16px);min-height:520px}
   /* Ennakkoarvio on työkalu: koko näkymä mahtuu yhdelle näytölle ilman sivun vieritystä */
-  #v-ennakko.on{display:flex;flex-direction:column;height:calc(100vh - var(--toph,76px) - 40px);min-height:600px}
+  #v-ennakko.on{display:flex;flex-direction:column;height:calc(100vh - var(--toph,76px) - 40px);min-height:480px}
   #v-ennakko .brief{margin-bottom:12px}
   #v-ennakko .brief p{font-size:16px;line-height:1.45}
   #v-ennakko .split.fit{flex:1;height:auto;min-height:0}
@@ -371,9 +371,9 @@ footer{max-width:1360px;margin:0 auto;padding:0 28px 32px;color:var(--m);font-si
 .rap-grid div{border:1px solid var(--l);border-radius:10px;padding:10px 12px}.rap-grid b{display:block;font:500 22px "IBM Plex Mono"}.rap-grid small{color:var(--m);font-size:12px}
 @media(max-width:720px){.rap{padding:16px}.rap-grid{grid-template-columns:1fr 1fr}}
 @media print{.top,.rap-top,footer,#sys{display:none!important}body{background:#fff}.rap{border:0;padding:0}.view{display:none!important}#v-raportti{display:block!important}}
-.enopt{display:grid;gap:6px;margin-bottom:12px}
-.enopt label{display:grid;grid-template-columns:auto auto 1fr;gap:6px;align-items:baseline;padding:8px 10px;border:1px solid var(--l);border-radius:9px;cursor:pointer;font-size:13.5px}
-.enopt label span{color:var(--m);font-size:12.5px}
+.enopt{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px}
+.enopt label{display:grid;grid-template-columns:auto 1fr;gap:2px 6px;align-items:baseline;padding:7px 9px;border:1px solid var(--l);border-radius:9px;cursor:pointer;font-size:13.5px}
+.enopt label span{grid-column:1/-1;color:var(--m);font-size:11.5px;line-height:1.3}
 .enopt label:has(input:checked){border-color:var(--a);background:#FFF7ED}
 .enrow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
 .enrow label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--m)}
