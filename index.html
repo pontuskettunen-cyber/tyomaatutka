@@ -311,6 +311,12 @@ footer{max-width:1360px;margin:0 auto;padding:0 28px 32px;color:var(--m);font-si
   .split.fit>.panel:not(.mapp)>.list{flex:1;max-height:none;overflow-y:auto}
 }
 .leaflet-container{cursor:grab}.leaflet-dragging .leaflet-container{cursor:grabbing}
+.segctl{background:#fff;border:1px solid var(--l);border-radius:8px;padding:4px;display:flex;gap:4px;align-items:center;font-size:12px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.segctl span{padding:0 6px;color:var(--m)}
+.segctl button{border:0;background:transparent;padding:4px 9px;border-radius:6px;font:inherit;cursor:pointer;color:var(--i2)}
+.segctl button.on{background:var(--i);color:#fff}
+.lmap{height:300px;border:1px solid var(--l);border-radius:10px;margin:10px 0 0;overflow:hidden}
+@media(max-width:720px){.lmap{height:240px}}
 </style>
 </head>
 <body>
@@ -728,6 +734,20 @@ function renderCards(){
   el.querySelectorAll(".card").forEach(c=>c.onclick=()=>select(c.dataset.id,true));
 }
 let Lhome, LhomeSeg, homeFitted=false;
+/* Kartan valitsin: oletuksena vain hidastavat pysäkkivälit, "Kaikki" näyttää loput */
+function segCtl(st){
+  if(!M.home._segCtl){
+    const C = L.Control.extend({onAdd(){ const d = L.DomUtil.create("div","segctl"); L.DomEvent.disableClickPropagation(d); L.DomEvent.disableScrollPropagation(d); return d; }});
+    M.home._segCtl = new C({position:"topright"}).addTo(M.home);
+  }
+  const d = M.home._segCtl.getContainer();
+  if(!st){ d.style.display = "none"; return; }
+  d.style.display = "";
+  d.innerHTML = st.sig
+    ? `<span>Pysäkkivälit</span><button data-a="0" class="${st.showAll?"":"on"}">Hidastavat ${st.sig}</button><button data-a="1" class="${st.showAll?"on":""}">Kaikki ${st.all}</button>`
+    : `<span>Ei selvästi hidastavia välejä · ${st.all} väliä</span>`;
+  d.querySelectorAll("button").forEach(b=>b.onclick=()=>{ S.segAll = b.dataset.a==="1"; renderHomeMap(); });
+}
 /* Työmaan väri kertoo mitatun vaikutuksen. Pysäkkivälit näkyvät vain valitulle työmaalle, katuja pitkin. */
 const SITE = {
   hidastaa: {c:"#B42318", t:"Hidastaa (mitattu)"},
@@ -758,7 +778,12 @@ function renderHomeMap(){
     layer.addTo(Lhome);
   });
   // valitun työmaan pysäkkivälit: valkoinen reunus + väri; vähän mittauksia = katkoviiva ja haalea
-  const segs = (S.segs[S.sel]||[]).slice().sort((a,b)=>(a.lisaviive_s||0)-(b.lisaviive_s||0));
+  const allSegs = S.segs[S.sel]||[];
+  const sig = allSegs.filter(g=>(g.n_24h||0)>=MIN_N && g.lisaviive_s>10);
+  if(S._segFor !== S.sel){ S._segFor = S.sel; S.segAll = false; }
+  const showAll = S.segAll || !sig.length;
+  const segs = (showAll ? allSegs : sig).slice().sort((a,b)=>(a.lisaviive_s||0)-(b.lisaviive_s||0));
+  segCtl(allSegs.length ? {sig:sig.length, all:allSegs.length, showAll} : null);
   const stops = new Map();
   segs.forEach(g=>{
     const pts = Array.isArray(g.viiva) && g.viiva.length>1 ? g.viiva : [[g.from_lat,g.from_lon],[g.to_lat,g.to_lon]];
@@ -1091,7 +1116,7 @@ document.querySelectorAll("#ikSel button").forEach(b=>b.onclick=()=>{ S.ik=b.dat
 S.lMode = "kaikki"; S.lQ = ""; S.lSel = null;
 function lineIndex(){
   const idx = new Map();
-  const add = (name) => { if(!idx.has(name)) idx.set(name, {name, tram:TRAM.has(name), works:new Map(), up:[]}); return idx.get(name); };
+  const add = (name) => { if(!idx.has(name)) idx.set(name, {name, tram:TRAM.has(name), works:new Map(), up:[], raw:new Set()}); return idx.get(name); };
   S.luvat.forEach(l=>{
     if(!onRoute(l)) return;
     const ph = phase(l).k;
@@ -1100,6 +1125,7 @@ function lineIndex(){
     const old = (S.linjat[l.lupa_id]||[]);
     lines(l.linjat).filter(n=>!/N$/.test(n)).forEach(n=>{
       const e = add(n);
+      v2.concat(old).forEach(r=>{ if(ln(r.route)===n) e.raw.add(r.route); });
       if(ph==="tulossa"){ if(+new Date(l.alkaa) < Date.now()+14*DAY) e.up.push(l); return; }
       const rv = v2.filter(r=>ln(r.route)===n && r.ohitukset>=MIN_N);
       const ro = old.filter(r=>ln(r.route)===n);
@@ -1202,6 +1228,7 @@ function renderLinjaDet(e){
   box.innerHTML = `<div class="det">
     <div class="sup"><span class="lbadge ${e.tram?"tram":""}">${esc(e.name)}</span><span class="note">${e.tram?"Raitiovaunu":"Bussi"} · ${S.ik==="7d"?"7 vrk":"24 h"}</span></div>
     <h3>${nf(e.sites)} ${e.sites===1?"työmaa-alue":"työmaa-aluetta"} reitin varrella <span class="note" style="font-weight:400">(${nf(e.works.size)} lupaa)</span></h3>
+    <div class="lmap" id="lMap"></div><div class="note" style="margin:4px 0 10px">Reitti HSL:n avoimesta linjastosta. Työmaan väri: punainen = hidastaa tätä linjaa, harmaa = ei mitattua haittaa, oranssi = mittaus kesken. Punainen viiva = hidastava pysäkkiväli.</div>
     ${e.sug.map(sugCard).join("")}
     ${e.vt.length ? linjaVuorot(e) : `<div class="facts">
       ${dirs.length? dirs.slice(0,2).map(d=>`<div><b class="${e.tot[d]>30?"slow":""}">${sgn(e.tot[d])}</b><small>arvio suunnassa ${d}</small></div>`).join("") : `<div><b>–</b><small>lisäaika kertyy</small></div>`}
@@ -1216,6 +1243,48 @@ function renderLinjaDet(e){
     ${e.up.length && e.works.size ? `<div class="aibox" style="margin-top:12px">Linjalla on jo ${nf(e.works.size)} käynnissä olevaa työtä, ja ${nf(e.up.length)} uutta alkaa kahden viikon sisällä. Aikataulujen ja matkustajatiedotuksen tarkistaminen kannattaa aloittaa nyt.</div>`:""}
     <div style="height:10px"></div></div>`;
   wireInfo(box);
+  linjaKartta(e);
+}
+const ROUTE_GEOM = new Map();
+async function routeGeom(raw){
+  const key = [...raw].sort().join(",");
+  if(ROUTE_GEOM.has(key)) return ROUTE_GEOM.get(key);
+  const q = new URLSearchParams({where:`NUMERO in (${[...raw].map(r=>`'${String(r).replace(/[^0-9A-Za-z]/g,"")}'`).join(",")})`, outFields:"NUMERO,SUUNTA", outSR:"4326", maxAllowableOffset:"0.00003", geometryPrecision:"5", f:"json"});
+  const p = fetch("https://services1.arcgis.com/sswNXkUiRoWtrx0t/ArcGIS/rest/services/HSL_linjasto_ja_pysakit/FeatureServer/2/query?"+q).then(r=>r.json())
+    .then(d=>(d.features||[]).map(f=>({dir:f.attributes.SUUNTA, paths:(f.geometry?.paths||[]).map(p=>p.map(c=>[c[1],c[0]]))}))).catch(()=>[]);
+  ROUTE_GEOM.set(key, p); return p;
+}
+async function linjaKartta(e){
+  const el = document.getElementById("lMap"); if(!el) return;
+  if(M.linja){ M.linja.remove(); M.linja = null; }
+  const m = M.linja = mkMap("lMap"); m.attributionControl.addAttribution("Reitit © HSL, CC BY 4.0");
+  const ids = new Set([...e.works.keys(), ...e.up.map(l=>l.lupa_id)]);
+  const b = L.latLngBounds([]);
+  const geom = await routeGeom(e.raw.size ? e.raw : new Set());
+  if(M.linja !== m) return;   // käyttäjä vaihtoi linjaa haun aikana
+  geom.forEach(g=>{ const pl = L.polyline(g.paths,{color:e.tram?"#00985F":"#1D6FB8", weight:4, opacity:.55, interactive:false}).addTo(m); b.extend(pl.getBounds()); });
+  // linjan hidastavat pysäkkivälit
+  const raws = [...e.raw];
+  ids.forEach(id=>(S.segs[id]||[]).forEach(g=>{
+    if(!(g.linjat||[]).some(r=>raws.includes(r))) return;
+    if((g.n_24h||0) < MIN_N || !(g.lisaviive_s > 10)) return;
+    const pts = Array.isArray(g.viiva)&&g.viiva.length>1 ? g.viiva : [[g.from_lat,g.from_lon],[g.to_lat,g.to_lon]];
+    L.polyline(pts,{color:"#fff", weight:9, opacity:.9, interactive:false}).addTo(m);
+    L.polyline(pts,{color:"#B42318", weight:5}).bindTooltip(`<b>${esc(stopName(g,"from"))} → ${esc(stopName(g,"to"))}</b><br>${sgn(g.lisaviive_s)} per ajo · ${nf(g.n_24h)} ajoa / 24 h`,{sticky:true}).addTo(m);
+  }));
+  ids.forEach(id=>{
+    const l = S.byId[id]; if(!l || !l.geom) return;
+    const w = e.works.get(id), ds = w ? Object.values(w.dirs) : [];
+    const k = !w ? "kesken" : !ds.some(x=>x.v2) ? "kesken" : ds.some(x=>x.s>10) ? "hidastaa" : "ei";
+    const col = w ? SITE[k].c : "#7C3AED";
+    const lay = L.geoJSON(l.geom,{style:{color:col, weight:1.5, fillColor:col, fillOpacity:.35}}).addTo(m);
+    const c = centroid(l.geom);
+    if(c) L.circleMarker(c,{radius:6, weight:2, color:"#fff", fillColor:col, fillOpacity:1})
+      .bindTooltip(`<b>${esc(title(l))}</b><br>${w?(ds.length?ds.map((x,i)=>`suunta ${Object.keys(w.dirs)[i]}: ${sgn(x.s)}`).join(" · "):"mittaus kesken"):"alkaa "+fmtShort(l.alkaa)}<br><span style="color:#6B737B">Klikkaa: avaa työmaa</span>`,{sticky:true})
+      .on("click",()=>{ location.hash = "#/?l="+encodeURIComponent(id); }).addTo(m);
+    if(!geom.length) b.extend(lay.getBounds());
+  });
+  if(b.isValid()) m.fitBounds(b,{padding:[16,16]});
 }
 document.getElementById("lQ").oninput = e => { S.lQ = e.target.value; S.lSel = null; renderLinjat(); };
 document.querySelectorAll("#lMode button").forEach(b=>b.onclick=()=>{ S.lMode=b.dataset.m; S.lSel=null; document.querySelectorAll("#lMode button").forEach(x=>x.classList.toggle("on",x===b)); renderLinjat(); });
