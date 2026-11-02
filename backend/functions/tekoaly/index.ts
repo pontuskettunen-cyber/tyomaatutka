@@ -296,6 +296,27 @@ Kun ajantasausvälit on annettu, ensimmäinen toimenpide on välikohtainen muuto
   return { kirjoitettu: rivit.length };
 }
 
+/* ---------- 2d) ennakkoarvion lausunto- ja tiedoteluonnos ---------- */
+async function lausunto(body: any) {
+  const lask = body?.laskelma;
+  if (!lask || !Array.isArray(lask.linjat)) return { virhe: "Laskelma puuttuu." };
+  const pv = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Helsinki" });
+  const { count } = await db.from("ai_kysely").select("id", { count: "exact", head: true }).eq("pv", pv);
+  if ((count ?? 0) >= PAIVARAJA_KYSY) return { virhe: "Päivän kiintiö on täynnä. Kokeile huomenna uudelleen." };
+  await db.from("ai_kysely").insert({ tyyppi: "lausunto" });
+  const syote = JSON.stringify(lask).slice(0, 12000);
+  const system = `Olet HSL:n liikennesuunnittelun avustaja. Saat Työmaatutkan ennakkoarvion suunnitellusta katutyöstä: mihin linjoihin työ osuu, ohitukset arkipäivänä, arvioitu lisäaika per ohitus (vaihteluväleineen ja perusteineen), ajoitusvaihtoehdot ja samoille linjoille kasautuvat muut työt.
+Kirjoita kaksi tekstiä suomeksi:
+1) "lausunto": HSL:n lausuntoluonnos kaupungille työn liikennejärjestelysuunnitelmasta. Enintään 140 sanaa. Rakenne: vaikutus joukkoliikenteeseen yhdellä lauseella (linjat, ohitukset, lisäaika), HSL:n pyynnöt 2–4 viivakohtana (esim. ajoitus pienimmän haitan aikaan, bussikaistan tai pysäkin säilyttäminen, yhteensovitus kasautuvan työn kanssa), ja maininta että arvio perustuu mitattuun dataan ja on epävarma (vaihteluväli). Älä keksi lukuja, nimiä, pykäliä tai päivämääriä. Jätä vastaanottaja ja allekirjoitus hakasulkeisiin, esim. [käsittelijä].
+2) "tiedote": matkustajatiedote HSL:n kanaviin. Enintään 55 sanaa, selkokieltä: mikä muuttuu, millä linjoilla, milloin ja paljonko matka voi hidastua (minuutteina, pyöristä). Ei teknisiä termejä.
+Jos jokin tieto puuttuu (esim. osoite tai päivämäärät), kirjoita yleisesti ja jätä paikka hakasulkeisiin.
+Vastaa pelkällä JSONilla: {"lausunto": string, "tiedote": string}`;
+  const t = await claude(MALLI_KIRJOITUS, system, syote, 2500);
+  const k = parseJSON(t);
+  if (!k?.lausunto) return { virhe: "Luonnosta ei saatu muodostettua." };
+  return { ok: true, lausunto: String(k.lausunto), tiedote: String(k.tiedote ?? ""), malli: MALLI_KIRJOITUS };
+}
+
 /* ---------- 3) kysy / viestiluonnos ---------- */
 async function kysy(body: any) {
   const kysymys = String(body?.kysymys ?? "").slice(0, 500).trim();
@@ -346,6 +367,7 @@ Deno.serve(async (req) => {
   try {
     if (tila === "luokittele") { const r = await luokittele(); await db.from("tallennin_loki").insert({ funktio: "tekoaly-luokittele", rivit: r.luokiteltu }); return json({ ok: true, ...r }); }
     if (tila === "katsaus") { const r = await katsaus(); await db.from("tallennin_loki").insert({ funktio: "tekoaly-katsaus", rivit: r.kirjoitettu.length }); return json({ ok: true, ...r }); }
+    if (tila === "lausunto") return json(await lausunto(body));
     if (tila === "aikataulu-testi") {
       // kuluttaa kysymyskiintiötä, jotta julkinen kutsu ei voi ajaa mallia rajattomasti
       const pv = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Helsinki" });

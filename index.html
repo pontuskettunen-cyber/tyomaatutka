@@ -963,6 +963,7 @@ function laskeEn(){
     try{
       const r = await fetch(API+"rpc/ennakko_valit", {method:"POST", headers:{apikey:KEY, Authorization:"Bearer "+KEY, "content-type":"application/json"}, body:JSON.stringify({pts})});
       EN.res = r.ok ? await r.json() : [];
+      if(!EN.have){ try{ const kj = await get("rpc/kuormitus_jaksot"); EN.have = new Set(kj.map(x=>x.jakso||x)); }catch(e){ EN.have = new Set(["aamu","paiva","ilta","muu"]); } }
     }catch(e){ EN.res = []; }
     naytaEn();
   }, 250);
@@ -991,8 +992,9 @@ function naytaEn(){
     {k:"koko", t:"Koko vuorokauden", j:["aamu","paiva","ilta","muu"]},
     {k:"paiva", t:"Vain klo 10–14", j:["paiva"]},
     {k:"ei_ruuhka", t:"Ruuhkien ulkopuolella (klo 10–14 ja 18–6)", j:["paiva","muu"]},
-  ].map(x=>({...x, o:x.j.reduce((a,j)=>a+ohit(j),0)})).map(x=>({...x, h:H(x.o,s)}));
-  const paras = sk.slice(1).sort((a,b)=>a.h-b.h)[0], koko = sk[0];
+  ].map(x=>({...x, o:x.j.reduce((a,j)=>a+ohit(j),0), ok:x.j.every(j=>EN.have.has(j))})).map(x=>({...x, h:H(x.o,s)}));
+  const puuttuu = ["aamu","paiva","ilta","muu"].filter(j=>!EN.have.has(j));
+  const paras = sk.slice(1).filter(x=>x.ok).sort((a,b)=>a.h-b.h)[0], koko = sk[0];
   const a = document.getElementById("enA").value, p = document.getElementById("enP").value;
   const kesto = a && p ? Math.max(1, Math.round((new Date(p)-new Date(a))/DAY)+1) : null;
   // kasautumat: sama linja, päällekkäinen aika, alle 1,5 km
@@ -1003,20 +1005,21 @@ function naytaEn(){
   const kesk = m ? `${nf(m.n)} mitatun ${haitta==="pieni"?"pienen":haitta==="suuri"?"suuren":"kohtalaisen"} haitan työn mediaani (vaihteluväli ${sgn(lo)}…${sgn(hi)})` : `oletusarvo, koska tämän haittaluokan mitattuja töitä on vielä alle 3`;
   EN.calc = {haitta, s:Math.round(s), lo:Math.round(lo), hi:Math.round(hi), perusta:kesk, alkaa:a, paattyy:p, kesto,
     linjat:L2.slice(0,12).map(e=>({linja:e.n, suunta:+e.d, ratikka:e.tram, ohitukset_arkipaiva:Math.round(e.vrk), aamuruuhka:Math.round(e.j.aamu||0), iltaruuhka:Math.round(e.j.ilta||0)})),
-    ohitukset_arkipaiva:Math.round(tot), lisaaika_h_vrk:+H(tot,s).toFixed(1), ajoitus:sk.map(x=>({vaihtoehto:x.t, lisaaika_h_vrk:+x.h.toFixed(1)})),
-    paras:{vaihtoehto:paras.t, saasto_pros:koko.h?Math.round((1-paras.h/koko.h)*100):0},
+    ohitukset_arkipaiva:Math.round(tot), lisaaika_h_vrk:+H(tot,s).toFixed(1), ajoitus:sk.filter(x=>x.ok).map(x=>({vaihtoehto:x.t, lisaaika_h_vrk:+x.h.toFixed(1)})),
+    paras: paras && koko.ok ? {vaihtoehto:paras.t, saasto_pros:koko.h?Math.round((1-paras.h/koko.h)*100):0} : null, puuttuvat_jaksot: puuttuu,
     kasautumat:kas.map(o=>({osoite:shortStreet(o.x), lupa_id:o.x.lupa_id, etaisyys_m:Math.round(o.d), yhteiset_linjat:o.yht.slice(0,6), alkaa:o.x.alkaa?fmtDate(o.x.alkaa):null, paattyy:o.x.paattyy?fmtDate(o.x.paattyy):null})),
     osoite: EN.lupa ? title(S.byId[EN.lupa]) : null};
   const nimiL = L2.slice(0,6).map(e=>`${e.n}`).filter((v,i,a)=>a.indexOf(v)===i);
   out.innerHTML = `
-    <p class="tiivis">Työ osuisi <b>${nf(new Set(L2.map(e=>e.n)).size)} linjaan</b> (${esc(nimiL.join(", "))}${new Set(L2.map(e=>e.n)).size>6?"…":""}), noin <b>${nf(tot)} ohitusta arkipäivänä</b>. Arvioitu lisäaika <b>${sgn(s)} per ohitus</b>, eli noin <b>${nf(H(tot,s),1)} h vuorokaudessa</b>${paras && koko.h>0 && paras.h < koko.h*0.8 ? `. Ajoittamalla työn ${paras.t.toLowerCase().replace("vain ","")} haitta pienenee noin ${nf(Math.round((1-paras.h/koko.h)*100))} %` : ""}.</p>
+    <p class="tiivis">Työ osuisi <b>${nf(new Set(L2.map(e=>e.n)).size)} linjaan</b> (${esc(nimiL.join(", "))}${new Set(L2.map(e=>e.n)).size>6?"…":""}), noin <b>${nf(tot)} ohitusta arkipäivänä</b>. Arvioitu lisäaika <b>${sgn(s)} per ohitus</b>, eli noin <b>${nf(H(tot,s),1)} h vuorokaudessa</b>${paras && koko.ok && koko.h>0 && paras.h < koko.h*0.8 ? `. Ajoittamalla työn ${paras.t.toLowerCase().replace("vain ","")} haitta pienenee noin ${nf(Math.round((1-paras.h/koko.h)*100))} %` : ""}.</p>
     <div class="facts">
       <div><b>${nf(H(tot,lo),1)}–${nf(H(tot,hi),1)} h</b><small>lisäaikaa / arkipäivä (vaihteluväli)</small></div>
       <div><b>${kesto && koko.h ? nf(H(tot,s)*kesto,0)+" h" : "–"}</b><small>koko kestolta${kesto?` (${kesto} pv)`:""}</small></div>
       <div><b>${kesto && koko.h ? nf(H(tot,s)*kesto*S.load,0)+" h" : "–"}</b><small>matkustajille (${S.load} hlö/ajo, oletus)</small></div>
     </div>
     <div class="sec">Paras ajoitus</div>
-    <table class="t"><tbody>${sk.map(x=>`<tr class="${x===paras?"best":""}"><td>${esc(x.t)}${x===paras?' <span class="vchip tod">pienin haitta</span>':""}</td><td class="r">${nf(x.h,1)} h / vrk</td><td class="r note">${x===koko?"":(koko.h?"−"+nf(Math.round((1-x.h/koko.h)*100))+" %":"")}</td></tr>`).join("")}</tbody></table>
+    <table class="t"><tbody>${sk.map(x=>`<tr class="${x===paras?"best":""}"><td>${esc(x.t)}${x===paras?' <span class="vchip tod">pienin haitta</span>':""}</td><td class="r">${x.ok?nf(x.h,1)+" h / vrk":'<span class="note">ei vielä dataa</span>'}</td><td class="r note">${x===koko||!x.ok||!koko.ok?"":(koko.h?"−"+nf(Math.round((1-x.h/koko.h)*100))+" %":"")}</td></tr>`).join("")}</tbody></table>
+    ${puuttuu.length?`<div class="note" style="margin-top:4px">Liikennemääriä ei ole vielä mitattu kaikille vuorokaudenajoille (puuttuu: ${puuttuu.map(j=>({aamu:"aamu 6–10",paiva:"päivä 10–14",ilta:"ilta 14–18",muu:"ilta–yö 18–6"})[j]).join(", ")}). Keruu alkoi 2.11., joten luvut täydentyvät vuorokauden kuluessa, ja vuorokausiluvut ovat siihen asti alakanttiin.</div>`:""}
     <div class="note" style="margin-top:4px">Oletus: kun työtä ei tehdä, kaistat ovat auki eikä haittaa synny.</div>
     ${kas.length?`<div class="sec">Kasautuu samoille linjoille</div><ul class="kas">${kas.map(o=>`<li><a href="#/?l=${encodeURIComponent(o.x.lupa_id)}">${esc(shortStreet(o.x))}</a> ${nf(o.d/1000,1)} km päässä, linjat ${esc(o.yht.slice(0,5).join(", "))}${o.x.alkaa?` · ${fmtShort(o.x.alkaa)}–${o.x.paattyy?fmtShort(o.x.paattyy):""}`:""}</li>`).join("")}</ul>`:""}
     <div class="sec">Linjat</div>

@@ -52,3 +52,8 @@ grant execute on function ennakko_valit(jsonb) to anon, authenticated;
 
 select cron.schedule('kuormitus-tunti', '41 * * * *', $$select paivita_kuormitus()$$);
 select paivita_kuormitus();
+
+-- mitkä vuorokaudenjaksot on jo mitattu (sivu kertoo puuttuvista)
+create or replace function kuormitus_jaksot() returns table (jakso text)
+language sql stable security definer set search_path = public as $$ select distinct jakso from vali_kuormitus $$;
+grant execute on function kuormitus_jaksot() to anon, authenticated;
