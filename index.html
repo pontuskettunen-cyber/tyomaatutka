@@ -544,7 +544,7 @@ const INFO = {
 const infoBtn = k => `<button class="info" data-info="${k}" aria-label="Mitä tämä tarkoittaa?">i</button>`;
 function tile(val, label, key, bd, href){
   const inner = `<b>${val}</b><small>${label} ${key?infoBtn(key):""}</small>`;
-  if(bd) return `<button class="tile tbtn ${S.bdOpen?"open":""}" data-bd="1" aria-expanded="${!!S.bdOpen}">${inner}<span class="tmore">${S.bdOpen?"Piilota erittely ↑":"Mistä koostuu ↓"}</span></button>`;
+  if(bd) return `<div class="tile tbtn ${S.bdOpen?"open":""}" data-bd="1" role="button" tabindex="0" aria-expanded="${!!S.bdOpen}">${inner}<span class="tmore">${S.bdOpen?"Piilota erittely ↑":"Mistä koostuu ↓"}</span></div>`;
   return href ? `<a class="tile" href="${href}">${inner}</a>` : `<div class="tile">${inner}</div>`;
 }
 let _pop;
@@ -665,7 +665,7 @@ function renderBrief(){
     tile(nf(runR.length), "reittien varrella", "reitilla", null, "#/tyot") +
     tile(nf(vehH,1)+" h" + (tr ? ` <span class="trend ${tr.cls}">${tr.txt}</span>` : ""), per.full ? `ajoaikaa menetetty / vrk${S.ik==="7d"?" (ka.)":""}` : `ajoaikaa menetetty · ${per.dur}`, "menetetty", "bd") +
     tile(nf(up7.length), "alkaa 7 päivän sisällä", "alkaa", null, "#/tyot") + sigNext + sigCl;
-  document.querySelectorAll("#kpis [data-bd]").forEach(x=>x.onclick=e=>{ if(e.target.closest(".info")) return; S.bdOpen = !S.bdOpen; renderBreakdown(); });
+  document.querySelectorAll("#kpis [data-bd]").forEach(x=>{ const t = e=>{ if(e.target.closest(".info")) return; S.bdOpen = !S.bdOpen; renderBrief(); }; x.onclick = t; x.onkeydown = e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); t(e); } }; });
   wireInfo(document.querySelector(".now"));
   renderBreakdown();
 }
