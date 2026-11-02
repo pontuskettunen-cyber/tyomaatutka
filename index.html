@@ -87,6 +87,31 @@ main{max-width:1360px;margin:0 auto;padding:24px 28px 32px}
 .lrow .x small{display:block;font:400 11.5px "IBM Plex Sans";color:var(--m)}
 .share{border:1px solid var(--l);background:var(--p);border-radius:7px;padding:3px 9px;font-size:12px;color:var(--i2);margin-left:auto}
 .stopn{font-weight:500}.stopc{font:400 11.5px "IBM Plex Mono";color:var(--m)}
+.nowrow{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;margin-bottom:12px}
+.nowrow .headline{margin:0;font-size:23px}
+.strip{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
+.tile{display:block;text-decoration:none;color:inherit;background:var(--p);border:1px solid var(--l);border-radius:10px;padding:8px 11px;min-width:0}
+.tile b{display:block;font:500 19px/1.2 "IBM Plex Mono";letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile b.txt{font:600 14px/1.35 "IBM Plex Sans";letter-spacing:0;margin:2px 0}
+.tile small{display:block;color:var(--m);font-size:11.5px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile.sigA{border-left:3px solid var(--ind)}.tile.sigB{border-left:3px solid #B45309}
+a.tile:hover{border-color:#C9CDC4}
+@media(max-width:1180px){.strip{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:720px){.nowrow{flex-direction:column;align-items:stretch;gap:8px}.nowrow .headline{font-size:19px}.strip{grid-template-columns:repeat(2,minmax(0,1fr))}.tile b{font-size:17px}}
+.aic{margin-bottom:14px}
+.aih{display:flex;align-items:center;gap:12px;padding:9px 14px;background:linear-gradient(90deg,#FFF7F1,transparent)}
+.aih .ait{flex:1;min-width:0;font-weight:600;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.aih .seg button{padding:4px 10px;font-size:12.5px}
+.aireco1{padding:0 14px 10px;font-size:13.5px;color:var(--i2)}
+.aireco1 b{color:var(--i)}
+@media(max-width:720px){.aih{flex-wrap:wrap;gap:6px 10px}.aih .ait{flex-basis:100%;white-space:normal;order:3}}
+.card{min-height:0;padding:10px 12px;gap:4px}
+.card .w{-webkit-line-clamp:1}
+.card .big b{font-size:19px}
+.cards{margin-bottom:14px}
+.h2row{margin-bottom:8px}
+.now{margin-bottom:12px}
+.det{padding:14px 16px 6px}.det h3{font-size:19px}.facts{margin:10px 0}.sec{margin:14px 0 6px}
 /* KPI strip */
 .kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:18px}
 @media(max-width:860px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -255,15 +280,18 @@ footer{max-width:1360px;margin:0 auto;padding:0 28px 32px;color:var(--m);font-si
 <section class="view" id="v-home">
   <div class="intro" id="intro"><span><b>Työmaatutka</b> on konsepti HSL:lle: se mittaa avoimesta datasta, paljonko Helsingin katutyöt hidastavat busseja ja ratikoita, ja varoittaa etukäteen töistä, jotka osuvat samoille linjoille. Tekijä Pontus Kettunen.</span><a href="#/menetelma">Miten tämä toimii →</a><button aria-label="Sulje esittely" id="introX">×</button></div>
   <div class="now" aria-live="polite">
-    <div class="now-k"><span class="dot on"></span><span id="briefWhen">Tilanne nyt</span><div class="seg ik" id="ikSel" style="text-transform:none;letter-spacing:0"><button data-ik="24h" class="on">24 h</button><button data-ik="7d">7 vrk</button></div></div>
-    <h1 class="headline" id="brief">Ladataan tilannekuvaa…</h1>
-    <div class="signals" id="signals"></div>
+    <div class="nowrow">
+      <div style="min-width:0"><div class="now-k"><span class="dot on"></span><span id="briefWhen">Tilanne nyt</span></div>
+      <h1 class="headline" id="brief">Ladataan tilannekuvaa…</h1></div>
+      <div class="seg ik" id="ikSel"><button data-ik="24h" class="on">24 h</button><button data-ik="7d">7 vrk</button></div>
+    </div>
+    <div class="strip" id="kpis"></div>
   </div>
-  <div class="kpis" id="kpis"></div>
-  <section class="ai" id="aiBox">
-    <div class="ph"><span class="ai-badge"><i></i>TEKOÄLYN KATSAUS</span>
-      <div class="seg" id="aiRole"><button data-r="hsl" class="on">HSL</button><button data-r="kaupunki">Kaupunki</button><button data-r="viikko" id="aiWeekBtn" style="display:none">Viikko</button></div></div>
-    <div id="aiBody"><div class="ai-off">Ladataan…</div></div>
+  <section class="ai aic" id="aiBox">
+    <div class="aih" id="aiHead"><span class="ai-badge"><i></i>TEKOÄLY</span><span class="ait" id="aiTitle">Ladataan…</span>
+      <div class="seg" id="aiRole"><button data-r="hsl" class="on">HSL</button><button data-r="kaupunki">Kaupunki</button><button data-r="viikko" id="aiWeekBtn" style="display:none">Viikko</button></div>
+      <button class="ai-more" id="aiMore" aria-expanded="false">Avaa ↓</button></div>
+    <div id="aiBody"></div>
   </section>
   <div class="h2row"><h2 id="cardsTitle">Eniten vaikuttavat työt nyt</h2><a href="#/tyot">Kaikki työmaat →</a></div>
   <div class="cards" id="cards"></div>
@@ -494,17 +522,18 @@ function renderBrief(){
   else sig.push(`<a class="sig" href="#/tyot"><small>Reittien varrella</small><b>${nf(runR.length)} käynnissä olevaa työtä</b><span>${nf(lineSet.size)} linjaa kulkee ohi</span></a>`);
   if(next) sig.push(`<a class="sig ind" href="#/?l=${encodeURIComponent(next.lupa_id)}"><small>Seuraavaksi alkaa</small><b>${esc(shortStreet(next))}</b><span>${fmtDate(next.alkaa)}${lines(next.linjat).length?" · linjat "+esc(lines(next.linjat).slice(0,4).join(", ")):""}</span></a>`);
   sig.push(`<a class="sig warn2" href="#/tyot"><small>Kasautumat</small><b>${cl.length ? `${cl.length} ${cl.length===1?"kohde":"kohdetta"}` : "Ei kasautumia"}</b><span>${cl[0] ? esc(shortStreet(cl[0].a))+" + "+esc(shortStreet(cl[0].b)) : "seuraavan 14 päivän aikana"}</span></a>`);
-  document.getElementById("signals").innerHTML = sig.join("");
+  const sigNext = next ? `<a class="tile sigA" href="#/?l=${encodeURIComponent(next.lupa_id)}"><small>Seuraavaksi alkaa · ${fmtDate(next.alkaa)}</small><b class="txt">${esc(shortStreet(next))}</b></a>` : "";
+  const sigCl = `<a class="tile sigB" href="#/tyot"><small>Kasautumat 14 pv</small><b class="txt">${cl.length ? `${cl.length} ${cl.length===1?"kohde":"kohdetta"}` : "Ei kasautumia"}</b></a>`;
   const upd = all.map(l=>l.paivitetty).filter(Boolean).sort().pop();
   document.getElementById("briefWhen").textContent = "Tilanne nyt · päivitetty " + ago(upd);
 
   const vehH = runR.reduce((s,l)=>{ const i = impact(l); return s + (i && i.vehH>0 ? i.vehH : 0); },0);
   document.getElementById("kpis").innerHTML = [
-    [nf(run.length), "katutyötä käynnissä Helsingissä"],
-    [nf(runR.length), "joukkoliikenteen reitin varrella"],
-    [nf(vehH,1)+" h", `ajoneuvotunteja menetetty / vrk${S.ik==="7d"?" (7 vrk ka.)":""}`],
-    [nf(up7.length), "alkaa seuraavan 7 päivän aikana"],
-  ].map(([b,s])=>`<div class="kpi"><b>${b}</b><small>${s}</small></div>`).join("");
+    [nf(run.length), "katutyötä käynnissä"],
+    [nf(runR.length), "reittien varrella"],
+    [nf(vehH,1)+" h", `menetetty / vrk${S.ik==="7d"?" (7 vrk ka.)":""}`],
+    [nf(up7.length), "alkaa 7 päivän sisällä"],
+  ].map(([b,s])=>`<div class="tile"><b>${b}</b><small>${s}</small></div>`).join("") + sigNext + sigCl;
 }
 function renderCards(){
   let items = ranked().slice(0,6).map(x=>x.l);
@@ -521,7 +550,7 @@ function renderCards(){
       <div class="hd"><span class="num">${i+1}</span><span class="st ${ph.k}">${esc(ph.txt)}</span></div>
       <div class="t">${esc(title(l))}</div>
       <div class="w">${esc(purpose(l))}</div>
-      <div class="chips">${lines(l.linjat).filter(r=>!/N$/.test(r)).slice(0,4).map(r=>`<span class="chip">${esc(r)}</span>`).join("")}${lines(l.linjat).filter(r=>!/N$/.test(r)).length>4?`<span class="chip">+${lines(l.linjat).filter(r=>!/N$/.test(r)).length-4}</span>`:""}</div>
+      <div class="chips">${lines(l.linjat).filter(r=>!/N$/.test(r)).slice(0,3).map(r=>`<span class="chip">${esc(r)}</span>`).join("")}${lines(l.linjat).filter(r=>!/N$/.test(r)).length>3?`<span class="chip">+${lines(l.linjat).filter(r=>!/N$/.test(r)).length-3}</span>`:""}</div>
       <div class="big">${big}</div>
     </button>`;
   }).join("") || `<div class="empty">Ei mitattavia töitä vielä.</div>`;
@@ -938,28 +967,22 @@ async function fn(body){
 }
 const linkLupa = t => esc(t).replace(/\*\*(.+?)\*\*/g,"<b>$1</b>").replace(/\[?\b([A-Z]{2}\d{5,}(?:-\d+)?)\b\]?/g, (m,id)=> S.byId[id] ? `<a href="#/?l=${encodeURIComponent(id)}">${esc(title(S.byId[id]))}</a>` : id);
 function renderAI(){
-  const el = document.getElementById("aiBody"); if(!el) return;
+  const el = document.getElementById("aiBody"), tt = document.getElementById("aiTitle"), mb = document.getElementById("aiMore"); if(!el) return;
   const k = S.katsaus[S.aiRole];
   if(!k){
-    el.innerHTML = S.ai === false
-      ? `<div class="ai-off">Tekoälykerros on rakennettu ja odottaa API-avainta. Kun avain on lisätty, Claude tulkitsee jokaisen luvan tekstin (sulkeeko työ kaistan, raitiotien tai pysäkin) ja kirjoittaa tähän katsauksen HSL:lle ja kaupungille kolmen tunnin välein. Luvut lasketaan aina koodilla, tekoäly vain selittää ne.</div>`
-      : `<div class="ai-off">Ensimmäinen katsaus kirjoitetaan seuraavalla ajokerralla (klo 6, 9, 12, 15, 18 ja 21).</div>`;
-    return;
+    tt.textContent = S.ai === false ? "Tekoälykerros odottaa API-avainta" : "Ensimmäinen katsaus kirjoitetaan seuraavalla ajokerralla";
+    el.innerHTML = ""; mb.style.display = "none"; return;
   }
-  const c = k.sisalto || {};
-  const first = t => { const m = String(t||"").match(/^.+?[.!?](?=\s|$)/); return m ? m[0] : t; };
-  const items = (c.kohdat||[]);
-  const li = (x, short) => `<li>${esc(short ? first(x.teksti) : x.teksti)}${x.lupa_id && S.byId[x.lupa_id]?` <a href="#/?l=${encodeURIComponent(x.lupa_id)}">${esc(shortStreet(S.byId[x.lupa_id]))} →</a>`:""}</li>`;
-  el.innerHTML = `<div class="ai-body">
-    <h3>${esc(c.otsikko||"")}</h3>
-    ${c.tiivis?`<p style="margin:-4px 0 10px;color:var(--i2)">${esc(c.tiivis)}</p>`:""}
-    ${c.suositus?`<div class="ai-reco" style="margin-bottom:10px"><b>Suositus:</b> ${esc(c.suositus)}</div>`:""}
-    ${S.aiOpen ? `<ol>${items.map(x=>li(x,false)).join("")}</ol>` : `<ol class="ai-short">${items.slice(0,3).map(x=>li(x,true)).join("")}</ol>`}
-    ${items.length ? `<button class="ai-more" id="aiMore">${S.aiOpen ? "Näytä lyhyesti ↑" : `Lue koko katsaus (${items.length} kohtaa) ↓`}</button>` : ""}
-    <div class="ai-meta">Kirjoittanut ${esc(k.malli||"Claude")} ${ago(k.luotu)} mitatuista luvuista. Tarkista luvut työmaan tiedoista ennen päätöksiä.</div>
-  </div>`;
-  const mb = document.getElementById("aiMore"); if(mb) mb.onclick = ()=>{ S.aiOpen = !S.aiOpen; renderAI(); };
+  const c = k.sisalto || {}, items = (c.kohdat||[]);
+  tt.textContent = c.otsikko || "Tilannekatsaus";
+  mb.style.display = items.length ? "" : "none";
+  mb.textContent = S.aiOpen ? "Sulje ↑" : "Avaa ↓"; mb.setAttribute("aria-expanded", S.aiOpen);
+  const li = x => `<li>${esc(x.teksti)}${x.lupa_id && S.byId[x.lupa_id]?` <a href="#/?l=${encodeURIComponent(x.lupa_id)}">${esc(shortStreet(S.byId[x.lupa_id]))} →</a>`:""}</li>`;
+  el.innerHTML = (c.suositus ? `<div class="aireco1"><b>Suositus:</b> ${esc(c.suositus)}</div>` : "")
+    + (S.aiOpen ? `<div class="ai-body" style="padding-top:0">${c.tiivis?`<p style="margin:0 0 8px;color:var(--i2)">${esc(c.tiivis)}</p>`:""}<ol>${items.map(li).join("")}</ol>
+      <div class="ai-meta">Kirjoittanut ${esc(k.malli||"Claude")} ${ago(k.luotu)} mitatuista luvuista. Tarkista luvut työmaan tiedoista ennen päätöksiä.</div></div>` : "");
 }
+document.getElementById("aiMore").onclick = ()=>{ S.aiOpen = !S.aiOpen; renderAI(); };
 document.querySelectorAll("#aiRole button").forEach(b=>b.onclick=()=>{ S.aiRole=b.dataset.r; document.querySelectorAll("#aiRole button").forEach(x=>x.classList.toggle("on",x===b)); renderAI(); });
 async function ask(q){
   const out = document.getElementById("askOut");
