@@ -1,0 +1,23 @@
+name: Ajantasauspysäkit (HSL GTFS)
+on:
+  schedule:
+    - cron: "17 2 * * 1"   # maanantaisin 04.17/05.17 Suomen aikaa
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  paivita:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: Laske ajantasauspysäkit
+        run: python scripts/ajantasaus.py
+      - name: Tallenna jos muuttui
+        run: |
+          git config user.name "tyomaatutka-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/ajantasaus.json
+          git diff --cached --quiet || (git commit -m "Ajantasauspysäkit päivitetty" && git push)

@@ -1,0 +1,80 @@
+"""Työmaatutka – ajantasauspysäkit HSL:n GTFS-aineistosta.
+
+Tuottaa data/ajantasaus.json:
+  { "paivitetty": ..., "linjat": { "1004|1": { "pysakit": [[stop, tp], ...],      # yleisimmän ajoreitin pysäkit järjestyksessä, tp=1 ajantasauspysäkki
+                                              "vuoroja": n,
+                                              "ajat": { "aamu": [min, ...], "ilta": [...], "paiva": [...] } } } }
+  ajat = aikataulun mukainen ajoaika (min, mediaani) peräkkäisten ajantasauspysäkkien välillä arkipäivän vuoroissa.
+Reittitunnus ja suunta luetaan trip_id:stä (muoto ROUTE_PVM_PÄIVÄTYYPPI_SUUNTA_LÄHTÖAIKA), samat kuin HFP:ssä.
+"""
+import csv, io, json, statistics, sys, urllib.request, zipfile, datetime, collections
+
+URL = "https://infopalvelut.storage.hsldev.com/gtfs/hsl.zip"
+path = sys.argv[1] if len(sys.argv) > 1 else "hsl.zip"
+if len(sys.argv) <= 1:
+    urllib.request.urlretrieve(URL, path)
+
+def mins(t):
+    h, m, s = (int(x) for x in t.split(":"))
+    return h * 60 + m + s / 60
+
+def jakso(start):
+    h = int(start[:2])
+    return "aamu" if 7 <= h < 9 else "paiva" if 9 <= h < 15 else "ilta" if 15 <= h < 18 else None
+
+patterns = collections.Counter()          # (route, dir, pattern) -> trips
+ajat = collections.defaultdict(list)      # (route, dir, pattern, jakso) -> [[min between tps], ...]
+
+def flush(trip, rows):
+    if not trip or not rows:
+        return
+    parts = trip.split("_")
+    if len(parts) < 5:
+        return
+    route, dtype, d, start = parts[0], parts[2], parts[3], parts[4]
+    rows.sort(key=lambda r: r[0])
+    pat = tuple((r[1], r[2]) for r in rows)
+    key = (route, d, pat)
+    patterns[key] += 1
+    j = jakso(start)
+    if j and dtype not in ("La", "Su"):       # arkipäivät
+        tp = [r[3] for r in rows if r[2] == 1]
+        if len(tp) >= 2:
+            ajat[key + (j,)].append([round(tp[i + 1] - tp[i], 2) for i in range(len(tp) - 1)])
+
+with zipfile.ZipFile(path) as z, z.open("stop_times.txt") as f:
+    rd = csv.reader(io.TextIOWrapper(f, encoding="utf-8-sig", newline=""))
+    hdr = next(rd)
+    I = {k: hdr.index(k) for k in ("trip_id", "departure_time", "stop_id", "stop_sequence", "timepoint")}
+    cur, rows = None, []
+    for r in rd:
+        t = r[I["trip_id"]]
+        if t != cur:
+            flush(cur, rows)
+            cur, rows = t, []
+        try:
+            stop = int(r[I["stop_id"]])
+        except ValueError:
+            continue
+        rows.append((int(r[I["stop_sequence"]]), stop, 1 if r[I["timepoint"]] == "1" else 0, mins(r[I["departure_time"]])))
+    flush(cur, rows)
+
+best = {}
+for (route, d, pat), n in patterns.items():
+    k = f"{route}|{d}"
+    if k not in best or n > best[k][1]:
+        best[k] = (pat, n)
+
+out = {}
+for k, (pat, n) in best.items():
+    route, d = k.split("|")
+    e = {"pysakit": [list(p) for p in pat], "vuoroja": n, "ajat": {}}
+    for j in ("aamu", "paiva", "ilta"):
+        L = ajat.get((route, d, pat, j))
+        if L:
+            e["ajat"][j] = [round(statistics.median(x[i] for x in L), 1) for i in range(len(L[0]))]
+    out[k] = e
+
+json.dump({"paivitetty": datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%MZ"), "lahde": "HSL GTFS (CC BY 4.0)", "linjat": out},
+          open("data/ajantasaus.json", "w"), ensure_ascii=False, separators=(",", ":"))
+print(f"linjasuuntia {len(out)}")
