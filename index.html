@@ -400,7 +400,7 @@ function phase(l){
   return {k:"kaynnissa", txt:"Käynnissä"};
 }
 // vaikutuksen pääluku: ensisijaisesti ennen/jälkeen (jos perustaso), muuten aikataulusta jääminen
-const MIN_N = 5;
+const MIN_N = 10;
 const mitta = (id, ik, j="kaikki") => (S.mitta[id]||{})[ik+"|"+j];
 function impact(l){
   const m = mitta(l.lupa_id, S.ik);
@@ -456,7 +456,8 @@ function renderBrief(){
   const next = up7R.slice().sort((a,b)=>new Date(a.alkaa)-new Date(b.alkaa))[0] || up7.slice().sort((a,b)=>new Date(a.alkaa)-new Date(b.alkaa))[0];
   // Otsikko: yksi lause, joka muuttuu datan mukana
   let head;
-  if(r.length){ const t = r[0]; head = `<em>${esc(shortStreet(t.l))}</em> hidastaa joukkoliikennettä eniten${t.i.s!=null?`: ${sgn(t.i.s)} per ohitus`:""}.`; }
+  const rH = r.filter(x=>x.i.kind!=="v2" || x.i.n>=20);
+  if(rH.length){ const t = rH[0]; head = `<em>${esc(shortStreet(t.l))}</em> hidastaa joukkoliikennettä eniten${t.i.s!=null?`: ${sgn(t.i.s)} per ohitus`:""}.`; }
   else head = `${nf(runR.length)} katutyötä bussi- ja ratikkareittien varrella. Vaikutusmittaus käynnistyy.`;
   document.getElementById("brief").innerHTML = head;
   // Kolme signaalia: suurin vaikutus, seuraavaksi alkava, kasautumat
@@ -644,7 +645,8 @@ function clashes(){
     const lo = Math.max(+new Date(a.alkaa), +new Date(b.alkaa)), hi = Math.min(+new Date(a.paattyy||8e15), +new Date(b.paattyy||8e15));
     if(hi <= lo || !c[i] || !c[j]) continue;
     const dist = Math.hypot((c[i][0]-c[j][0])*111200, (c[i][1]-c[j][1])*55800);
-    if(dist > 2500) continue;
+    if(dist > 1500) continue;
+    if(a.ai_vaikutus === "ei" || a.ai_vaikutus === "pieni") continue; // tekoäly: työ ei haittaa ajoneuvoliikennettä
     const shared = lines(a.linjat).filter(r=>lines(b.linjat).includes(r) && !/N$/.test(r));
     if(!shared.length) continue;
     const key = [cl[i],cl[j]].sort().join("|"), prev = best.get(key);
@@ -671,7 +673,7 @@ function renderTyot(){
   const lineSet = new Set(upR.flatMap(l=>lines(l.linjat)));
   document.getElementById("tyotBrief").innerHTML = `Seuraavan 14 päivän aikana alkaa <strong>${nf(up.length)} katutyötä</strong>. Niistä <strong>${nf(upR.length)}</strong> on bussi- tai ratikkareitin varrella, ja ne koskettavat ${nf(lineSet.size)} linjaa. Kaikki ${nf(all.filter(l=>phase(l).k==="kaynnissa").length)} käynnissä olevaa työtä löytyvät suodattimella <em>Käynnissä</em>.`;
   const cl = clashes();
-  document.getElementById("clash").innerHTML = cl.length ? `<div class="warn"><h4>Kasautuvat työt samoilla linjoilla (${cl.length})</h4><div class="note" style="margin-bottom:6px">Uusi työ alkaa linjalle, jolla on jo toinen työ alle 2,5 km päässä. Viiveet kasautuvat samalle matkustajalle.</div><ul>${cl.slice(0,5).map(c=>`<li><b>${esc(title(c.a))}</b> alkaa ${fmtDate(c.a.alkaa)} linjoilla ${c.shared.slice(0,6).map(esc).join(", ")}${c.shared.length>6?"…":""}, joilla on jo työ ${nf(c.dist/1000,1)} km päässä (<b>${esc(title(c.b))}</b>). Yhtä aikaa ${fmtShort(c.lo)}–${c.hi<8e15?fmtShort(c.hi):""}.</li>`).join("")}</ul></div>` : "";
+  document.getElementById("clash").innerHTML = cl.length ? `<div class="warn"><h4>Kasautuvat työt samoilla linjoilla (${cl.length})</h4><div class="note" style="margin-bottom:6px">Uusi ajoneuvoliikennettä haittaava työ alkaa linjalle, jolla on jo toinen työ alle 1,5 km päässä. Viiveet kasautuvat samalle matkustajalle.</div><ul>${cl.slice(0,5).map(c=>`<li><b>${esc(title(c.a))}</b> alkaa ${fmtDate(c.a.alkaa)} linjoilla ${c.shared.slice(0,6).map(esc).join(", ")}${c.shared.length>6?"…":""}, joilla on jo työ ${nf(c.dist/1000,1)} km päässä (<b>${esc(title(c.b))}</b>). Yhtä aikaa ${fmtShort(c.lo)}–${c.hi<8e15?fmtShort(c.hi):""}.</li>`).join("")}</ul></div>` : "";
   const items = filtered();
   document.getElementById("listTitle").textContent = `${nf(items.length)} työtä`;
   const el = document.getElementById("list");
