@@ -313,7 +313,12 @@ footer{max-width:1360px;margin:0 auto;padding:0 28px 32px;color:var(--m);font-si
 @media(max-width:720px){.agentbar{flex-direction:column;align-items:flex-start;gap:4px}.suggrid{grid-template-columns:1fr}}
 /* Kartta ja viereinen paneeli yhtä korkeiksi: kumpikin täyttää näkymän, oikea vierii itsenäisesti */
 @media(min-width:1021px){
-  .split.fit{align-items:stretch;height:calc(100vh - 92px);min-height:520px}
+  .split.fit{align-items:stretch;height:calc(100vh - var(--toph,76px) - 16px);min-height:520px}
+  /* Ennakkoarvio on työkalu: koko näkymä mahtuu yhdelle näytölle ilman sivun vieritystä */
+  #v-ennakko.on{display:flex;flex-direction:column;height:calc(100vh - var(--toph,76px) - 40px);min-height:600px}
+  #v-ennakko .brief{margin-bottom:12px}
+  #v-ennakko .brief p{font-size:16px;line-height:1.45}
+  #v-ennakko .split.fit{flex:1;height:auto;min-height:0}
   .split.fit>.panel{position:static!important;display:flex;flex-direction:column;min-height:0}
   .split.fit>.panel.mapp>.map{flex:1;height:auto;min-height:0}
   .split.fit>.panel:not(.mapp){overflow-y:auto;overscroll-behavior:contain}
@@ -534,14 +539,14 @@ tr.best td{background:#F0F8F3}
 
 <!-- ================= ENNAKKOARVIO ================= -->
 <section class="view" id="v-ennakko">
-  <div class="brief"><div class="k">Ennakkoarvio<span class="forpro">HSL:n suunnittelijoille</span></div><p><b>Mitä jos?</b> Piirrä suunniteltu työ kartalle tai valitse alkava lupa. Tutka arvioi ennen työn alkua, mihin linjoihin se osuu, paljonko lisäaikaa se tuo ja mihin aikaan työ kannattaa tehdä. Arvio perustuu mitattuihin liikennemääriin ja samantyyppisten käynnissä olevien töiden mitattuun vaikutukseen.</p></div>
+  <div class="brief"><div class="k">Ennakkoarvio<span class="forpro">HSL:n suunnittelijoille</span></div><p><b>Mitä jos?</b> Piirrä suunniteltu työ kartalle tai valitse alkava lupa. Tutka arvioi ennen työn alkua, mihin linjoihin se osuu, paljonko lisäaikaa se tuo ja mihin aikaan työ kannattaa tehdä.</p></div>
   <div class="split fit">
     <div class="panel mapp">
       <div class="ph"><h2>Työalue</h2>
         <select id="enLupa" class="search" style="max-width:340px"><option value="">Valitse alkava lupa…</option></select>
         <div class="seg"><button id="enUndo" type="button">Kumoa piste</button><button id="enClear" type="button">Tyhjennä</button></div>
       </div>
-      <div class="note" id="enOhje" style="padding:6px 16px 8px;border-bottom:1px solid var(--l)"></div>
+      <div class="note" id="enOhje" style="padding:5px 16px 6px;border-bottom:1px solid var(--l);font-size:12.5px;line-height:1.4"></div>
       <div class="map" id="mapE"></div>
     </div>
     <div class="panel" id="enPanel">
@@ -765,12 +770,15 @@ const baseCover = l => Math.min(1, (l.perustaso_ikkunat||0)/12);
     if(dx || dy) L.DomUtil.setPosition(el, p.add([dx, dy]));
   };
 })();
+function setTopH(){ const t = document.querySelector(".top"); if(t) document.documentElement.style.setProperty("--toph", t.offsetHeight+"px"); }
+addEventListener("resize", ()=>{ setTopH(); Object.values(M||{}).forEach(m=>m&&m.invalidateSize&&m.invalidateSize()); });
 function mkMap(id, extra){
   const m = L.map(id,{zoomControl:true, scrollWheelZoom:true, wheelPxPerZoomLevel:90, wheelDebounceTime:25, zoomSnap:0.25, zoomDelta:0.5, preferCanvas:true, ...(extra||{})}).setView([60.18,24.94],13);
   L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,className:"tiles",attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}).addTo(m);
   return m;
 }
 const M = {};
+setTopH();
 function centroid(g){
   let sx=0, sy=0, n=0;
   const walk = c => { if(typeof c[0]==="number"){ sx+=c[0]; sy+=c[1]; n++; } else c.forEach(walk); };
