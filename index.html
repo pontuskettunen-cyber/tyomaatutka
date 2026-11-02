@@ -1048,7 +1048,11 @@ function initEnnakko(l){
     const leg = L.control({position:"bottomleft"});
     leg.onAdd = ()=>{ const d = L.DomUtil.create("div","enleg"); d.innerHTML = `<div><i class="w"></i>Työalue</div><div><i class="b"></i>Linjojen pysäkkivälit, joihin työ osuu</div>`; return d; };
     leg.addTo(M.en);
-    M.en.on("click", e=>{ enTalleta(); if(EN.lupa){ EN.lupa = null; EN.pts = []; } document.getElementById("enLupa").value = ""; EN.pts.push([e.latlng.lat, e.latlng.lng]); drawEn(); laskeEn(); });
+    M.en.on("click", e=>{ enTalleta();
+      // Uusi alue, jos vanha on poissa näkyvistä tai kaukana: muuten viiva vetäisi kartan ulkopuolelle (Ctrl+Z palauttaa vanhan)
+      const vb = M.en.getBounds(), last = EN.pts[EN.pts.length-1];
+      const kaukana = last && (M.en.distance(last, e.latlng) > 1500 || !EN.pts.some(p=>vb.contains(p)));
+      if(EN.lupa || kaukana){ EN.lupa = null; EN.pts = []; } document.getElementById("enLupa").value = ""; EN.pts.push([e.latlng.lat, e.latlng.lng]); drawEn(); laskeEn(); });
     document.getElementById("enUndo").onclick = ()=>enKumoa();
     document.getElementById("enClear").onclick = ()=>{ enTalleta(); EN.pts = []; EN.lupa = null; document.getElementById("enLupa").value = ""; drawEn(); laskeEn(); };
     document.querySelectorAll('#enHaitta input, #enA, #enP').forEach(x=>x.onchange = ()=>naytaEn());
