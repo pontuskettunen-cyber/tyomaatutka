@@ -769,6 +769,10 @@ function renderHomeMap(){
     L.polyline(pts,{pane:"segs", renderer:M.home._segR, color:col, weight: slow?5:3.5, opacity: vahva?.95:.55, dashArray:dash, lineCap:"round", lineJoin:"round"}).bindTooltip(tip,{sticky:true}).addTo(LhomeSeg);
     [["from",pts[0]],["to",pts[pts.length-1]]].forEach(([w,p])=>{ const id = w==="from"?g.from_stop:g.to_stop; if(!stops.has(id)) stops.set(id,{p, name:stopName(g,w)}); });
   });
+  // valitun työmaan tunnistusrengas: pienikin lupa-alue erottuu loitonnettuna
+  const selL = S.byId[S.sel], selC = selL && selL.geom && centroid(selL.geom);
+  if(selC){ L.circleMarker(selC,{pane:"stops", renderer:M.home._stopR, radius:13, weight:3, color:"#14181C", fill:false, interactive:false}).addTo(LhomeSeg);
+            L.circleMarker(selC,{pane:"stops", renderer:M.home._stopR, radius:16, weight:2, color:"#fff", fill:false, opacity:.9, interactive:false}).addTo(LhomeSeg); }
   stops.forEach(v=>L.circleMarker(v.p,{pane:"stops", renderer:M.home._stopR, radius:3.5, weight:1.5, color:"#14181C", fillColor:"#fff", fillOpacity:1}).bindTooltip(esc(v.name),{direction:"top"}).addTo(LhomeSeg));
   if(!homeFitted){ M.home.setView([60.172,24.94],14); homeFitted = true; }
 }
