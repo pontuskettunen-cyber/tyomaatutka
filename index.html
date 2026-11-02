@@ -527,7 +527,7 @@ html.hsl #v-home .nowctl{display:flex;align-items:center;gap:10px;flex:none}
 html.hsl #v-home .omalinja{margin:0;padding:0;border:0;background:none;flex-wrap:nowrap;gap:0}
 html.hsl #v-home .omalinja label{display:none}
 html.hsl #v-home .omarow{gap:0;border:1px solid var(--l);border-radius:999px;background:var(--p);padding:3px}
-html.hsl #v-home .omarow input{width:150px;border:0;border-radius:999px;font-size:14.5px;padding:6px 12px;background:none}
+html.hsl #v-home .omarow input{width:170px;border:0;border-radius:999px;font-size:14.5px;padding:6px 12px;background:none}
 html.hsl #v-home .omarow input:focus{outline:0}
 html.hsl #v-home .omarow:focus-within{border-color:var(--a);box-shadow:0 0 0 3px var(--a-soft)}
 html.hsl #v-home .omarow .btn{padding:6px 14px;font-size:13.5px;white-space:nowrap}
@@ -619,6 +619,7 @@ html.hsl #v-home .todo{padding:10px 14px}
   const h = document.getElementById("v-home"), row = h.querySelector(".nowrow"), ik = document.getElementById("ikSel");
   const ctl = document.createElement("div"); ctl.className = "nowctl"; row.replaceChild(ctl, ik);
   ctl.append(document.getElementById("omaForm"), ik);
+  const q = document.getElementById("omaQ"); q.placeholder = "Oma linja, esim. 55"; q.setAttribute("aria-label","Mitä linjaa ajat tai käytät? Näe linjasi työmaat ja paljonko ne hidastavat.");
   const split = h.querySelector(".split.fit"); split.after(h.querySelector(".todo-sec")); h.querySelector(".todo-sec").after(document.getElementById("aiBox"));
 })();
 </script>
