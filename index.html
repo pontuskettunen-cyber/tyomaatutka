@@ -1011,7 +1011,7 @@ function route(nav){
     if(!S.liveInit){ S.liveInit = true; let pref = null; try{ pref = localStorage.getItem("tt_live"); }catch(e){}
       const on = S.forceLive || (pref ? pref==="1" : innerWidth >= 1021);
       document.getElementById("liveTgl").onchange = e => { liveSet(e.target.checked); renderDetail(); };
-      if(on) liveSet(true); }
+      if(on){ liveSet(true); renderDetail(); } }
     else if(LV.on){ buildShapes(); syncSubs(); }
     if((changed || nav==="first") && S.byId[S.sel] && l){ const c = centroid(S.byId[S.sel].geom||{coordinates:[]}); if(c) M.home.setView(c,16); } }
   if(v==="tyot") renderTyot();
