@@ -616,7 +616,7 @@ function wireInfo(root){
     _pop.innerHTML = `<b>${esc(h)}</b>${body}<a href="#/menetelma" onclick="document.querySelector('.pop').style.display='none'">Kaikki selitykset →</a>`;
     const r = b.getBoundingClientRect();
     _pop.style.display = "block";
-    _pop.style.left = Math.max(8, Math.min(innerWidth - 300, r.left - 140)) + "px";
+    const pw = _pop.offsetWidth || 290; _pop.style.left = Math.max(8, Math.min(innerWidth - pw - 10, r.left - pw/2)) + "px";
     _pop.style.top = (r.bottom + scrollY + 6) + "px";
   });
 }
