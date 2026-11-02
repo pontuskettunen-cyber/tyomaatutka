@@ -576,7 +576,7 @@ function breakdown(){
   const on = S.luvat.filter(l=>onRoute(l) && phase(l).k==="kaynnissa");
   if(!S._clMap || S._clKey !== S.luvat){ const all = S.luvat.filter(onRoute); const {cl} = clusters(all); S._clMap = new Map(all.map((l,i)=>[l.lupa_id, cl[i]])); S._clKey = S.luvat; }
   const best = new Map();
-  on.forEach(l=>{ const i = impact(l); if(!i || !(i.vehH>0)) return; const k = S._clMap.get(l.lupa_id); const p = best.get(k); if(!p || i.vehH > p.vehH) best.set(k, {l, vehH:i.vehH, n:i.n}); });
+  on.forEach(l=>{ const i = impact(l); if(!i || i.kind!=="v2" || !(i.vehH>0)) return; /* vain uusi mittaus: sama mittausjakso kaikille */ const k = S._clMap.get(l.lupa_id); const p = best.get(k); if(!p || i.vehH > p.vehH) best.set(k, {l, vehH:i.vehH, n:i.n}); });
   const sites = [...best.values()].sort((a,b)=>b.vehH-a.vehH);
   const total = sites.reduce((s,x)=>s+x.vehH,0);
   const byLine = new Map(), byCat = new Map();
