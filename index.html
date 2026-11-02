@@ -1275,7 +1275,7 @@ async function linjaKartta(e){
   ids.forEach(id=>{
     const l = S.byId[id]; if(!l || !l.geom) return;
     const w = e.works.get(id), ds = w ? Object.values(w.dirs) : [];
-    const k = !w ? "kesken" : !ds.some(x=>x.v2) ? "kesken" : ds.some(x=>x.s>10) ? "hidastaa" : "ei";
+    const k = !w || !ds.length ? "kesken" : ds.some(x=>x.s>10) ? "hidastaa" : "ei";
     const col = w ? SITE[k].c : "#7C3AED";
     const lay = L.geoJSON(l.geom,{style:{color:col, weight:1.5, fillColor:col, fillOpacity:.35}}).addTo(m);
     const c = centroid(l.geom);
