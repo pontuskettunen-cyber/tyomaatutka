@@ -323,6 +323,12 @@ footer{max-width:1360px;margin:0 auto;padding:0 28px 32px;color:var(--m);font-si
 .pop.wide{max-width:none;width:min(440px,92vw);max-height:70vh;overflow:auto}
 .pop .note{color:#C9CDC4}.calc-steps{margin:8px 0 6px;padding-left:18px;font-size:13px;line-height:1.45}.calc-steps li{margin-bottom:7px}
 .calc-steps .mono{font-family:"IBM Plex Mono",monospace;font-size:12.5px;background:rgba(255,255,255,.14);color:#fff;padding:1px 5px;border-radius:4px;display:inline-block;margin-top:3px}
+.tsub{display:block;font-size:11px;color:var(--m);margin-top:2px}
+.vchip{display:inline-block;font:500 10.5px/1 "IBM Plex Sans";padding:3px 6px;border-radius:5px;background:var(--l2);color:var(--m);margin-left:6px;vertical-align:3px}
+.vchip.tod{background:#E7F3EC;color:#0B6B3A}
+.varm{font-size:13px;line-height:1.45;padding:9px 12px;border-radius:9px;margin:-4px 0 12px;background:var(--l2);color:var(--i2)}
+.varm b{margin-right:4px}.varm.tod{background:#E7F3EC}.varm.pohja{background:#EEF0FB}.varm.arvio{background:#FFF7ED}
+.tiivis{font-size:14.5px;line-height:1.5;margin:6px 0 10px;color:var(--i)}
 </style>
 </head>
 <body>
@@ -534,10 +540,16 @@ function phase(l){
 const MIN_N = 10;
 const mitta = (id, ik, j="kaikki") => (S.mitta[id]||{})[ik+"|"+j];
 function impact(l){
+  const vk = S.vaik?.[l.lupa_id];
   const m = mitta(l.lupa_id, S.ik);
+  const arvio = m && m.n >= MIN_N && m.lisa_ajo != null ? m.lisa_ajo : null;
+  if(vk && vk.tila==="todennettu" && vk.vaikutus_s != null){
+    // todennettu: sama väli työn aikana vs. ilman työtä (ennen alkua tai päätyttyä)
+    return {kind:"v2", tod:true, vert:vk.vertailu, s:vk.vaikutus_s, seis:vk.vaikutus_seis, vehH:Math.max(0, vk.ajoneuvotunnit_vrk||0), n:vk.aikana_n, nB:vk.pohja_n, arvio, prev:null};
+  }
   if(m && m.n >= MIN_N && m.lisa_ajo != null){
     const prev = S.ik==="7d" ? mitta(l.lupa_id,"ed7d") : null;
-    return {kind:"v2", s:m.lisa_ajo, seis:m.lisa_seis, vehH:m.ajoneuvotunnit_vrk, n:m.n, ohit:m.ohitukset, prev: prev && prev.n>=MIN_N ? prev.lisa_ajo : null};
+    return {kind:"v2", tod:false, s:m.lisa_ajo, seis:m.lisa_seis, vehH:m.ajoneuvotunnit_vrk, n:m.n, ohit:m.ohitukset, prev: prev && prev.n>=MIN_N ? prev.lisa_ajo : null};
   }
   const vert = S.pilot.find(p=>p.rooli==="vertailu");
   if(l.indeksi_24h != null && l.perustaso_ikkunat >= 4){
@@ -639,6 +651,7 @@ function breakdown(){
   on.forEach(l=>{ const i = impact(l); if(!i || i.kind!=="v2" || !(i.vehH>0)) return; /* vain uusi mittaus: sama mittausjakso kaikille */ const k = S._clMap.get(l.lupa_id); const p = best.get(k); if(!p || i.vehH > p.vehH) best.set(k, {l, vehH:i.vehH, n:i.n}); });
   const sites = [...best.values()].sort((a,b)=>b.vehH-a.vehH);
   const total = sites.reduce((s,x)=>s+x.vehH,0);
+  const tod = sites.filter(x=>impact(x.l).tod), totTod = tod.reduce((s,x)=>s+x.vehH,0);
   const byLine = new Map(), byCat = new Map();
   sites.forEach(x=>{
     byCat.set(catOf(x.l), (byCat.get(catOf(x.l))||0) + x.vehH);
@@ -648,7 +661,7 @@ function breakdown(){
       const e = byLine.get(n) || {h:0, sites:new Set()}; e.h += r.ohitukset*r.lisa_ajo/3600/days; e.sites.add(x.l.lupa_id); byLine.set(n, e);
     });
   });
-  return {total, sites, byLine:[...byLine.entries()].sort((a,b)=>b[1].h-a[1].h), byCat:[...byCat.entries()].sort((a,b)=>b[1]-a[1])};
+  return {total, totTod, nTod:tod.length, sites, byLine:[...byLine.entries()].sort((a,b)=>b[1].h-a[1].h), byCat:[...byCat.entries()].sort((a,b)=>b[1]-a[1])};
 }
 function trend(){
   const today = new Date(); today.setHours(0,0,0,0);
@@ -730,7 +743,7 @@ function renderBrief(){
   document.getElementById("kpis").innerHTML =
     tile(nf(run.length), "katutyötä käynnissä", "kaynnissa", null, "#/tyot") +
     tile(nf(runR.length), "reittien varrella", "reitilla", null, "#/tyot") +
-    tile(nf(vehH,1)+" h" + (tr ? ` <span class="trend ${tr.cls}">${tr.txt}</span>` : ""), per.full ? `lisäaika työmaiden kohdilla / vrk${S.ik==="7d"?" (ka.)":""}` : `lisäaika työmaiden kohdilla · ${per.dur}`, "menetetty", "bd") +
+    tile(nf(vehH,1)+" h" + (tr ? ` <span class="trend ${tr.cls}">${tr.txt}</span>` : ""), (per.full ? `lisäaika työmaiden kohdilla / vrk${S.ik==="7d"?" (ka.)":""}` : `lisäaika työmaiden kohdilla · ${per.dur}`) + `<span class="tsub">${bd.nTod ? `todennettu ${nf(bd.totTod,1)} h · arvio ${nf(bd.total-bd.totTod,1)} h` : "kaikki vielä arviota"}</span>`, "menetetty", "bd") +
     ((S.sug||[]).length ? `<a class="tile sigB" href="#/linjat" style="border-left-color:var(--a)"><small>Aikatauluagentti</small><b class="txt">${S.sug.length} ${S.sug.length===1?"ehdotus":"ehdotusta"}</b></a>` : tile(nf(up7.length), "alkaa 7 päivän sisällä", "alkaa", null, "#/tyot")) + sigNext + sigCl;
   document.querySelectorAll("#kpis [data-bd]").forEach(x=>{ const t = e=>{ if(e.target.closest(".info")) return; S.bdOpen = !S.bdOpen; renderBrief(); }; x.onclick = t; x.onkeydown = e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); t(e); } }; });
   wireInfo(document.querySelector(".now"));
@@ -745,7 +758,7 @@ function renderCards(){
   el.innerHTML = items.map((l,i)=>{
     const ph = phase(l), im = impact(l);
     let big;
-    if(im && im.s != null) big = `<b class="${im.s>10?"slow":im.s<-10?"fast":""}" title="lisäviive per ohitus${im.n?", n="+im.n:""}">${sgn(im.s)}</b>${im.n!=null&&im.n<30?'<span class="prelim">alustava</span>':""}`;
+    if(im && im.s != null) big = `<b class="${im.s>10?"slow":im.s<-10?"fast":""}" title="lisäviive per ohitus${im.n?", n="+im.n:""}">${sgn(im.s)}</b>${im.tod?'<span class="vchip tod">todennettu</span>':'<span class="vchip">arvio</span>'}`;
     else big = `<b title="ajoa / vrk ohi työmaan">${nf(l.ajoja_vrk)}<small style="font-size:11px;color:var(--m)"> ajoa</small></b>`;
     return `<button class="card ${S.sel===l.lupa_id?"sel":""}" data-id="${esc(l.lupa_id)}">
       <div class="hd"><span class="num">${i+1}</span><span class="t">${esc(shortStreet(l))}</span></div>
@@ -776,6 +789,24 @@ const SITE = {
   ei:       {c:"#5B6770", t:"Ei mitattua haittaa"},
   kesken:   {c:"#D97706", t:"Mittaus kesken"}
 };
+/* Mittauksen varmuus ihmiskielellä: mitä luku on ja milloin se tarkentuu */
+function varmuus(l){
+  const vk = S.vaik?.[l.lupa_id], im = impact(l), ph = phase(l).k;
+  if(im && im.tod) return {k:"tod", lyhyt:"todennettu", txt:`Todennettu: sama pysäkkiväli on mitattu ${im.vert==="ennen"?"ennen työn alkua":"työn päätyttyä"} (${nf(im.nB)} ohitusta) ja työn aikana (${nf(im.n)} ohitusta). Ero on työmaan oma vaikutus.`};
+  if(vk && vk.tila==="pohjaa_kertyy") return {k:"pohja", lyhyt:"pohjataso kertyy", txt:`Työ alkaa ${fmtDate(l.alkaa)}. Samaa pysäkkiväliä mitataan jo nyt ilman työtä: ${nf(vk.pohja_n||0)} ohitusta. Todennettu vaikutus näkyy, kun työn aikana on kertynyt vähintään ${MIN_N} ohitusta linjaa kohden, yleensä saman päivän aikana.`};
+  if(ph==="kaynnissa" && im) return {k:"arvio", lyhyt:"arvio", txt:`Arvio: työ oli käynnissä jo ennen mittauksen alkua, joten väliä verrataan linjan muihin väleihin. Luku on yläraja, koska osa väleistä on hitaita ilman työtäkin. Todennettu luku saadaan, kun työ päättyy${l.paattyy?" ("+fmtDate(l.paattyy)+")":""} ja samaa väliä mitataan ilman sitä.`};
+  return null;
+}
+/* Yhden lauseen yhteenveto työmaasta ihmiselle */
+function tiivis(l, im, ml){
+  const ph = phase(l).k, ls = lines(l.linjat).filter(n=>!/N$/.test(n));
+  if(!onRoute(l)) return `<p class="tiivis">Tämän työn kohdalla ei kulje bussi- tai ratikkareittejä, joten se ei vaikuta joukkoliikenteeseen suoraan.</p>`;
+  if(ph==="tulossa") return `<p class="tiivis">Työ alkaa <b>${fmtDate(l.alkaa)}</b> ja osuu ${ls.length} linjan reitille (${esc(ls.slice(0,5).join(", "))}${ls.length>5?"…":""}). Vaikutus mitataan heti työn alettua.</p>`;
+  if(!im || im.s==null) return `<p class="tiivis">Työ on käynnissä ${ls.length} linjan reitillä. Ohituksia ei ole vielä tarpeeksi luotettavaan lukuun.</p>`;
+  const top = (ml||[]).filter(r=>r.ohitukset>=MIN_N && r.lisa_ajo>10).sort((a,b)=>b.lisa_ajo-a.lisa_ajo)[0];
+  const verbi = im.s > 10 ? `hidastaa joukkoliikennettä: tavallinen ohitus kestää noin <b>${nf(Math.round(im.s))} s</b> pidempään` : im.s < -10 ? `ei hidasta: ohitukset ovat jopa ${nf(Math.round(-im.s))} s nopeampia` : `ei hidasta merkittävästi (alle 10 s per ohitus)`;
+  return `<p class="tiivis">Työ ${verbi}${im.tod?"":" (arvio)"}.${top?` Eniten hidastuu linja <b>${esc(ln(top.route))}</b> (${sgn(top.lisa_ajo)}).`:""} Ohituksia kertyy noin ${nf(im.n)} mittausjaksossa.</p>`;
+}
 function siteKind(l){ const im = impact(l); if(!im || im.kind!=="v2") return "kesken"; return im.s > 10 ? "hidastaa" : "ei"; }
 function renderHomeMap(){
   if(!M.home){
@@ -871,7 +902,7 @@ async function renderDetail(){
   const ph = phase(l), im = impact(l), ls = (S.linjat[l.lupa_id]||[]).filter(r=>/^\d{1,3}[A-Z]?$/.test(ln(r.route)) && (r.ohitukset_24h||0) >= 3).slice().sort((a,b)=>(b.ohitukset_24h||0)-(a.ohitukset_24h||0));
   const segs = (S.segs[l.lupa_id]||[]);
   let facts;
-  if(im && im.kind==="v2") facts = [[sgn(im.s)+(im.n<30?' <span class="prelim">alustava</span>':""),`lisäaika ajossa per ohitus · n=${nf(im.n)} ${infoBtn("lisaaika")}`],[sgn(im.seis),`pidempi seisonta pysäkillä ${infoBtn("ajossa")}`],[nf(im.vehH,1)+" h",`lisäaika yhteensä · ${period().dur}`]];
+  if(im && im.kind==="v2") facts = [[sgn(im.s)+(im.n<30?' <span class="prelim">alustava</span>':""),`${im.tod?"todennettu vaikutus":"lisäaika (arvio)"} per ohitus · n=${nf(im.n)} ${infoBtn("lisaaika")}`],[sgn(im.seis),`pidempi seisonta pysäkillä ${infoBtn("ajossa")}`],[nf(im.vehH,1)+" h",`lisäaika yhteensä · ${period().dur}`]];
   else if(im) facts = [[sgn(im.s),"lisäviive per ohitus, linjojen keskiarvo"],[nf(im.vehH,1)+" h","ajoneuvotunteja / 24 h"],[nf(l.ohitukset_24h),"ohitusta / 24 h"]];
   else if(ph.k==="tulossa") facts = [[fmtDate(l.alkaa),"työ alkaa"],[nf(l.perustaso_havainnot),"perustason havaintoa"],[nf(baseCover(l)*100)+" %","vuorokaudesta katettu"]];
   else if(onRoute(l)) facts = [[nf(l.ajoja_vrk),"ajoa / vrk ohi työmaan"],[nf(lines(l.linjat).length),"linjaa"],["–","lisäviive kertyy"]];
@@ -882,7 +913,9 @@ async function renderDetail(){
     <h3>${esc(title(l))}</h3>
     <div class="addr">${esc(purpose(l))} · ${l.alkaa?fmtDate(l.alkaa):""}–${l.paattyy?fmtDate(l.paattyy):""}</div>
     ${l.ai_vaikutus?`<div class="aibox"><span class="ai-badge"><i></i>TEKOÄLYN TULKINTA LUVASTA</span><div style="margin-top:4px"><span class="aitag ${esc(l.ai_vaikutus)}">vaikutus: ${esc(l.ai_vaikutus)}</span> ${(l.ai_sulkee||[]).map(x=>`<span class="aitag pieni">${esc(String(x).replace("_"," "))}</span>`).join(" ")} <span class="note">${esc(l.ai_perustelu||"")}</span></div></div>`:""}
+    ${tiivis(l, im, ml)}
     <div class="facts">${facts.map(f=>`<div><b>${f[0]}</b><small>${f[1]}</small></div>`).join("")}</div>
+    ${(()=>{ const v = varmuus(l); return v ? `<div class="varm ${v.k}"><b>${esc(v.lyhyt[0].toUpperCase()+v.lyhyt.slice(1))}</b> ${esc(v.txt.replace(/^[^:]+:\s*/,""))}${im&&im.tod&&im.arvio!=null?` <span class="note">(Pelkkä vertailu linjan muihin väleihin antaisi ${sgn(im.arvio)}.)</span>`:""}</div>` : ""; })()}
     ${onRoute(l) && ph.k==="kaynnissa" && LV.on ? `<div id="nowPass"></div>` : ""}
     ${im && im.kind==="ennen" ? `<div class="note" style="margin:-6px 0 8px">Ennen ja jälkeen: ajoaika ${sgn(im.pct,1," %")} perustasosta, yleinen ruuhka vähennetty.</div>`:""}
     ${im && im.kind==="v2" && im.prev!=null ? `<div class="note" style="margin:-6px 0 8px">Edellinen viikko: ${sgn(im.prev)} per ohitus · ${im.s-im.prev>3?'<span class="slow">kasvanut</span>':im.s-im.prev<-3?'<span class="ok">pienentynyt</span>':'ennallaan'}</div>`:""}
@@ -994,7 +1027,9 @@ function renderTyot(){
   const el = document.getElementById("list");
   el.innerHTML = items.slice(0,300).map(l=>{
     const ph = phase(l), im = impact(l);
-    const right = onRoute(l) ? (im && im.s!=null ? `<span class="${im.s>10?"slow":""}">${sgn(im.s)}</span><small>lisäviive</small>` : `${nf(l.ajoja_vrk)}<small>ajoa / vrk</small>`) : `<small>ei reitillä</small>`;
+    const vm = varmuus(l);
+    const right = onRoute(l) ? (im && im.s!=null ? `<span class="${im.s>10?"slow":""}">${sgn(im.s)}</span><small>${im.tod?"todennettu":"arvio"} / ohitus</small>`
+      : vm && vm.k==="pohja" ? `${nf(S.vaik[l.lupa_id].pohja_n||0)}<small>ohitusta pohjaksi</small>` : `${nf(l.ajoja_vrk)}<small>ajoa / vrk</small>`) : `<small>ei reitillä</small>`;
     return `<div class="li ${S.sel2===l.lupa_id?"sel":""}" data-id="${esc(l.lupa_id)}">
       <div class="d">${l.alkaa?fmtShort(l.alkaa):"–"}<small>${l.paattyy?"→ "+fmtShort(l.paattyy):""}</small></div>
       <div class="n">${esc(title(l))} ${l.ai_vaikutus==="suuri"||l.ai_vaikutus==="kohtalainen"?`<span class="aitag ${l.ai_vaikutus}">${l.ai_vaikutus==="suuri"?"suuri haitta":"kohtalainen"}</span>`:""}</div>
@@ -1466,6 +1501,7 @@ async function load(){
     S.ltila = {}; lt.forEach(r=>{ (S.ltila[ln(r.route)] ||= []).push(r); });
     S.nauha = {}; lnh.forEach(r=>{ (S.nauha[ln(r.route)+"|"+r.dir] ||= []).push(r); });
     S.sug = sug;
+    S.vaik = {}; (await getAll("v_lupa_vaikutus","lupa_id").catch(()=>[])).forEach(r=>S.vaik[r.lupa_id]=r);
     S.mitta = {}; mt.forEach(r=>{ (S.mitta[r.lupa_id] ||= {})[r.ikkuna+"|"+r.jakso] = r; });
     S.mlinja = {}; mlj.forEach(r=>(S.mlinja[r.lupa_id] ||= []).push(r));
     S.tila = tila[0]||{}; S.luvat = luvat; S.pilot = pilot;
