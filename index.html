@@ -575,6 +575,7 @@ html.hsl #v-home .todo{padding:10px 14px}
 .bdr.bdhead{font-size:11px;color:var(--m);text-transform:uppercase;letter-spacing:.04em;cursor:default;padding-bottom:0;background:none!important}
 .bdr .r{text-align:right}
 @media(max-width:720px){.bdr.bdsite{grid-template-columns:1fr 60px 70px}.bdr .beur:last-child,.bdr.bdhead{display:none}}
+.lc-k.pk b{font-variant-numeric:tabular-nums}.lc-k.pk-ok b{color:#1F7A4D}.lc-k.pk-amb b{color:#B45309}.lc-k.pk-red b{color:#B42318}
 </style>
 </head>
 <body>
@@ -698,6 +699,15 @@ html.hsl #v-home .todo{padding:10px 14px}
       <tr><td>Käyttäjien arvio</td><td>Suunnittelijoiden lyhyt arvio viikoittain</td><td>Hyödyllinen omassa työssä</td></tr>
     </tbody></table>
     <p class="note">Pilotin tavoitteet sovitaan tiimin kanssa ennen aloitusta. Yllä olevat ovat ehdotus.</p>
+
+    <h3>Seuraava askel: milloin viive maksaa oikeaa rahaa</h3>
+    <p>Pieni viive ei maksa HSL:lle mitään: se mahtuu aikataulun väljyyteen ja kääntöaikaan päätepysäkillä. Rahaa se maksaa vasta, kun viive siirtyy seuraavaan lähtöön. Silloin aikataulua pitää pidentää tai linjalle tarvitaan lisäauto.</p>
+    <ul>
+      <li><b>Data on jo olemassa.</b> HSL:n avoimessa aikataulussa on jokaiselle vuorolle viivevara (max_delay, 0–5 min) ja ratikoille vaunukierrot. Tarkistus 2.11.2026: ratikoilla viivevara on kääntöaika miinus noin 3–4 minuuttia 81 %:ssa vuoropareista.</li>
+      <li><b>Tutka näyttää jo nyt</b> Linjat-näkymässä, kuinka suuren osan viivevarasta työmaat vievät. Alle puolet: ei kustannusta. Yli 100 %: viive siirtyy seuraaviin lähtöihin.</li>
+      <li><b>Pilotissa HSL:n kanssa:</b> tulkinta varmistetaan aikataulusuunnittelijoilta, bussien autokierrot saadaan liikennöitsijöiltä, ja ajoneuvodatasta mitataan, lähtevätkö vuorot päätepysäkiltä myöhässä. Sen jälkeen tutka voi kertoa, millä linjalla lisäauto on tarpeen ja mitä se maksaa (auton pääomakulu noin 200 € päivässä ja kuljettajan tunnit noin 50 €/h, Väylävirasto 2022).</li>
+    </ul>
+    <p class="note">Tutka ei näytä lisäautoja tai säästöjä euroina ennen kuin ne on mitattu. Mittaus alkoi 2.11.2026.</p>
 
     <h3>Mitä tuotanto vaatisi</h3>
     <ul>
@@ -993,6 +1003,7 @@ const INFO = {
   ajossa: ["Ajossa ja pysäkillä", "Ajossa = hidastuminen pysäkkien välillä, yleensä työmaan vaikutus. Pysäkillä = tavallista pidempi seisonta, usein muusta syystä kuten tungoksesta."],
   ajantasaus: ["Ajantasausväli", "Aikataulussa kellonaika on vain ajantasauspysäkeillä. Etuajassa oleva vuoro odottaa niillä. Aikataulun väljennys tehdään kahden ajantasauspysäkin väliin, joten taulukko näyttää, mille väleille työmaiden lisäaika osuu. Lähde: HSL:n avoin aikataulu-data (GTFS), päivitetään viikoittain."],
   p90: ["Huonoin kymmenesosa", "Joka kymmenes vuoro saa työmaiden kohdalla vähintään näin paljon lisäaikaa. Matkustajalle tärkein luku: se ratkaisee, ehtiikö vaihtoon."],
+  puskuri: ["Viivevara", "Kuinka monta minuuttia vuoro voi myöhästyä ilman, että saman auton tai vaunun seuraava lähtö myöhästyy. Luku tulee HSL:n avoimesta aikataulusta (max_delay, päiväajan vuorojen mediaani). Ratikoilla se on tarkistettu vaunukierroista: se on kääntöaika päätepysäkillä miinus noin 3–4 minuuttia. Prosentti kertoo, kuinka suuren osan varasta työmaat vievät huonoimmassa kymmenesosassa vuoroista. Alle 50 %: viive mahtuu aikatauluun eikä maksa mitään. 50–100 %: vara on vähissä. Yli 100 %: viive siirtyy seuraaviin lähtöihin, ja aikataulua tai autojen määrää pitää harkita. Busseilla luku on aikataulun arvo, ei vielä mitattu."],
   jakso: ["Luvut ajalta", "Aikaväli, jolta näytetyt luvut on laskettu. Tarkennettu mittaus alkoi aamulla 2.11.2026, joten aluksi jakso on lyhyempi kuin valittu 24 h tai 7 vrk."],
 };
 const infoBtn = k => `<button class="info" data-info="${k}" aria-label="Mitä tämä tarkoittaa?">i</button>`;
@@ -2150,6 +2161,12 @@ function renderLinjaDet(e){
     ${k ? `<div class="lc-k"><b class="${k.med>30?"slow":""}">${sgn(k.med)}</b><span>tavallinen vuoro</span></div>
            <div class="lc-k"><b class="${k.p90>120?"slow":""}">${sgn(k.p90)}</b><span>huonoin 10 % vuoroista ${infoBtn("p90")}</span></div>`
         : `<div class="lc-k"><b class="${(e.tot[d]||0)>30?"slow":""}">${e.tot[d]!=null?sgn(e.tot[d]):"–"}</b><span>työmaat yht. (arvio)</span></div>`}
+    ${(()=>{ const pk = term && term.puskuri; if(!pk) return "";
+      const vara = pk.md*60, kayt = k ? k.p90 : e.tot[d];
+      if(kayt==null) return `<div class="lc-k"><b>${nf(pk.md)} min</b><span>viivevara vuorossa ${infoBtn("puskuri")}</span></div>`;
+      const pros = vara > 0 ? Math.round(Math.max(0,kayt)/vara*100) : (kayt > 30 ? 999 : 0);
+      const cls = pros >= 100 ? "pk-red" : pros >= 50 ? "pk-amb" : "pk-ok";
+      return `<div class="lc-k pk ${cls}" title="${esc(`Viivevara ${pk.md} min (HSL:n aikataulu, päiväajan vuorojen mediaani${pk.kaanto?`; ratikan kääntöaika päätepysäkillä ${pk.kaanto} min`:""}). Huonoin 10 % vuoroista saa työmailta ${sgn(kayt)}.`)}"><b>${pros>=999?"yli":nf(Math.min(pros,999))+" %"}</b><span>${vara>0?`viivevarasta (${nf(pk.md)} min) kuluu työmaihin`:`aikataulussa ei viivevaraa${e.tram?"":" (aikataulun arvo)"}`} ${infoBtn("puskuri")}</span></div>`; })()}
     <div class="lc-k"><b>${nf(e.works.size)}</b><span>lupaa reitillä</span></div>
     <div class="lc-k up"><b>${nf(e.up.length)}</b><span>alkaa 14 pv sis.</span></div>
     <div class="lc-k lclive"><b id="lLiveN">–</b><span>ajoneuvoa liikkeellä</span></div>
