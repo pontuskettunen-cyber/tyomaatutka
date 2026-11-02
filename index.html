@@ -585,6 +585,7 @@ html.hsl #v-home .todo{padding:10px 14px}
 @media(max-width:860px){.tstats{grid-template-columns:1fr}}
 .st.kiire{background:#FEE2E2;color:#B42318}
 .saa-k{text-transform:none;letter-spacing:0;color:var(--m)}
+.saa-var{text-transform:none;letter-spacing:0;color:#B45309;font-weight:700}
 </style>
 </head>
 <body>
@@ -733,6 +734,16 @@ html.hsl #v-home .todo{padding:10px 14px}
     <ul>
       <li><b>Jo käytössä:</b> Ilmatieteen laitoksen havainnot (Helsinki Kaisaniemi) tallennetaan 10 minuutin välein syyskuusta 2026 alkaen. Sadejaksot näkyvät työmaan kaaviossa, ja lupateksteistä tunnistetaan kiireelliset korjaukset, kuten vesijohtovuodot.</li>
       <li><b>Seuraavaksi:</b> todennettu ennen–jälkeen-vertailu tehdään vain samankaltaisten sääolojen välillä. Talven aikana mitataan, paljonko sama työmaa hidastaa lumella enemmän kuin kuivalla.</li>
+      <li><b>Viime talvet vertailuksi</b> (Ilmatieteen laitos, Kaisaniemi, marraskuu–huhtikuu):
+        <table class="t" style="margin:6px 0 4px"><thead><tr><th></th><th class="r">2024–25</th><th class="r">2025–26</th></tr></thead><tbody>
+          <tr><td>Päiviä, joina lunta vähintään 10 cm</td><td class="r">7</td><td class="r">60</td></tr>
+          <tr><td>Suurin lumensyvyys</td><td class="r">20 cm</td><td class="r">31 cm</td></tr>
+          <tr><td>Kovan pakkasen päiviä (alin −10 °C tai kylmempi)</td><td class="r">9</td><td class="r">33</td></tr>
+          <tr><td>Nollakelipäiviä (pakkasta ja suojaa samana päivänä)</td><td class="r">66</td><td class="r">32</td></tr>
+          <tr><td>Päiviä, joina uutta lunta vähintään 3 cm</td><td class="r">7</td><td class="r">7</td></tr>
+        </tbody></table>
+        Talvet eroavat paljon: leuto talvi tuo nollakelejä ja liukkautta, kova talvi lumipeitteen ja pakkasen, joka rikkoo vesijohtoja. Bussien viiveitä viime talvilta ei ole avoimena datana, joten tutkan oma talvivertailu kertyy tästä talvesta alkaen. HSL:n oma ajoneuvoarkisto mahdollistaisi viime talven analyysin heti.</li>
+      <li><b>Säävaroitukset:</b> Ilmatieteen laitoksen Helsinkiä koskevat varoitukset (liikennesää, liukkaus, sade, tulva) tallennetaan marraskuusta 2026 alkaen ja näkyvät tilannekuvassa.</li>
       <li><b>Pilotissa:</b> jokaisen säätapahtuman jälkeen seurataan 72 tuntia: kiireelliset kaivut bussireiteillä, HSL:n poikkeustiedotteet ja viiveiden muutos. Ennusteen ja viivevaran yhdistelmästä voidaan varoittaa etukäteen linjoista, joilla viive todennäköisesti siirtyy seuraaviin lähtöihin. Hulevesitulvien riskialueet (HSY) voidaan merkitä bussireiteille.</li>
     </ul>
 
@@ -1194,7 +1205,9 @@ function renderBrief(){
   const per = period();
   const sn = saaNyt(), ss = saaJakso(Math.max(Date.now() - (S.ik==="7d"?7:1)*DAY, +new Date(S.tila?.havainto_alkoi || 0)), Date.now()).filter(x=>x.luokka!=="pouta");
   const saaTxt = sn ? ` · <span class="saa-k" title="Ilmatieteen laitos, Helsinki Kaisaniemi. Sää vaikuttaa kaikkiin linjoihin: tutka vertaa työmaan väliä saman linjan muihin väleihin samassa 2 tunnin jaksossa, joten yleinen sää kumoutuu.">${nf(sn.lampo,1)} °C, ${esc(sn.luokka)}${ss.length?` · jaksolla ${esc([...new Set(ss.map(x=>x.luokka))].join(", "))} ${nf(ss.length*2)} h`:""}</span>` : "";
-  document.getElementById("briefWhen").innerHTML = `Luvut ajalta ${per.txt} · laskettu ${ago(upd)}${saaTxt}`;
+  const vNyt = (S.varoitukset||[]).filter(v=>{ const n = Date.now(); return (!v.alkaa || +new Date(v.alkaa) <= n + 12*3600e3) && (!v.paattyy || +new Date(v.paattyy) > n); });
+  const varTxt = vNyt.length ? ` · <span class="saa-var" title="${esc(vNyt.map(v=>v.otsikko).join("\n"))}">⚠ ${esc(vNyt[0].tapahtuma||"säävaroitus")}${vNyt.length>1?` +${vNyt.length-1}`:""}</span>` : "";
+  document.getElementById("briefWhen").innerHTML = `Luvut ajalta ${per.txt} · laskettu ${ago(upd)}${saaTxt}${varTxt}`;
   const bd = breakdown();
   const vehH = bd.total;
   const tr = trend();
@@ -2723,6 +2736,7 @@ async function load(){
     S.nauha = {}; lnh.forEach(r=>{ (S.nauha[ln(r.route)+"|"+r.dir] ||= []).push(r); });
     S.sug = sug;
     get("v_hairiot").then(h=>{ S.hairiot = Array.isArray(h) && h.length ? h : null; }).catch(()=>{ S.hairiot = null; });
+    get("v_saa_varoitukset?order=alkaa.desc").then(w=>{ S.varoitukset = Array.isArray(w) ? w : []; }).catch(()=>{ S.varoitukset = []; });
     get(`v_saa_2h?bucket=gte.${new Date(Date.now()-8*DAY).toISOString()}&order=bucket.asc`).then(w=>{ S.saa = Array.isArray(w) ? w : []; if(document.getElementById("v-home").classList.contains("on")) renderBrief(); }).catch(()=>{ S.saa = []; });
     S.vaik = {}; (await getAll("v_lupa_vaikutus","lupa_id").catch(()=>[])).forEach(r=>S.vaik[r.lupa_id]=r);
     S.mitta = {}; mt.forEach(r=>{ (S.mitta[r.lupa_id] ||= {})[r.ikkuna+"|"+r.jakso] = r; });
