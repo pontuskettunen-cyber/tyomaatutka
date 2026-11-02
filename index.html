@@ -535,7 +535,9 @@ html.hsl #v-home .strip.s3 .tile{display:flex;align-items:center;gap:12px;paddin
 html.hsl #v-home .strip.s3 .tile b{font-size:24px;flex:none;overflow:visible}
 html.hsl #v-home .strip.s3 .tile small{white-space:normal;font-size:12px;line-height:1.3;min-width:0}
 html.hsl #v-home .strip.s3 .tile .tsub{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-html.hsl #v-home .strip.s3 .tile .tmore{position:absolute;right:12px;top:6px;font-size:11.5px}
+html.hsl #v-home .strip.s3{grid-template-columns:1.45fr 1fr 1fr}
+html.hsl #v-home .strip.s3 .tile.tbtn{padding-right:96px}
+html.hsl #v-home .strip.s3 .tile .tmore{position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:12px;margin:0;white-space:nowrap}
 html.hsl #v-home .cards{margin-bottom:12px}
 html.hsl #v-home .card{padding:9px 12px !important;gap:6px !important}
 html.hsl #v-home .card .w{display:none}
@@ -1132,7 +1134,7 @@ function renderCards(){
     return `<button class="card ${S.sel===l.lupa_id?"sel":""}" data-id="${esc(l.lupa_id)}">
       <div class="hd"><span class="num">${i+1}</span><span class="t">${esc(shortStreet(l))}</span></div>
       <div class="w">${esc(purpose(l))}</div>
-      <div class="crow"><span class="cbig">${big}</span><div class="chips">${lines(l.linjat).filter(r=>!/N$/.test(r)).slice(0,3).map(r=>`<span class="chip">${esc(r)}</span>`).join("")}${lines(l.linjat).filter(r=>!/N$/.test(r)).length>3?`<span class="chip">+${lines(l.linjat).filter(r=>!/N$/.test(r)).length-3} muuta</span>`:""}</div></div>
+      <div class="crow"><span class="cbig">${big}</span><div class="chips">${lines(l.linjat).filter(r=>!/N$/.test(r)).slice(0,3).map(r=>`<span class="chip">${esc(r)}</span>`).join("")}${lines(l.linjat).filter(r=>!/N$/.test(r)).length>3?`<span class="chip" title="ja ${lines(l.linjat).filter(r=>!/N$/.test(r)).length-3} muuta linjaa">+${lines(l.linjat).filter(r=>!/N$/.test(r)).length-3}</span>`:""}</div></div>
     </button>`;
   }).join("") || `<div class="empty">Ei mitattavia töitä vielä.</div>`;
   el.querySelectorAll(".card").forEach(c=>c.onclick=()=>select(c.dataset.id,true));
