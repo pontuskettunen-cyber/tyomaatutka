@@ -24,6 +24,7 @@ def jakso(start):
     return "aamu" if 7 <= h < 9 else "paiva" if 9 <= h < 15 else "ilta" if 15 <= h < 18 else None
 
 patterns = collections.Counter()          # (route, dir, pattern) -> trips
+esim = {}                                 # (route, dir, pattern) -> esimerkkivuoro (muodon hakuun)
 ajat = collections.defaultdict(list)      # (route, dir, pattern, jakso) -> [[min between tps], ...]
 
 def flush(trip, rows):
@@ -37,6 +38,7 @@ def flush(trip, rows):
     pat = tuple((r[1], r[2]) for r in rows)
     key = (route, d, pat)
     patterns[key] += 1
+    esim.setdefault(key, trip)
     j = jakso(start)
     if j and dtype not in ("La", "Su"):       # arkipäivät
         # rajapisteet: ajantasauspysäkit + päätepysäkki (HSL:n ratikoilla ajantasaus on vain lähtöpäässä)
@@ -77,6 +79,54 @@ for k, (pat, n) in best.items():
         if L:
             e["ajat"][j] = [round(statistics.median(x[i] for x in L), 1) for i in range(len(L[0]))]
     out[k] = e
+
+# reittiviivat GTFS:n shapes.txt:stä (ajankohtaisempi kuin ArcGIS-linjasto), yksi tiedosto per linjasuunta
+def dp(pts, tol):
+    """Douglas–Peucker-yksinkertaistus, tol metreinä."""
+    if len(pts) < 3:
+        return pts
+    kx, ky = 55600, 111320
+    stack, keep = [(0, len(pts) - 1)], {0, len(pts) - 1}
+    while stack:
+        a, b = stack.pop()
+        ax, ay, bx, by = pts[a][1] * kx, pts[a][0] * ky, pts[b][1] * kx, pts[b][0] * ky
+        dx, dy = bx - ax, by - ay
+        L2 = dx * dx + dy * dy or 1e-9
+        best, bi = 0, None
+        for i in range(a + 1, b):
+            px, py = pts[i][1] * kx - ax, pts[i][0] * ky - ay
+            t = max(0, min(1, (px * dx + py * dy) / L2))
+            d = ((px - t * dx) ** 2 + (py - t * dy) ** 2) ** 0.5
+            if d > best:
+                best, bi = d, i
+        if bi is not None and best > tol:
+            keep.add(bi)
+            stack += [(a, bi), (bi, b)]
+    return [pts[i] for i in sorted(keep)]
+
+trip_for = {k: esim[(k.split("|")[0], k.split("|")[1], v[0])] for k, v in best.items()}
+want = set(trip_for.values())
+shape_of = {}
+with zipfile.ZipFile(path) as z, z.open("trips.txt") as f:
+    for r in csv.DictReader(io.TextIOWrapper(f, encoding="utf-8-sig", newline="")):
+        if r["trip_id"] in want:
+            shape_of[r["trip_id"]] = r["shape_id"]
+need = set(shape_of.values())
+shp = collections.defaultdict(list)
+with zipfile.ZipFile(path) as z, z.open("shapes.txt") as f:
+    for r in csv.DictReader(io.TextIOWrapper(f, encoding="utf-8-sig", newline="")):
+        if r["shape_id"] in need:
+            shp[r["shape_id"]].append((int(r["shape_pt_sequence"]), float(r["shape_pt_lat"]), float(r["shape_pt_lon"])))
+os.makedirs("data/reitit", exist_ok=True)
+nr = 0
+for k, trip in trip_for.items():
+    sid = shape_of.get(trip)
+    if not sid or sid not in shp:
+        continue
+    pts = [[round(a, 5), round(b, 5)] for _, a, b in sorted(shp[sid])]
+    json.dump(dp(pts, 4), open(f"data/reitit/{k.replace('|', '_').replace(' ', '-')}.json", "w"), separators=(",", ":"))
+    nr += 1
+print(f"reittiviivoja {nr}")
 
 # ajantasauspysäkkien nimet ja sijainnit (kartta ja agentin tekstit)
 tps = {p[0] for e in out.values() for p in e["pysakit"] if p[1] >= 1}

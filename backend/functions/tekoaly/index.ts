@@ -253,6 +253,7 @@ async function aikataulu(testi = false) {
       linja: ln(e.route), route: e.route, suunta: e.dir, jakso: e.jakso, jakso_nimi: JAKSO[e.jakso] ?? e.jakso,
       vuoroja: e.vuoroja, mittauspaivia: e.paivia, mediaani_s: Math.round(e.med), huonoin_10pros_s: Math.round(e.p90),
       ehdotettu_lisaaika_min: ehdMin, varmuus,
+      vahvaan_nayttoon_puuttuu: { mittauspaivia: Math.max(0, 3 - e.paivia), vuoroja: Math.max(0, 40 - e.vuoroja) },
       muut_jaksot: (muut ?? []).filter((m: any) => m.jakso !== e.jakso).map((m: any) => ({ jakso: m.jakso, vuoroja: m.vuoroja, mediaani_s: Math.round(m.med), p90_s: Math.round(m.p90) })),
       tyomaat_reitin_jarjestyksessa: (nauha ?? []).map((r: any) => ({ lupa_id: r.lupa_id, osoite: (L[r.lupa_id]?.osoite ?? "").split(/,\s*/)[0],
         tyo: (L[r.lupa_id]?.tarkoitus ?? "").split(/\s(?:LISÄYS|KORJAUS|MUUTOS)\b/)[0].slice(0, 90), paattyy: pvm(L[r.lupa_id]?.paattyy ?? null),
@@ -265,7 +266,7 @@ Kirjoita jokaiselle tapaukselle ehdotus suunnittelijan päätettäväksi. Sään
 - Ehdota yhtä pääasiallista toimenpidettä: (a) aikataulun ajoajan väljennys jaksolle (käytä ehdotettu_lisaaika_min), (b) yhteydenotto kaupunkiin tai urakoitsijaan, jos yksi työmaa aiheuttaa yli puolet lisäajasta, tai (c) seuranta ilman muutosta, jos varmuus on alustava ja vaikutus rajautuu yhteen päivään.
 - Jos tapauksella on ajantasausvalit, kohdista väljennys niihin: kerro väli muodossa "alku → loppu: X min → Y min" (Y = aikataulu_min + ehdotus_min; jos aikataulu_min puuttuu, sano "+ehdotus_min min"). Älä ehdota lisäystä väleille, joita ei ole annettu. Jos ajantasaus_huom on annettu, kerro se lyhyesti.
 - Mainitse, milloin vaikutus todennäköisesti päättyy (suurimman työmaan päättymispäivä), jotta väljennys osataan purkaa.
-- Kerro varmuus rehellisesti. Jos varmuus on alustava, sano montako päivää lisää tarvitaan.
+- Kerro varmuus rehellisesti. Vahva näyttö = vähintään 3 mittauspäivää ja 40 vuoroa. Jos varmuus on alustava, kerro vahvaan_nayttoon_puuttuu-kentän mukaan, montako päivää ja vuoroa vielä tarvitaan.
 - Suomeksi, selkeästi, ilman markdownia. Linjat matkustajan numeroina.
 Vastaa pelkällä JSON-taulukolla, yksi olio per tapaus samassa järjestyksessä:
 [{"route": string, "suunta": number, "jakso": string, "otsikko": max 10 sanaa, "ehdotus": max 30 sanaa, "perustelu": max 45 sanaa, "toimenpiteet": [max 3 lyhyttä kohtaa], "purku": max 20 sanaa}]
