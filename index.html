@@ -381,6 +381,8 @@ footer{max-width:1360px;margin:0 auto;padding:0 28px 32px;color:var(--m);font-si
 .ltab-b tr[data-site]{cursor:pointer}.ltab-b tr[data-site]:hover td{background:#FBF4EF}.ltab-b tr.valittu td{background:#FFF1E6}
 .lnauha svg circle{cursor:pointer}
 .lveh{position:absolute}
+.lvert{display:grid;gap:6px;font-size:12.5px;line-height:1.45;margin:0 0 8px;padding:8px 10px;background:#FAFAF8;border:1px solid var(--l);border-radius:8px}
+.lvert b{font-weight:600}.lvert .ai-badge{margin-right:4px}
 .lnro{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 4px;border-radius:5px;color:#fff;font:600 11.5px/1 "IBM Plex Mono";border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.35);box-sizing:border-box}
 .lnro.iso{min-width:24px;height:24px;font-size:12.5px;cursor:pointer}
 .ltab-b .lnro{margin-right:7px;vertical-align:1px;border-width:1px;box-shadow:none}
@@ -1850,11 +1852,12 @@ function lineIndex(){
       const e = add(n);
       v2.concat(old).forEach(r=>{ if(ln(r.route)===n) e.raw.add(r.route); });
       if(ph==="tulossa"){ if(+new Date(l.alkaa) < Date.now()+14*DAY) e.up.push(l); return; }
-      const rv = v2.filter(r=>ln(r.route)===n && r.ohitukset>=MIN_N);
-      const ro = old.filter(r=>ln(r.route)===n);
+      const rv = v2.filter(r=>ln(r.route)===n && r.lisa_ajo!=null);
       let dirs = {};
-      if(rv.length) rv.forEach(r=>dirs[r.dir]={s:r.lisa_ajo, n:r.ohitukset, v2:true});
-      else ro.forEach(r=>{ if(r.lisaviive_s!=null && (r.ohitukset_24h||0)>=3) dirs[r.dir]={s:r.lisaviive_s, n:r.ohitukset_24h, v2:false}; });
+      // suunta kerrallaan: alle MIN_N ohitusta = ei vielä riittävästi dataa (näytetään, mutta ei lasketa hidastajiin eikä summiin)
+      rv.forEach(r=>{ const d = String(r.dir), o = dirs[d]; const n_ = (o?o.n:0) + r.ohitukset;
+        dirs[d] = {s: o ? (o.s*o.n + r.lisa_ajo*r.ohitukset)/Math.max(1,n_) : r.lisa_ajo, n:n_, v2:true}; });
+      Object.values(dirs).forEach(x=>x.ok = x.n >= MIN_N);
       e.works.set(l.lupa_id, {l, dirs});
     });
   });
@@ -1862,11 +1865,11 @@ function lineIndex(){
   if(!S._clMap || S._clKey !== S.luvat){ const on = S.luvat.filter(onRoute); const {cl} = clusters(on); S._clMap = new Map(on.map((l,i)=>[l.lupa_id, cl[i]])); S._clKey = S.luvat; }
   idx.forEach(e=>{
     const tot = {}, best = {};
-    e.works.forEach(w=>Object.entries(w.dirs).forEach(([d,x])=>{ if(x.s>0){ const k = d+"|"+S._clMap.get(w.l.lupa_id); best[k] = Math.max(best[k]||0, x.s); } }));
+    e.works.forEach(w=>Object.entries(w.dirs).forEach(([d,x])=>{ if(x.ok && x.s>0){ const k = d+"|"+S._clMap.get(w.l.lupa_id); best[k] = Math.max(best[k]||0, x.s); } }));
     Object.entries(best).forEach(([k,v])=>{ const d = k.split("|")[0]; tot[d] = (tot[d]||0) + v; });
     e.sites = new Set([...e.works.keys()].map(id=>S._clMap.get(id))).size;
     e.tot = tot; e.max = Math.max(0, ...Object.values(tot));
-    e.measured = [...e.works.values()].filter(w=>Object.keys(w.dirs).length).length;
+    e.measured = [...e.works.values()].filter(w=>Object.values(w.dirs).some(x=>x.ok)).length;
     // vuorokohtainen mittaus (ensisijainen): mediaani ja huonoin 10 % koko reitiltä
     const vt = (S.ltila?.[e.name]||[]).filter(r=>r.ikkuna===S.ik && r.jakso==="kaikki" && r.vuoroja>=5);
     e.vt = vt;
@@ -1983,7 +1986,7 @@ addEventListener("mousedown", e=>{ const pk = document.getElementById("lPick"); 
 function linjaTiivis(e){
   const nimi = `${e.tram?"Ratikka":"Bussi"} ${esc(e.name)}`;
   const kaikki = (S.ltila?.[e.name]||[]).filter(r=>r.ikkuna===S.ik && r.jakso==="kaikki" && r.vuoroja>=5).sort((a,b)=>b.p90-a.p90)[0];
-  const ws = [...e.works.values()].map(w=>({l:w.l, s:Math.max(0,...Object.values(w.dirs).map(x=>x.s))})).filter(x=>x.s>10).sort((a,b)=>b.s-a.s);
+  const ws = [...e.works.values()].map(w=>({l:w.l, s:lMaxS(w)})).filter(x=>x.s>10).sort((a,b)=>b.s-a.s);
   const suurin = ws[0] ? ` Suurin yksittäinen hidastaja on <b>${esc(shortStreet(ws[0].l))}</b> (${minuutteina(ws[0].s)}, arvio).` : "";
   if(kaikki){
     const kumoaa = ws[0] && ws[0].s > Math.max(30, kaikki.med*3) ? ` Miksi koko reitin luku on pienempi kuin yksittäisen työmaan? Osalla työmaista ${e.tram?"ratikka":"bussi"} kulkee tavallista nopeammin ja osalla hitaammin, ja ne kumoavat osittain toisiaan. Lisäksi työmaakohtainen luku on arvio, kun taas koko reitin luku on mitattu vuoro kerrallaan.` : "";
@@ -1994,8 +1997,8 @@ function linjaTiivis(e){
 }
 /* ---------- Linjat-ohjaamo ---------- */
 const lWorks = e => [...e.works.values()];
-const lMaxS = w => Math.max(0, ...Object.values(w.dirs).map(x=>x.s));
-function lKind(e, id){ const w = e.works.get(id); if(!w) return "tulossa"; const ds = Object.values(w.dirs); return !ds.length ? "kesken" : ds.some(x=>x.s>10) ? "hidastaa" : "ei"; }
+const lMaxS = w => Math.max(0, ...Object.values(w.dirs).filter(x=>x.ok).map(x=>x.s));
+function lKind(e, id){ const w = e.works.get(id); if(!w) return "tulossa"; const ds = Object.values(w.dirs).filter(x=>x.ok); return !ds.length ? "kesken" : ds.some(x=>x.s>10) ? "hidastaa" : "ei"; }
 const LKC = {hidastaa:"#B42318", ei:"#5B6770", kesken:"#D97706", tulossa:"#6D28D9"};
 function lNumerot(e){ const ws = lWorks(e).sort((a,b)=>lMaxS(b)-lMaxS(a)).map(w=>w.l.lupa_id);
   const up = e.up.slice().sort((a,b)=>new Date(a.alkaa)-new Date(b.alkaa)).map(l=>l.lupa_id);
@@ -2100,10 +2103,26 @@ function lSiteCard(e){
     el.innerHTML = `<div class="k">Linjan tilanne <span style="text-transform:none;letter-spacing:0">klikkaa reittiä, työmaata tai punaista väliä → tiedot tähän</span></div>${linjaTiivis(e)}${suunta}`; return; }
   const w = e.works.get(id), ph = phase(l).k;
   const nyt = (LL.veh ? [...LL.veh.values()] : []).filter(v=>{ const sh = LV.shapes.get(id); return sh && inShape(sh, v.lat, v.lon); }).length;
-  const dval = x => w && w.dirs[x] ? `<b class="${w.dirs[x].s>10?"slow":w.dirs[x].s<-10?"fast":""}">${sgn(w.dirs[x].s)}</b><small>suunta ${x} (${w.dirs[x].v2?"arvio":"alustava"}) · ${nf(w.dirs[x].n)} ohitusta</small>` : `<b>–</b><small>suunta ${x}: ${ph==="tulossa"?"alkaa "+fmtShort(l.alkaa):"ei vielä mittausta"}</small>`;
+  const dnimi = x => (S._lDirs||[]).find(o=>o.x===x)?.t || `suunta ${x}`;
+  const dval = x => { const v = w && w.dirs[x], kz = ph!=="tulossa" && lKierto(e, id, x);
+    if(kz) return `<b style="color:#B45309">kiertää?</b><small>${esc(dnimi(x))}: vain ${kz.hav}/${Math.round(kz.odot)} aikataulun vuoroa ajoi työmaan välin</small>`;
+    if(v && v.ok) return `<b class="${v.s>10?"slow":v.s<-10?"fast":""}">${sgn(v.s)}</b><small>${esc(dnimi(x))} · ${v.s>10?"hidastaa":"ei hidasta"} (arvio, ${nf(v.n)} ohitusta)</small>`;
+    if(v) return `<b style="color:#6B737B">${nf(v.n)} ohit.</b><small>${esc(dnimi(x))}: ei vielä riittävästi dataa (alle ${MIN_N} ohitusta)</small>`;
+    return `<b>–</b><small>${esc(dnimi(x))}: ${ph==="tulossa"?"alkaa "+fmtShort(l.alkaa):"ei ohituksia mitattu"}</small>`; };
+  // lupateksti (tekoäly) ja suuntakohtainen mittaus rinnakkain
+  const okD = ["1","2"].filter(x=>w && w.dirs[x] && w.dirs[x].ok), hid = okD.filter(x=>w.dirs[x].s>10);
+  let pa = "";
+  if(okD.length===2 && hid.length===1) pa = `Vaikutus on yksisuuntainen: hidastaa suuntaan ${esc(dnimi(hid[0]))}, ei vastasuuntaan. Tyypillistä, kun työ on vain toisella kaistalla.`;
+  else if(okD.length===2 && hid.length===2) pa = `Hidastaa molempiin suuntiin.`;
+  else if(okD.length===2) pa = `Kumpaankaan suuntaan ei mitattu selvää hidastusta.`;
+  else if(okD.length===1) pa = `Vain suunnasta ${esc(dnimi(okD[0]))} on riittävästi dataa. Toisen suunnan vaikutus selviää, kun ohituksia kertyy.`;
+  if(hid.length && (l.ai_vaikutus==="ei" || l.ai_vaikutus==="pieni")) pa += ` Lupateksti ei kerro merkittävästä liikennehaitasta, mutta mittaus näyttää hidastuksen: järjestelyt kannattaa tarkistaa paikan päällä.`;
+  if(okD.length===2 && !hid.length && (l.ai_vaikutus==="suuri" || l.ai_vaikutus==="kohtalainen")) pa += ` Lupateksti ennakoi haittaa, mutta mittaus ei sitä näytä.`;
+  const ai = l.ai_vaikutus ? `<div class="lvert"><div><span class="ai-badge"><i></i>LUPATEKSTI</span> haitta: <b>${esc(l.ai_vaikutus)}</b>${(l.ai_sulkee||[]).length?` · sulkee: ${esc(l.ai_sulkee.map(x=>String(x).replace("_"," ")).join(", "))}`:""}${l.ai_perustelu?`<div class="note">${esc(l.ai_perustelu)}</div>`:""}</div>${pa?`<div><b>MITTAUS</b> ${pa}</div>`:""}</div>` : (pa?`<div class="lvert"><div><b>MITTAUS</b> ${pa}</div></div>`:"");
   el.innerHTML = `<div class="k">Valittu työmaa <button type="button" class="lsx" id="lSiteX">× sulje</button></div>
     <h3>${esc(title(l))}</h3><div class="p">${esc(purpose(l))} · ${ph==="tulossa"?`alkaa ${fmtDate(l.alkaa)}`:`käynnissä${l.paattyy?" "+fmtDate(l.paattyy)+" asti":""}`}</div>
     <div class="facts">${["1","2"].map(x=>`<div>${dval(x)}</div>`).join("")}<div><b>${LL.on?nf(nyt):"–"}</b><small>linjan ${esc(e.name)} ajoneuvoa kohdalla nyt</small></div></div>
+    ${ai}
     <div class="llinks"><a href="#/?l=${encodeURIComponent(id)}">Avaa Tilannekuvassa →</a>${ph!=="tulossa"?`<a href="#/raportti?l=${encodeURIComponent(id)}">Jälkiraportti →</a>`:`<a href="#/ennakko?l=${encodeURIComponent(id)}">Ennakkoarvio →</a>`}</div>`;
   document.getElementById("lSiteX").onclick = ()=>{ S.lSite = null; S.lVali = null; S.lReitti = false; lNauha(e); lSiteCard(e); lTabs(e); lKorosta(e); };
 }
@@ -2116,7 +2135,9 @@ function lTabs(e){
   const ws = lWorks(e).sort((a,b)=>lMaxS(b)-lMaxS(a)), NR = lNumerot(e);
   let body = "";
   if(S.lTab==="tyot") body = `<div class="note" style="margin:2px 0 4px">${nf(e.works.size)} käynnissä olevaa lupaa. Vierekkäiset luvat (alle 300 m) lasketaan yhteenvedossa yhdeksi työmaa-alueeksi, siksi alueita on ${nf(e.sites)}. Numero = sama kuin kartalla.</div><table class="t"><thead><tr><th>Työmaa</th><th class="r">Suunta 1</th><th class="r">Suunta 2</th></tr></thead><tbody>
-    ${ws.map(w=>`<tr data-site="${esc(w.l.lupa_id)}" class="${S.lSite===w.l.lupa_id?"valittu":""}"><td>${lNro(NR.get(w.l.lupa_id)||"", lKind(e,w.l.lupa_id))}${esc(title(w.l))}<br><span class="note">${esc(purpose(w.l)).slice(0,64)}</span></td>${["1","2"].map(x=>`<td class="r ${w.dirs[x]&&w.dirs[x].s>10?"slow":""}">${w.dirs[x]?sgn(w.dirs[x].s):"–"}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+    ${ws.map(w=>`<tr data-site="${esc(w.l.lupa_id)}" class="${S.lSite===w.l.lupa_id?"valittu":""}"><td>${lNro(NR.get(w.l.lupa_id)||"", lKind(e,w.l.lupa_id))}${esc(title(w.l))}<br><span class="note">${esc(purpose(w.l)).slice(0,64)}</span></td>${["1","2"].map(x=>{ const v = w.dirs[x]; const kz = lKierto(e, w.l.lupa_id, x);
+      return `<td class="r ${v&&v.ok&&v.s>10?"slow":""}">${kz?`<span class="aitag kohtalainen" title="Vain ${kz.hav}/${Math.round(kz.odot)} aikataulun vuoroa ajoi työmaan välin">kiertää?</span>`:v?(v.ok?sgn(v.s):`<span class="note" title="Vain ${v.n} ohitusta: ei vielä riittävästi dataa">${v.n} ohit.</span>`):"–"}</td>`; }).join("")}</tr>`).join("")}</tbody></table>
+    <div class="note" style="margin-top:6px">"3 ohit." = mitattu, mutta alle ${MIN_N} ohitusta: ei vielä riittävästi dataa luvuksi. "kiertää?" = aikataulun vuoroista vain pieni osa ajoi työmaan välin, linja kulkee todennäköisesti poikkeusreittiä.</div>`;
   if(S.lTab==="ajat"){
     const all = (S.ltila[e.name]||[]).filter(r=>r.ikkuna===S.ik && r.dir===d);
     const k = all.find(r=>r.jakso==="kaikki");
@@ -2220,7 +2241,29 @@ async function linjaKartta(e){
     .bindTooltip(`<b>${esc(v.n)}</b><br>${v.ajt?"Ajantasauspysäkki":"Päätepysäkki"}`,{direction:"top"}).addTo(base));
 }
 const LLay = {base:null, sites:new Map(), ring:null, fitFor:null};
-const lHidastaa = (e, d) => lWorks(e).filter(w=>w.dirs[d] && w.dirs[d].s > 10).sort((a,b)=>b.dirs[d].s-a.dirs[d].s);
+/* Poikkeusreitti: aikataulun mukaan työmaan välin pitäisi ajaa N vuoroa, mutta havaittuja ohituksia on vain murto-osa. */
+function lKierto(e, id, d){
+  if(!S.at || !S.at.linjat) return null;
+  const nyt = new Date(), vk = new Date(nyt.toLocaleString("en-US",{timeZone:"Europe/Helsinki"})).getDay();
+  if(vk===0 || vk===6) return null;   // aikataulun tuntijakauma on arkipäiviltä
+  const alku = Math.max(+nyt - (S.ik==="7d" ? 7 : 1)*DAY, +new Date(S.tila?.havainto_alkoi || +nyt - DAY));
+  const tunnit = Math.max(0, (+nyt - alku)/3600000); if(tunnit < 3) return null;
+  const segs = S.segs[id] || []; let odot = 0, hav = 0;
+  [...e.raw].forEach(r=>{
+    const lin = S.at.linjat[`${r}|${d}`]; if(!lin || !lin.arki_h) return;
+    const st = new Set(lin.pysakit.map(p=>String(p[0])));
+    if(!segs.some(g=>st.has(String(g.from_stop)) && st.has(String(g.to_stop)))) return;   // tämä suunta ei kulje työmaan välillä
+    if(tunnit >= 24) odot += lin.arki_vrk * tunnit/24;
+    else { for(let t = alku; t < +nyt; t += 3600000){ const h = +new Date(t).toLocaleString("en-GB",{timeZone:"Europe/Helsinki", hour:"2-digit", hour12:false}) % 24; odot += lin.arki_h[h] || 0; } }
+    hav += (S.mlinja[id]||[]).filter(x=>x.ikkuna===S.ik && x.jakso==="kaikki" && x.route===r && String(x.dir)===d).reduce((a,x)=>a+(x.ohitukset||0),0);
+  });
+  if(!(odot >= 12 && hav < odot*0.25)) return null;
+  // varmistus: saman linjan muilla työmailla ohituksia kertyy normaalisti -> kyse ei ole keruun katkoksesta
+  const raws = [...e.raw];
+  const muut = [...e.works.keys()].filter(x=>x!==id).map(x=>(S.mlinja[x]||[]).filter(y=>y.ikkuna===S.ik && y.jakso==="kaikki" && raws.includes(y.route) && String(y.dir)===d).reduce((a,y)=>a+(y.ohitukset||0),0));
+  return muut.length && Math.max(...muut) >= odot*0.5 ? {odot, hav} : null;
+}
+const lHidastaa = (e, d) => lWorks(e).filter(w=>w.dirs[d] && w.dirs[d].ok && w.dirs[d].s > 10).sort((a,b)=>b.dirs[d].s-a.dirs[d].s);
 function lKorosta(e){
   if(!M.linja) return;
   if(LLay.ring){ LLay.ring.remove(); LLay.ring = null; }
