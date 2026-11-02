@@ -662,8 +662,9 @@ html.hsl #v-home .todo{padding:10px 14px}
   const ph = nav.querySelector('a[data-r="hsl"]'); ph.textContent = "Pilotti ja menetelmä";
   const sub = (pairs, cur) => { const d = document.createElement("div"); d.className = "subnav"; d.innerHTML = pairs.map(([href,t,k])=>`<a href="${href}" class="${k===cur?"on":""}">${t}</a>`).join(""); return d; };
   const A = [["#/","Yleiskuva","home"],["#/tyot","Kaikki työmaat","tyot"]], B = [["#/hsl","Pilotti HSL:ssä","hsl"],["#/menetelma","Menetelmä ja lähteet","menetelma"]];
-  h.prepend(sub(A,"home")); document.getElementById("v-tyot").prepend(sub(A,"tyot"));
-  document.getElementById("v-hsl").prepend(sub(B,"hsl")); document.getElementById("v-menetelma").prepend(sub(B,"menetelma"));
+  h.prepend(sub(A,"home"));
+  document.addEventListener("DOMContentLoaded", ()=>{ document.getElementById("v-tyot").prepend(sub(A,"tyot"));
+    document.getElementById("v-hsl").prepend(sub(B,"hsl")); document.getElementById("v-menetelma").prepend(sub(B,"menetelma")); });
 })();
 </script>
 
