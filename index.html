@@ -631,7 +631,7 @@ html.hsl #v-home .todo{padding:10px 14px}
   /* Linjahaku yläpalkkiin: toimii jokaiselta sivulta ja vie Linjat-näkymään */
   const f = document.getElementById("omaForm"), live = document.querySelector(".top .live");
   live.before(f); live.style.marginLeft = "0";
-  const q = document.getElementById("omaQ"); q.placeholder = "Hae linja, esim. 55"; q.setAttribute("aria-label","Hae linja: näe linjan työmaat ja paljonko ne hidastavat");
+  const q = document.getElementById("omaQ"); q.placeholder = "Linja, esim. 55"; q.setAttribute("aria-label","Hae linja: näe linjan työmaat ja paljonko ne hidastavat");
   const b = f.querySelector("button"); b.textContent = "→"; b.title = "Näytä linja"; b.setAttribute("aria-label","Näytä linja");
   /* Tilapalkin teksti lyhyeksi: koko teksti näkyy vihjeenä */
   const st = document.getElementById("status"); new MutationObserver(()=>{ live.title = st.textContent; }).observe(st,{childList:true,characterData:true,subtree:true});
