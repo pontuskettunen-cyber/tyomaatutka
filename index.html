@@ -2108,7 +2108,7 @@ function lSiteCard(e){
   const nyt = (LL.veh ? [...LL.veh.values()] : []).filter(v=>{ const sh = LV.shapes.get(id); return sh && inShape(sh, v.lat, v.lon); }).length;
   const dnimi = x => (S._lDirs||[]).find(o=>o.x===x)?.t || `suunta ${x}`;
   const dval = x => { const v = w && w.dirs[x], kz = ph!=="tulossa" && lKierto(e, id, x);
-    if(kz) return `<b style="color:#B45309">kiertää?</b><small>${esc(dnimi(x))}: vain ${kz.hav}/${Math.round(kz.odot)} aikataulun vuoroa ajoi työmaan välin</small>`;
+    if(kz) return `<b style="color:#B45309">${kz.tiedote?"kiertää":"kiertää?"}</b><small>${esc(dnimi(x))}: vain ${kz.hav}/${Math.round(kz.odot)} aikataulun vuoroa ajoi työmaan välin.${S.hairiot ? (kz.tiedote ? ` <b>Vahvistettu:</b> HSL:n tiedote "${esc((kz.tiedote.otsikko||"").slice(0,90))}"` : ` HSL ei ole tiedottanut poikkeuksesta tälle linjalle.`) : ""}</small>`;
     if(v && v.ok) return `<b class="${v.s>10?"slow":v.s<-10?"fast":""}">${sgn(v.s)}</b><small>${esc(dnimi(x))} · ${v.s>10?"hidastaa":"ei hidasta"} (arvio, ${nf(v.n)} ohitusta)</small>`;
     if(v) return `<b style="color:#6B737B">${nf(v.n)} ohit.</b><small>${esc(dnimi(x))}: ei vielä riittävästi dataa (alle ${MIN_N} ohitusta)</small>`;
     return `<b>–</b><small>${esc(dnimi(x))}: ${ph==="tulossa"?"alkaa "+fmtShort(l.alkaa):"ei ohituksia mitattu"}</small>`; };
@@ -2139,8 +2139,8 @@ function lTabs(e){
   let body = "";
   if(S.lTab==="tyot") body = `<div class="note" style="margin:2px 0 4px">${nf(e.works.size)} käynnissä olevaa lupaa. Vierekkäiset luvat (alle 300 m) lasketaan yhteenvedossa yhdeksi työmaa-alueeksi, siksi alueita on ${nf(e.sites)}. Numero = sama kuin kartalla.</div><table class="t"><thead><tr><th>Työmaa</th><th class="r">Suunta 1</th><th class="r">Suunta 2</th></tr></thead><tbody>
     ${ws.map(w=>`<tr data-site="${esc(w.l.lupa_id)}" class="${S.lSite===w.l.lupa_id?"valittu":""}"><td>${lNro(NR.get(w.l.lupa_id)||"", lKind(e,w.l.lupa_id))}${esc(title(w.l))}<br><span class="note">${esc(purpose(w.l)).slice(0,64)}</span></td>${["1","2"].map(x=>{ const v = w.dirs[x]; const kz = lKierto(e, w.l.lupa_id, x);
-      return `<td class="r ${v&&v.ok&&v.s>10?"slow":""}">${kz?`<span class="aitag kohtalainen" title="Vain ${kz.hav}/${Math.round(kz.odot)} aikataulun vuoroa ajoi työmaan välin">kiertää?</span>`:v?(v.ok?sgn(v.s):`<span class="note" title="Vain ${v.n} ohitusta: ei vielä riittävästi dataa">${v.n} ohit.</span>`):"–"}</td>`; }).join("")}</tr>`).join("")}</tbody></table>
-    <div class="note" style="margin-top:6px">"3 ohit." = mitattu, mutta alle ${MIN_N} ohitusta: ei vielä riittävästi dataa luvuksi. "kiertää?" = aikataulun vuoroista vain pieni osa ajoi työmaan välin, linja kulkee todennäköisesti poikkeusreittiä.</div>`;
+      return `<td class="r ${v&&v.ok&&v.s>10?"slow":""}">${kz?`<span class="aitag ${kz.tiedote?"suuri":"kohtalainen"}" title="Vain ${kz.hav}/${Math.round(kz.odot)} aikataulun vuoroa ajoi työmaan välin${kz.tiedote?" · vahvistettu HSL:n häiriötiedotteesta":""}">${kz.tiedote?"kiertää ✓":"kiertää?"}</span>`:v?(v.ok?sgn(v.s):`<span class="note" title="Vain ${v.n} ohitusta: ei vielä riittävästi dataa">${v.n} ohit.</span>`):"–"}</td>`; }).join("")}</tr>`).join("")}</tbody></table>
+    <div class="note" style="margin-top:6px">"3 ohit." = mitattu, mutta alle ${MIN_N} ohitusta: ei vielä riittävästi dataa luvuksi. "kiertää?" = aikataulun vuoroista vain pieni osa ajoi työmaan välin, linja kulkee todennäköisesti poikkeusreittiä. "kiertää ✓" = HSL on myös tiedottanut linjalle poikkeuksesta.</div>`;
   if(S.lTab==="ajat"){
     const all = (S.ltila[e.name]||[]).filter(r=>r.ikkuna===S.ik && r.dir===d);
     const k = all.find(r=>r.jakso==="kaikki");
@@ -2265,7 +2265,15 @@ function lKierto(e, id, d){
   // varmistus: saman linjan muilla työmailla ohituksia kertyy normaalisti -> kyse ei ole keruun katkoksesta
   const raws = [...e.raw];
   const muut = [...e.works.keys()].filter(x=>x!==id).map(x=>(S.mlinja[x]||[]).filter(y=>y.ikkuna===S.ik && y.jakso==="kaikki" && raws.includes(y.route) && String(y.dir)===d).reduce((a,y)=>a+(y.ohitukset||0),0));
-  return muut.length && Math.max(...muut) >= odot*0.5 ? {odot, hav} : null;
+  if(!(muut.length && Math.max(...muut) >= odot*0.5)) return null;
+  return {odot, hav, tiedote: lTiedote(raws)};
+}
+/* HSL:n oma häiriötiedote linjalle (Digitransit): vahvistaa poikkeusreitin */
+function lTiedote(raws){
+  const nyt = Date.now();
+  return (S.hairiot||[]).find(a=>(a.reitit||[]).some(x=>raws.includes(x))
+    && (!a.alkaa || +new Date(a.alkaa) <= nyt + DAY) && (!a.paattyy || +new Date(a.paattyy) >= nyt)
+    && (a.vaikutus==="DETOUR" || a.vaikutus==="MODIFIED_SERVICE" || a.vaikutus==="STOP_MOVED" || /poikkeu|reitti|kiert|ohitt|siirt/i.test((a.otsikko||"")+" "+(a.kuvaus||"")))) || null;
 }
 const lHidastaa = (e, d) => lWorks(e).filter(w=>w.dirs[d] && w.dirs[d].ok && w.dirs[d].s > 10).sort((a,b)=>b.dirs[d].s-a.dirs[d].s);
 function lKorosta(e){
@@ -2487,6 +2495,7 @@ async function load(){
     S.ltila = {}; lt.forEach(r=>{ r.dir = String(r.dir); (S.ltila[ln(r.route)] ||= []).push(r); });
     S.nauha = {}; lnh.forEach(r=>{ (S.nauha[ln(r.route)+"|"+r.dir] ||= []).push(r); });
     S.sug = sug;
+    get("v_hairiot").then(h=>{ S.hairiot = h||[]; }).catch(()=>{ S.hairiot = []; });
     S.vaik = {}; (await getAll("v_lupa_vaikutus","lupa_id").catch(()=>[])).forEach(r=>S.vaik[r.lupa_id]=r);
     S.mitta = {}; mt.forEach(r=>{ (S.mitta[r.lupa_id] ||= {})[r.ikkuna+"|"+r.jakso] = r; });
     S.mlinja = {}; mlj.forEach(r=>(S.mlinja[r.lupa_id] ||= []).push(r));
