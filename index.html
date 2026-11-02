@@ -218,15 +218,19 @@ table.t .r{text-align:right;white-space:nowrap;font-family:"IBM Plex Mono"}
 .veh{display:grid;grid-template-columns:48px 1fr auto;gap:2px 10px;padding:9px 16px;border-bottom:1px solid var(--l2);font-size:13px;align-items:center}
 .badge{font:600 12px "IBM Plex Mono";text-align:center;padding:3px 0;border-radius:6px;color:#fff;background:#1D6FB8}
 .badge.tram{background:#00985F}
-.mleg{background:rgba(255,255,255,.96);border:1px solid rgba(0,0,0,.14);border-radius:9px;box-shadow:0 1px 5px rgba(0,0,0,.15);font-size:12px;line-height:1.35;color:#1f2937;max-width:250px}
-.mleg-h{all:unset;cursor:pointer;display:flex;justify-content:space-between;gap:10px;width:100%;box-sizing:border-box;padding:6px 10px;font-weight:600;font-size:12px}
-.mleg-h span{transition:transform .15s}.mleg.kiinni .mleg-h span{transform:rotate(-90deg)}
-.mleg-b{padding:0 10px 8px;max-height:46vh;overflow-y:auto}.mleg.kiinni .mleg-b{display:none}
-.mleg-b>div,.mleg-live>div{display:flex;align-items:center;gap:7px;margin:2px 0}
+.mleg{display:block;background:rgba(255,255,255,.97);border:1px solid rgba(0,0,0,.14);border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,.16);font-size:12px;line-height:1.35;color:#1f2937;width:max-content;max-width:min(470px,calc(100vw - 60px))}
+.mleg-h{display:flex;align-items:center;gap:8px;background:none;border:0;margin:0;font:600 12.5px/1.2 var(--sans,system-ui);color:#1f2937;cursor:pointer;padding:7px 12px}
+.mleg-h .ic{display:inline-flex;gap:3px}.mleg-h .ic i{width:8px;height:8px;border-radius:2px;display:inline-block}
+.mleg-h .ar{color:#6B737B;font-weight:400}
+.mleg.kiinni .mleg-b{display:none}
+.mleg-b{display:grid;grid-template-columns:auto auto;gap:4px 22px;padding:2px 12px 10px;border-top:1px solid rgba(0,0,0,.08)}
+.mleg-c{display:flex;flex-direction:column;gap:3px;min-width:0}
+.mleg-c>div{display:flex;align-items:center;gap:7px;white-space:nowrap}
 .mleg-b i{display:inline-block;width:18px;height:11px;border-radius:3px;flex:none;box-sizing:border-box}
-.mleg-g{font:500 10.5px "IBM Plex Mono",monospace;letter-spacing:.05em;text-transform:uppercase;color:var(--m,#6B737B);margin-top:7px!important}
-.mleg-live{display:none!important;flex-direction:column;align-items:stretch!important}.mleg.live .mleg-live{display:flex!important}
-.mleg-n{color:var(--m,#6B737B);font-size:11.5px}
+.mleg-g{font:500 10.5px "IBM Plex Mono",monospace;letter-spacing:.05em;text-transform:uppercase;color:#6B737B;margin:8px 0 2px}
+.mleg-live{grid-column:1/-1;display:none}.mleg.live .mleg-live{display:flex;flex-wrap:wrap;gap:3px 14px;align-items:center}
+.mleg-live .mleg-g{width:100%}
+.mleg-c.himmea{opacity:.45}
 .livebtn{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid rgba(0,0,0,.18);border-radius:999px;padding:7px 14px 7px 11px;font:600 13px/1.2 var(--sans,system-ui);color:#1f2937;box-shadow:0 1px 5px rgba(0,0,0,.18);cursor:pointer;white-space:nowrap}
 .livebtn:hover{background:#f6f7f8}
 .livebtn .dot{width:10px;height:10px;border-radius:50%;background:#9AA3AB;flex:none}
@@ -1353,25 +1357,26 @@ function renderHomeMap(){
     const lg = L.control({position:"bottomleft"});
     lg.onAdd = ()=>{ const d = L.DomUtil.create("div","mleg"); d.id = "homeLeg"; L.DomEvent.disableClickPropagation(d); L.DomEvent.disableScrollPropagation(d);
       const sw = (st)=>`<i style="${st}"></i>`;
-      d.innerHTML = `<button type="button" class="mleg-h" aria-expanded="true">Selitteet <span>▾</span></button><div class="mleg-b">
-        <div class="mleg-g">Työmaat</div>
+      d.innerHTML = `<button type="button" class="mleg-h" aria-expanded="false"><span class="ic"><i style="background:#B42318"></i><i style="background:#5B6770"></i><i style="background:#D97706"></i></span>Mitä värit tarkoittavat? <span class="ar">▴</span></button><div class="mleg-b">
+        <div class="mleg-c"><div class="mleg-g">Työmaat</div>
         <div>${sw("background:rgba(180,35,24,.35);border:1.5px solid #B42318")}Hidastaa busseja ja ratikoita</div>
         <div>${sw("background:rgba(91,103,112,.3);border:1.5px solid #5B6770")}Ei mitattua haittaa</div>
         <div>${sw("background:rgba(217,119,6,.3);border:1.5px solid #D97706")}Mittaus kesken</div>
-        <div>${sw("width:8px;height:8px;border-radius:50%;background:#A3A99F;margin:0 5px")}Muu katutyö, ei bussireitillä</div>
-        <div>${sw("width:13px;height:13px;border-radius:50%;border:2.5px solid #14181C;background:transparent")}Valittu työmaa</div>
-        <div class="mleg-g">Valitun työmaan pysäkkivälit</div>
+        <div>${sw("width:8px;height:8px;border-radius:50%;background:#A3A99F;margin:0 5px")}Muu katutyö, ei reitillä</div>
+        <div>${sw("width:13px;height:13px;border-radius:50%;border:2.5px solid #14181C;background:transparent;margin:0 2px")}Valittu työmaa</div></div>
+        <div class="mleg-c" id="legSeg"><div class="mleg-g">Valitun työmaan pysäkkivälit</div>
         <div>${sw("height:4px;background:#B42318")}Hidastuu selvästi</div>
-        <div>${sw("height:3px;background:#3F4850")}Normaali, ei hidastusta</div>
-        <div>${sw("height:0;border-top:3px dashed #8A939B")}Katkoviiva: vähän mittauksia tai reitti likimääräinen</div>
-        <div>${sw("width:8px;height:8px;border-radius:50%;background:#fff;border:1.5px solid #14181C;margin:0 4px")}Pysäkki</div>
+        <div>${sw("height:3px;background:#3F4850")}Normaali</div>
+        <div>${sw("height:0;border-top:3px dashed #8A939B")}Vähän mittauksia</div>
+        <div>${sw("width:8px;height:8px;border-radius:50%;background:#fff;border:1.5px solid #14181C;margin:0 5px")}Pysäkki</div></div>
         <div class="mleg-live"><div class="mleg-g">Livenä</div>
-        <div>${sw("width:9px;height:9px;border-radius:50%;background:#1D6FB8;margin:0 4px")}Bussi &nbsp; ${sw("width:9px;height:9px;border-radius:50%;background:#00985F;margin:0 4px")}Ratikka</div>
-        <div>${sw("width:9px;height:9px;border-radius:50%;background:#1D6FB8;border:3px solid #EAB308;margin:0 2px")}Juuri nyt työmaan kohdalla</div>
-        <div class="mleg-n">Napauta ajoneuvoa: tiedot jäävät näkyviin.</div></div>
+        <span>${sw("width:9px;height:9px;border-radius:50%;background:#1D6FB8;vertical-align:-1px;margin-right:4px")}Bussi</span>
+        <span>${sw("width:9px;height:9px;border-radius:50%;background:#00985F;vertical-align:-1px;margin-right:4px")}Ratikka</span>
+        <span>${sw("width:13px;height:13px;border-radius:50%;background:#1D6FB8;border:3px solid #EAB308;vertical-align:-3px;margin-right:4px")}Juuri nyt työmaalla</span>
+        <span style="color:#6B737B">Napauta ajoneuvoa seurataksesi.</span></div>
       </div>`;
-      const h = d.querySelector(".mleg-h"); let auki = true; try{ auki = localStorage.getItem("tt_leg") !== "0"; }catch(e){}
-      const set = v=>{ auki = v; d.classList.toggle("kiinni", !v); h.setAttribute("aria-expanded", v); try{ localStorage.setItem("tt_leg", v?"1":"0"); }catch(e){} };
+      const h = d.querySelector(".mleg-h"); let auki = false; try{ auki = localStorage.getItem("tt_leg2") === "1"; }catch(e){}
+      const set = v=>{ auki = v; d.classList.toggle("kiinni", !v); h.setAttribute("aria-expanded", v); h.querySelector(".ar").textContent = v ? "▾ piilota" : "▴"; try{ localStorage.setItem("tt_leg2", v?"1":"0"); }catch(e){} };
       h.onclick = ()=>set(!auki); set(auki); return d; };
     lg.addTo(M.home);
     M.home.on("moveend", ()=>{ if(LV.on) syncSubs(); });
@@ -1398,6 +1403,7 @@ function renderHomeMap(){
   const showAll = S.segAll || !sig.length;
   const segs = (showAll ? allSegs : sig).slice().sort((a,b)=>(a.lisaviive_s||0)-(b.lisaviive_s||0));
   segCtl(allSegs.length ? {sig:sig.length, all:allSegs.length, showAll} : null);
+  const lgS = document.getElementById("legSeg"); if(lgS) lgS.classList.toggle("himmea", !allSegs.length);
   const stops = new Map();
   segs.forEach(g=>{
     const pts = Array.isArray(g.viiva) && g.viiva.length>1 ? g.viiva : [[g.from_lat,g.from_lon],[g.to_lat,g.to_lon]];
