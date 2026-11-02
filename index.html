@@ -558,16 +558,10 @@ html.hsl #v-home .todo-sec{margin-top:16px}
 html.hsl #v-home .todo{padding:10px 14px}
 @media(max-width:1000px){html.hsl #v-home .nowrow{flex-direction:column;align-items:stretch}html.hsl #v-home .nowctl{justify-content:space-between}}
 .cunit{font:500 11px "IBM Plex Sans";color:var(--m);margin-left:3px;letter-spacing:0}
-.eurobox{margin:10px 0 12px;padding:12px 14px;border:1px solid var(--l);border-radius:var(--r);background:var(--g)}
-.eurobox .eh{display:flex;gap:8px;align-items:baseline;margin-bottom:8px}
-.eurobox .eg{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:8px}
-.eurobox .eg>div{background:var(--p);border:1px solid var(--l);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:2px}
-.eurobox .eg b{font:600 22px/1.1 "IBM Plex Mono";letter-spacing:-.02em}
-.eurobox .eg span{font-weight:600;font-size:13.5px}
-.eurobox .eg small{color:var(--m);font-size:12px;line-height:1.35}
-.eurobox .eg .saast{border-style:dashed;background:none}
-.eurobox .eg .saast b{font-size:15px;font-family:inherit}
-.eurobox>.note{font-size:11.5px}
+.eurobox{margin:8px 0 10px;padding:10px 14px;border:1px solid var(--l);border-radius:var(--r);background:var(--g);display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 22px;font-size:13.5px}
+.eurobox .eurn{font:600 17px "IBM Plex Mono";letter-spacing:-.02em;margin-right:4px}
+.eurobox .note{font-size:12px}
+.eurobox .info.txt{margin-left:auto}
 .rap-eur{background:var(--g);border-radius:8px;padding:10px 12px}
 @media(max-width:860px){.eurobox .eg{grid-template-columns:1fr}}
 .bdr.bdsite,.bdr.bdhead{grid-template-columns:minmax(120px,260px) 1fr 62px 92px 76px 82px}
@@ -576,6 +570,11 @@ html.hsl #v-home .todo{padding:10px 14px}
 .bdr .r{text-align:right}
 @media(max-width:720px){.bdr.bdsite{grid-template-columns:1fr 60px 70px}.bdr .beur:last-child,.bdr.bdhead{display:none}}
 .lc-k.pk b{font-variant-numeric:tabular-nums}.lc-k.pk-ok b,.lc-k.pk-ok i{color:#1F7A4D}.lc-k.pk-amb b,.lc-k.pk-amb i{color:#B45309}.lc-k.pk-red b,.lc-k.pk-red i{color:#B42318}.lc-k.pk i{font-style:normal;font-size:11px;font-weight:600}
+.subnav{display:flex;gap:4px;margin:-4px 0 12px;border-bottom:1px solid var(--l)}
+.subnav a{padding:7px 12px;font-size:13.5px;font-weight:600;color:var(--m);text-decoration:none;border-bottom:3px solid transparent;margin-bottom:-1px}
+.subnav a.on{color:var(--a);border-bottom-color:var(--a)}
+.h2links{display:flex;gap:18px;align-items:baseline}
+#worstLine{font-size:13px}
 </style>
 </head>
 <body>
@@ -622,7 +621,7 @@ html.hsl #v-home .todo{padding:10px 14px}
     <div id="aiBody"></div>
   </section>
   <div class="layer-k">Kartta ja työmaat</div>
-  <div class="h2row"><h2 id="cardsTitle">Eniten vaikuttavat työt nyt</h2><a href="#/tyot">Kaikki työmaat →</a></div>
+  <div class="h2row"><h2 id="cardsTitle">Eniten vaikuttavat työt nyt</h2><span class="h2links"><a href="#/linjat" id="worstLine" style="display:none"></a><a href="#/tyot">Kaikki työmaat →</a></span></div>
   <div class="cards" id="cards"></div>
   <div class="split fit">
     <div class="panel mapp">
@@ -656,6 +655,15 @@ html.hsl #v-home .todo{padding:10px 14px}
   /* Tilapalkin teksti lyhyeksi: koko teksti näkyy vihjeenä */
   const st = document.getElementById("status"); new MutationObserver(()=>{ live.title = st.textContent; }).observe(st,{childList:true,characterData:true,subtree:true});
   const split = h.querySelector(".split.fit"); split.after(h.querySelector(".todo-sec")); h.querySelector(".todo-sec").after(document.getElementById("aiBox"));
+  /* Valikko: Tilannekuva · Linjat · Ennakkoarvio · Pilotti ja menetelmä. Työmaat ja Tietoa ovat alasivuja. */
+  window.NAV_ALIAS = { tyot: "home", menetelma: "hsl", raportti: "home" };
+  const nav = document.querySelector(".top nav");
+  nav.querySelectorAll('a[data-r="tyot"], a[data-r="menetelma"], .navk, .navsep').forEach(x=>x.style.display="none");
+  const ph = nav.querySelector('a[data-r="hsl"]'); ph.textContent = "Pilotti ja menetelmä";
+  const sub = (pairs, cur) => { const d = document.createElement("div"); d.className = "subnav"; d.innerHTML = pairs.map(([href,t,k])=>`<a href="${href}" class="${k===cur?"on":""}">${t}</a>`).join(""); return d; };
+  const A = [["#/","Yleiskuva","home"],["#/tyot","Kaikki työmaat","tyot"]], B = [["#/hsl","Pilotti HSL:ssä","hsl"],["#/menetelma","Menetelmä ja lähteet","menetelma"]];
+  h.prepend(sub(A,"home")); document.getElementById("v-tyot").prepend(sub(A,"tyot"));
+  document.getElementById("v-hsl").prepend(sub(B,"hsl")); document.getElementById("v-menetelma").prepend(sub(B,"menetelma"));
 })();
 </script>
 
@@ -1004,6 +1012,7 @@ const INFO = {
   ajantasaus: ["Ajantasausväli", "Aikataulussa kellonaika on vain ajantasauspysäkeillä. Etuajassa oleva vuoro odottaa niillä. Aikataulun väljennys tehdään kahden ajantasauspysäkin väliin, joten taulukko näyttää, mille väleille työmaiden lisäaika osuu. Lähde: HSL:n avoin aikataulu-data (GTFS), päivitetään viikoittain."],
   p90: ["Huonoin kymmenesosa", "Joka kymmenes vuoro saa työmaiden kohdalla vähintään näin paljon lisäaikaa. Matkustajalle tärkein luku: se ratkaisee, ehtiikö vaihtoon."],
   puskuri: ["Viivevara", "Kuinka monta minuuttia vuoro voi myöhästyä ilman, että saman auton tai vaunun seuraava lähtö myöhästyy. Luku tulee HSL:n avoimesta aikataulusta (max_delay, päiväajan vuorojen mediaani). Ratikoilla se on tarkistettu vaunukierroista: se on kääntöaika päätepysäkillä miinus noin 3–4 minuuttia. Alle näkyy, kuinka suuren osan varasta työmaat vievät huonoimmassa kymmenesosassa vuoroista. Alle 50 %: viive mahtuu aikatauluun eikä maksa mitään. 50–100 %: vara on vähissä. Yli 100 %: viive voi siirtyä seuraaviin lähtöihin. 0 min tarkoittaa tiukkaa aikataulua: kääntöaika on vain minimin verran, joten jo pieni viive voi siirtyä seuraavaan lähtöön. Matkan aikana aikataulussa voi silti olla väljyyttä, jota tämä luku ei näe. Busseilla luku on aikataulun arvo, ei vielä mitattu."],
+  eurot: ["Miten eurot lasketaan", "Aikataulu: lisäaika × 50 €/h, eli bussin ajotunnin kuljettajakulu (Väylävirasto, hankearvioinnin yksikköarvot 2022: 49,70 €/h). Pieni viive ei maksa mitään, koska se mahtuu aikataulun väljyyteen. Rahaa se maksaa vasta, kun aikataulua pidennetään tai linjalle tarvitaan lisäauto. Matkustajat: lisäaika × 20 matkustajaa vuorossa (oletus) × 5 €/h, eli matkustajan ajan arvo, jota käytetään liikennehankkeiden arvioinnissa. Se ei ole kassasta lähtevää rahaa. Säästetyt eurot lasketaan samoilla hinnoilla mitatusta erosta, kun työ päättyy tai järjestelyä muutetaan ja samaa kohtaa voidaan verrata ennen ja jälkeen."],
   jakso: ["Luvut ajalta", "Aikaväli, jolta näytetyt luvut on laskettu. Tarkennettu mittaus alkoi aamulla 2.11.2026, joten aluksi jakso on lyhyempi kuin valittu 24 h tai 7 vrk."],
 };
 const infoBtn = k => `<button class="info" data-info="${k}" aria-label="Mitä tämä tarkoittaa?">i</button>`;
@@ -1093,7 +1102,7 @@ function renderBreakdown(){
   const top5 = bd.sites.slice(0,5).reduce((s,x)=>s+x.vehH,0);
   const bar = (label, v, href, sub) => `<div class="bdr">${href?`<a href="${href}">${esc(label)}</a>`:`<span>${esc(label)}</span>`}<div class="pb"><i style="width:${Math.max(2, v/(bd.sites[0]?.vehH||v||1)*100)}%"></i></div><b>${nf(v,1)} h</b><small>${nf(v/tot*100)} %${sub?" · "+sub:""}</small></div>`;
   let rows = "";
-  if(tab==="tyomaat") rows = `<div class="bdr bdhead"><span>Työmaa</span><span></span><span class="r">Lisäaika</span><span>Osuus</span><span class="r" title="Lisäaika × ${EUR_AJO} €/h, jos se lisätään aikatauluun">Aikataulu €</span><span class="r" title="Lisäaika × ${S.load} matkustajaa × ${EUR_MATK} €/h">Matkustajat €<br><i style="font-style:normal;text-transform:none;letter-spacing:0">${S.load} hlö/vuoro</i></span></div>` + bd.sites.slice(0,10).map(x=>{
+  if(tab==="tyomaat") rows = `<div class="bdr bdhead"><span>Työmaa</span><span></span><span class="r">Lisäaika</span><span>Osuus</span><span class="r" title="Lisäaika × ${EUR_AJO} €/h, jos se lisätään aikatauluun">Aikataulu</span><span class="r" title="Lisäaika × ${S.load} matkustajaa × ${EUR_MATK} €/h">Matkust.</span></div>` + bd.sites.slice(0,10).map(x=>{
     const id = x.l.lupa_id, open = S.bdOpenSite===id;
     const lr = (S.mlinja[id]||[]).filter(r=>r.ikkuna===S.ik && r.jakso==="kaikki" && r.ohitukset>=MIN_N && /^\d{1,3}[A-Z]?$/.test(ln(r.route))).sort((a,b)=>(b.ohitukset*Math.max(0,b.lisa_ajo||0))-(a.ohitukset*Math.max(0,a.lisa_ajo||0)));
     return `<div class="bdr bdsite ${open?"open":""}" data-site="${esc(id)}" role="button" tabindex="0"><span>${open?"▾":"▸"} ${esc(title(x.l))}</span><div class="pb"><i style="width:${Math.max(2, x.vehH/(bd.sites[0]?.vehH||1)*100)}%"></i></div><b>${nf(x.vehH,1)} h</b><small>${nf(x.vehH/tot*100)} % · ${x.n<30?"alustava":nf(x.n)+" ohitusta"}</small><b class="beur" title="Jos lisätään aikatauluun: ${nf(x.vehH,1)} h × ${EUR_AJO} €/h">${eur(x.vehH*EUR_AJO)}</b><b class="beur" title="Matkustajien aika: ${nf(x.vehH*S.load,0)} h × ${EUR_MATK} €/h (${S.load} matkustajaa vuorossa, oletus)">${eur(x.vehH*S.load*EUR_MATK)}</b></div>`
@@ -1109,13 +1118,11 @@ function renderBreakdown(){
       <div class="seg" id="bdTabs"><button data-t="tyomaat" class="${tab==="tyomaat"?"on":""}">Työmaittain</button><button data-t="linjat" class="${tab==="linjat"?"on":""}">Linjoittain</button><button data-t="tyypit" class="${tab==="tyypit"?"on":""}">Työtyypeittäin</button></div></div>
     ${bd.sites.length>=5 && tab==="tyomaat" ? `<div class="pareto">${bd.sites.length} työmaa-alueesta <b>5 suurinta aiheuttaa ${nf(top5/tot*100)} %</b> kaikesta työmaiden kohdan lisäajasta.</div>`:""}
     <div class="eurobox">
-      <div class="eh"><b>Mitä tämä maksaa?</b> <span class="note">${esc(period().full?"vuorokaudessa":"mitatulta ajalta ("+period().dur+")")} · arvio</span></div>
-      <div class="eg">
-        <div><b>${eur(bd.total*EUR_AJO)}</b><span>jos lisäaika lisätään aikatauluun</span><small>${nf(bd.total,1)} h × ${EUR_AJO} €/h (kuljettajan tuntikulu). Pieni viive ei maksa mitään, koska se mahtuu aikataulun väljyyteen. Rahaa se maksaa vasta, kun aikataulua pidennetään tai linjalle tarvitaan lisäauto.</small></div>
-        <div><b>${eur(bd.total*S.load*EUR_MATK)}</b><span>matkustajien menettämää aikaa</span><small>noin ${nf(Math.round(bd.total*S.load/100)*100)} h × ${EUR_MATK} €/h, laskettu ${S.load} matkustajalla vuorossa (oletus). Matkustajien ajan arvo, jota käytetään liikennehankkeiden arvioinnissa. Ei kassasta lähtevää rahaa.</small></div>
-        <div class="saast"><b>Säästetyt eurot</b><span>lasketaan mitatusta erosta</span><small>Kun työ päättyy tai järjestelyä muutetaan, tutka mittaa saman kohdan ennen ja jälkeen. Säästö = mitattu ero × samat yksikköhinnat.</small></div>
-      </div>
-      <div class="note">Yksikköhinnat: Väylävirasto, hankearvioinnin yksikköarvot 2022. Bussin ajotunnin kuljettajakulu 49,70 €/h, bussimatkustajan ajan arvo noin 5 €/h.</div>
+      <b>Mitä tämä maksaa?</b>
+      <span><b class="eurn">${eur(bd.total*EUR_AJO)}</b> jos lisäaika lisätään aikatauluun</span>
+      <span><b class="eurn">${eur(bd.total*S.load*EUR_MATK)}</b> matkustajien aikaa (${S.load} hlö/vuoro)</span>
+      <span class="note">Säästöt lasketaan mitatusta erosta, kun työ päättyy.</span>
+      <button class="info txt" data-info="eurot" type="button">Miten eurot lasketaan</button>
     </div>
     <div class="bdl">${rows || `<div class="note">Ei vielä riittävästi mitattua dataa.</div>`}</div>
     <div class="bdf"><div><b style="font-size:12px">Päivittäin</b> <span class="note">(valmiit vuorokaudet)</span>
@@ -1125,6 +1132,7 @@ function renderBreakdown(){
   el.querySelectorAll("#bdTabs button").forEach(b=>b.onclick=()=>{ S.bdTab=b.dataset.t; renderBreakdown(); });
   el.querySelectorAll(".bdsite").forEach(r=>{ const t=()=>{ S.bdOpenSite = S.bdOpenSite===r.dataset.site ? null : r.dataset.site; renderBreakdown(); }; r.onclick=t; r.onkeydown=e=>{ if(e.key==="Enter"){ e.preventDefault(); t(); } }; });
   if(_pop) _pop.style.display="none";
+  wireInfo(el);
 }
 
 document.getElementById("gloss").innerHTML = Object.values(INFO).map(([h,t,g])=>`<dt>${esc(h.split(":")[0])}</dt><dd>${esc(typeof t==="function"?g:t)}</dd>`).join("");
@@ -1199,6 +1207,8 @@ function renderCards(){
     </button>`;
   }).join("") || `<div class="empty">Ei mitattavia töitä vielä.</div>`;
   el.querySelectorAll(".card").forEach(c=>c.onclick=()=>select(c.dataset.id,true));
+  const wl = document.getElementById("worstLine"), bl = breakdown().byLine?.[0];
+  if(wl && bl){ wl.style.display = ""; wl.innerHTML = `Pahiten kärsivä linja: <b>${esc(bl[0])}</b> · avaa ohjaamo →`; wl.onclick = ()=>{ S.lSel = bl[0]; S.lSite = null; S.lVali = null; }; }
 }
 let Lhome, LhomeSeg, homeFitted=false;
 /* Kartan valitsin: oletuksena vain hidastavat pysäkkivälit, "Kaikki" näyttää loput */
@@ -2617,7 +2627,8 @@ function route(nav){
   if(path==="live"){ history.replaceState(null,"","#/"); S.forceLive = true; }
   const v = ["tyot","menetelma","linjat","raportti","ennakko","hsl"].includes(path) ? path : "home";
   document.querySelectorAll(".view").forEach(x=>x.classList.toggle("on", x.id==="v-"+v));
-  document.querySelectorAll("nav a").forEach(a=>a.classList.toggle("on", (a.dataset.r||"home")===(v==="home"?"home":v) || (a.dataset.r===""&&v==="home")));
+  const va = (window.NAV_ALIAS||{})[v] || v;
+  document.querySelectorAll("nav a").forEach(a=>a.classList.toggle("on", (a.dataset.r||"home")===(va==="home"?"home":va) || (a.dataset.r===""&&va==="home")));
   if(!S.loaded) return;
   if(v==="home"){ const changed = l && S.byId[l] && S.sel!==l; if(changed) S.sel = l;
     renderBrief(); renderAI(); renderCards(); renderHomeMap(); renderDetail(); setTimeout(()=>M.home.invalidateSize(),50);
