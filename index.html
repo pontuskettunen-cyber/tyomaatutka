@@ -264,6 +264,10 @@ table.t .r{text-align:right;white-space:nowrap;font-family:"IBM Plex Mono"}
 .sys{margin-top:16px;display:flex;flex-wrap:wrap;gap:6px 22px;font-size:12.5px;color:var(--m);padding:12px 2px;border-top:1px solid var(--l)}
 .sys b{color:var(--i2);font-weight:500;font-family:"IBM Plex Mono"}
 footer{max-width:1360px;margin:0 auto;padding:0 28px 32px;color:var(--m);font-size:12px;line-height:1.6}
+.card{min-height:0 !important;padding:10px 12px !important;gap:4px !important}
+.card .w{-webkit-line-clamp:1 !important}
+.crow{display:flex;align-items:center;gap:8px;margin-top:auto}
+.crow .chips{flex-wrap:nowrap;overflow:hidden}
 </style>
 </head>
 <body>
@@ -550,9 +554,9 @@ function renderCards(){
     if(im && im.s != null) big = `<b class="${im.s>10?"slow":im.s<-10?"fast":""}" title="lisäviive per ohitus">${sgn(im.s)}</b>`;
     else big = `<b title="ajoa / vrk ohi työmaan">${nf(l.ajoja_vrk)}<small style="font-size:11px;color:var(--m)"> ajoa</small></b>`;
     return `<button class="card ${S.sel===l.lupa_id?"sel":""}" data-id="${esc(l.lupa_id)}">
-      <div class="hd"><span class="num">${i+1}</span><span class="t">${esc(shortStreet(l))}</span><span class="cbig">${big}</span></div>
+      <div class="hd"><span class="num">${i+1}</span><span class="t">${esc(shortStreet(l))}</span></div>
       <div class="w">${esc(purpose(l))}</div>
-      <div class="chips">${lines(l.linjat).filter(r=>!/N$/.test(r)).slice(0,3).map(r=>`<span class="chip">${esc(r)}</span>`).join("")}${lines(l.linjat).filter(r=>!/N$/.test(r)).length>3?`<span class="chip">+${lines(l.linjat).filter(r=>!/N$/.test(r)).length-3}</span>`:""}</div>
+      <div class="crow"><span class="cbig">${big}</span><div class="chips">${lines(l.linjat).filter(r=>!/N$/.test(r)).slice(0,3).map(r=>`<span class="chip">${esc(r)}</span>`).join("")}${lines(l.linjat).filter(r=>!/N$/.test(r)).length>3?`<span class="chip">+${lines(l.linjat).filter(r=>!/N$/.test(r)).length-3}</span>`:""}</div></div>
     </button>`;
   }).join("") || `<div class="empty">Ei mitattavia töitä vielä.</div>`;
   el.querySelectorAll(".card").forEach(c=>c.onclick=()=>select(c.dataset.id,true));
