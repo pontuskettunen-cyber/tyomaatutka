@@ -1192,7 +1192,7 @@ function renderBrief(){
   const sigCl = `<a class="tile sigB" href="#/tyot"><small>Kasautumat 14 pv ${infoBtn("kasautumat")}</small><b class="txt">${cl.length ? `${cl.length} ${cl.length===1?"kohde":"kohdetta"}` : "Ei kasautumia"}</b></a>`;
   const upd = all.map(l=>l.paivitetty).filter(Boolean).sort().pop();
   const per = period();
-  const sn = saaNyt(), ss = saaJakso(Date.now() - (S.ik==="7d"?7:1)*DAY, Date.now()).filter(x=>x.luokka!=="pouta");
+  const sn = saaNyt(), ss = saaJakso(Math.max(Date.now() - (S.ik==="7d"?7:1)*DAY, +new Date(S.tila?.havainto_alkoi || 0)), Date.now()).filter(x=>x.luokka!=="pouta");
   const saaTxt = sn ? ` · <span class="saa-k" title="Ilmatieteen laitos, Helsinki Kaisaniemi. Sää vaikuttaa kaikkiin linjoihin: tutka vertaa työmaan väliä saman linjan muihin väleihin samassa 2 tunnin jaksossa, joten yleinen sää kumoutuu.">${nf(sn.lampo,1)} °C, ${esc(sn.luokka)}${ss.length?` · jaksolla ${esc([...new Set(ss.map(x=>x.luokka))].join(", "))} ${nf(ss.length*2)} h`:""}</span>` : "";
   document.getElementById("briefWhen").innerHTML = `Luvut ajalta ${per.txt} · laskettu ${ago(upd)}${saaTxt}`;
   const bd = breakdown();
