@@ -870,12 +870,14 @@ function renderRaportti(id){
   const arvioS = m && m.n >= MIN_N ? m.lisa_ajo : null;
   const perOhitus = tod ? tod.vaikutus_s : arvioS;
   const vrkH = tod ? Math.max(0, tod.ajoneuvotunnit_vrk||0) : (m?.ajoneuvotunnit_vrk ?? null);
-  const yht = vrkH!=null && kesto ? vrkH*kesto : null;
+  const per = period(), taysi = per.full || !!tod;   // koko keston laskelma vasta kun vuorokausi on mitattu
+  const yht = vrkH!=null && kesto && taysi ? vrkH*kesto : null;
+  const ohi = paattyy && +new Date(paattyy) < Date.now();
   const linjat = tod ? (tod.linjat||[]).map(x=>({route:x.route, dir:x.dir, s:x.ero, n:x.n_a})) : (S.mlinja[id]||[]).filter(r=>r.ikkuna===S.ik && r.jakso==="kaikki" && r.ohitukset>=MIN_N).map(r=>({route:r.route, dir:r.dir, s:r.lisa_ajo, n:r.ohitukset}));
   const lin = linjat.filter(x=>/^\d{1,3}[A-Z]?$/.test(ln(x.route))).sort((a,b)=>b.s-a.s);
   const tila = valmis ? `<span class="vchip tod">valmis · todennettu</span>` : `<span class="vchip">esikatselu</span>`;
   const lause = perOhitus==null ? `Työstä ei ole vielä tarpeeksi mittauksia raporttiin.`
-    : `${kesto?`Työ kesti ${nf(kesto)} päivää (${fmtDate(alkaa)}–${fmtDate(paattyy)}). `:""}Se ${perOhitus>10?`lisäsi bussien ja ratikoiden ajoaikaa keskimäärin <b>${nf(Math.round(perOhitus))} s jokaista ohitusta kohden</b>`:`ei hidastanut joukkoliikennettä merkittävästi (${sgn(perOhitus)} per ohitus)`}${yht!=null&&perOhitus>10?`, koko kestolta yhteensä noin <b>${nf(yht,0)} ajoneuvotuntia</b>`:""}.`;
+    : `${kesto?`Työ ${ohi?"kesti":"kestää"} ${nf(kesto)} päivää (${fmtDate(alkaa)}–${fmtDate(paattyy)}). `:""}${ohi?"Se":"Tähän mennessä se"} ${perOhitus>10?`${ohi?"lisäsi":"on lisännyt"} bussien ja ratikoiden ajoaikaa keskimäärin <b>${nf(Math.round(perOhitus))} s jokaista ohitusta kohden</b>`:`ei hidastanut joukkoliikennettä merkittävästi (${sgn(perOhitus)} per ohitus)`}${yht!=null&&perOhitus>10?`, ${ohi?"":"ja samalla tahdilla jatkuessaan "}koko kestolta yhteensä noin <b>${nf(yht,0)} ajoneuvotuntia</b>`:""}.${!taysi?` Koko keston laskelma tehdään, kun yksi kokonainen vuorokausi on mitattu.`:""}`;
   el.innerHTML = `
     <div class="rap-top"><a href="#/?l=${encodeURIComponent(id)}">← Takaisin työmaahan</a><button class="share" onclick="window.print()">Tulosta / tallenna PDF</button></div>
     <div class="rap-k">Jälkiraportti ${tila}</div>
@@ -885,7 +887,7 @@ function renderRaportti(id){
     ${!valmis?`<div class="varm ${tod?"tod":"arvio"}"><b>${tod?"Todennettu":"Esikatselu"}:</b> ${tod?`luvut perustuvat samaan pysäkkiväliin ${tod.vertailu==="ennen"?"ennen työn alkua":"työn päätyttyä"} ja työn aikana.`:`raportti valmistuu, kun työ päättyy${paattyy?" ("+fmtDate(paattyy)+")":""} ja samaa väliä on mitattu ilman työtä. Siihen asti luvut ovat arviota.`}</div>`:""}
     <div class="rap-grid">
       <div><b>${perOhitus!=null?sgn(perOhitus):"–"}</b><small>lisäaika per ohitus${tod?"":" (arvio)"}</small></div>
-      <div><b>${vrkH!=null?nf(vrkH,1)+" h":"–"}</b><small>lisäaikaa vuorokaudessa</small></div>
+      <div><b>${vrkH!=null?nf(vrkH,1)+" h":"–"}</b><small>${taysi?"lisäaikaa vuorokaudessa":"lisäaikaa mittausjaksolla ("+per.dur+")"}</small></div>
       <div><b>${yht!=null?nf(yht,0)+" h":"–"}</b><small>koko kestolta${kesto?` (${nf(kesto)} pv)`:""}</small></div>
       <div><b>${yht!=null?nf(yht*S.load,0)+" h":"–"}</b><small>matkustajille (${S.load} hlö/ajo, oletus)</small></div>
     </div>
