@@ -7,7 +7,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
 // PostgREST palauttaa enintään 1000 riviä: haetaan sivuina
-async function kaikki(mk: () => any) {
+async function sivuittain(mk: () => any) {
   const out: any[] = [];
   for (let off = 0; off < 50000; off += 1000) {
     const { data, error } = await mk().range(off, off + 999);
@@ -60,7 +60,7 @@ async function haeReitit(routes: string[]) {
 }
 
 async function run(kaikki: boolean) {
-  const segs = await kaikki(() => db.from("v_lupa_segmentit").select("from_stop,to_stop,from_lat,from_lon,to_lat,to_lon,linjat,viiva").order("lupa_id").order("from_stop").order("to_stop"));
+  const segs = await sivuittain(() => db.from("v_lupa_segmentit").select("from_stop,to_stop,from_lat,from_lon,to_lat,to_lon,linjat,viiva").order("lupa_id").order("from_stop").order("to_stop"));
   const uniq = new Map<string, any>();
   for (const s of segs ?? []) {
     if (!kaikki && s.viiva) continue;
