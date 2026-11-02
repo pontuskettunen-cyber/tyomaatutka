@@ -347,6 +347,7 @@ footer{max-width:1360px;margin:0 auto;padding:0 28px 32px;color:var(--m);font-si
 .layer-k{font:500 11.5px "IBM Plex Mono";letter-spacing:.05em;text-transform:uppercase;color:var(--m);margin:22px 0 8px;padding-top:14px;border-top:1px solid var(--l)}
 @media(max-width:1180px){.strip.s3{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:860px){.todos{grid-template-columns:1fr}.strip.s3{grid-template-columns:1fr 1fr}.strip.s3 .tile:first-child{grid-column:1/-1}}
+.aiwhen{font:400 11.5px "IBM Plex Sans";color:var(--m);margin-left:6px;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -760,7 +761,7 @@ function renderBrief(){
   // Otsikko: yksi lause, joka muuttuu datan mukana
   let head;
   const rH = r.filter(x=>x.i.kind!=="v2" || x.i.n>=20);
-  if(rH.length){ const t = rH[0]; head = `<em>${esc(shortStreet(t.l))}</em> hidastaa joukkoliikennettä eniten${t.i.s!=null?`: ${sgn(t.i.s)} per ohitus`:""}.${t.i.kind==="v2"&&!t.i.tod?' <span class="hnote">arvio</span>':""}`; }
+  if(rH.length){ const t = rH[0]; head = `<em>${esc(shortStreet(t.l))}</em> aiheuttaa joukkoliikenteelle eniten lisäaikaa${t.i.vehH?`: ${nf(t.i.vehH,1)} h, ${sgn(t.i.s)} per ohitus`:t.i.s!=null?`: ${sgn(t.i.s)} per ohitus`:""}.${t.i.kind==="v2"&&!t.i.tod?' <span class="hnote">arvio</span>':""}`; }
   else head = `${nf(runR.length)} katutyötä bussi- ja ratikkareittien varrella. Vaikutusmittaus käynnistyy.`;
   document.getElementById("brief").innerHTML = head;
   // Kolme signaalia: suurin vaikutus, seuraavaksi alkava, kasautumat
@@ -785,7 +786,7 @@ function renderBrief(){
   // Taso 2: kolme asiaa, joihin kannattaa reagoida
   const td = [];
   const top = rH[0] || r[0];
-  if(top) td.push(`<button class="todo red" data-sel="${esc(top.l.lupa_id)}"><small>Hidastaa eniten nyt</small><b>${esc(shortStreet(top.l))}</b><span>${top.i.s!=null?`${sgn(top.i.s)} per ohitus${top.i.tod?"":" (arvio)"}`:""}${lines(top.l.linjat).length?" · linjat "+esc(lines(top.l.linjat).filter(n=>!/N$/.test(n)).slice(0,5).join(", ")):""}</span><em>Näytä kartalla →</em></button>`);
+  if(top) td.push(`<button class="todo red" data-sel="${esc(top.l.lupa_id)}"><small>Eniten lisäaikaa nyt</small><b>${esc(shortStreet(top.l))}</b><span>${top.i.vehH?`${nf(top.i.vehH,1)} h yhteensä · `:""}${top.i.s!=null?`${sgn(top.i.s)} per ohitus${top.i.tod?"":" (arvio)"}`:""}${lines(top.l.linjat).length?" · linjat "+esc(lines(top.l.linjat).filter(n=>!/N$/.test(n)).slice(0,5).join(", ")):""}</span><em>Näytä kartalla →</em></button>`);
   if(next){ const vk = S.vaik?.[next.lupa_id]; td.push(`<button class="todo ind" data-sel="${esc(next.lupa_id)}"><small>Alkaa seuraavaksi · ${fmtDate(next.alkaa)}</small><b>${esc(shortStreet(next))}</b><span>${lines(next.linjat).length?"linjat "+esc(lines(next.linjat).filter(n=>!/N$/.test(n)).slice(0,5).join(", ")):"ei joukkoliikennettä vieressä"}${vk&&vk.pohja_n?` · pohjataso ${nf(vk.pohja_n)} ohitusta mitattu`:""}</span><em>Näytä kartalla →</em></button>`); }
   if(cl[0]) td.push(`<a class="todo warn2" href="#/tyot"><small>Kasautuma · ${fmtShort(cl[0].lo)}–${cl[0].hi<8e15?fmtShort(cl[0].hi):""}</small><b>${esc(shortStreet(cl[0].a))} + ${esc(shortStreet(cl[0].b))}</b><span>Molemmat linjoilla ${esc(cl[0].shared.slice(0,4).join(", "))}${cl[0].shared.length>4?"…":""}, ${nf(cl[0].dist/1000,1)} km välein: viiveet kasautuvat samalle matkustajalle.</span><em>Kaikki kasautumat (${cl.length}) →</em></a>`);
   document.getElementById("todo").innerHTML = td.join("");
@@ -1473,7 +1474,7 @@ function renderAI(){
     el.innerHTML = ""; mb.style.display = "none"; return;
   }
   const c = k.sisalto || {}, items = (c.kohdat||[]);
-  tt.textContent = c.otsikko || "Tilannekatsaus";
+  tt.innerHTML = `${esc(c.otsikko || "Tilannekatsaus")} <span class="aiwhen">kirjoitettu ${k.luotu?new Date(k.luotu).toLocaleTimeString("fi-FI",{hour:"2-digit",minute:"2-digit"}).replace(":","."):""}</span>`;
   mb.style.display = items.length ? "" : "none";
   mb.textContent = S.aiOpen ? "Sulje ↑" : "Avaa ↓"; mb.setAttribute("aria-expanded", S.aiOpen);
   const li = x => `<li>${esc(x.teksti)}${x.lupa_id && S.byId[x.lupa_id]?` <a href="#/?l=${encodeURIComponent(x.lupa_id)}">${esc(shortStreet(S.byId[x.lupa_id]))} →</a>`:""}</li>`;

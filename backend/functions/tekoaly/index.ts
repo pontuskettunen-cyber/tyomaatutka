@@ -155,7 +155,10 @@ async function katsaus() {
   // estää toistuvat kutsut: uusi katsaus korkeintaan 90 min välein
   const { data: viim } = await db.from("ai_katsaus").select("luotu").order("luotu", { ascending: false }).limit(1);
   if (viim?.[0] && Date.now() - +new Date(viim[0].luotu) < 90 * 60000) return { kirjoitettu: [] as string[], ohitettu: "tuore katsaus on jo olemassa" };
-  const f = await faktat();
+  const f: any = await faktat();
+  // sama järjestys kuin sivun pääotsikossa: eniten lisäaikaa yhteensä (ajoneuvotunnit), vähintään 20 ohitusta
+  f.suurimmat_nyt = (f.kaynnissa_reitilla ?? []).filter((l: any) => l.mitattu_24h && l.mitattu_24h.havaintoja >= 20).slice(0, 5)
+    .map((l: any) => ({ id: l.id, osoite: l.osoite, lisaaika_yhteensa_h_vrk: l.mitattu_24h.ajoneuvotunnit_vrk, lisaaika_per_ohitus_s: l.todennettu?.vaikutus_s ?? l.mitattu_24h.lisaaika_ajossa_s, todennettu: !!l.todennettu, linjat: l.linjat }));
   const system = `Kirjoitat Työmaatutka-palvelun tilannekatsauksen. Saat JSON-muodossa valmiiksi lasketut luvut Helsingin katutöistä ja niiden vaikutuksesta busseihin ja ratikoihin.
 Säännöt:
 - Käytä VAIN annettuja lukuja. Älä keksi lukuja, syitä tai tapahtumia. Jos data on vielä ohutta, sano se suoraan.
@@ -163,6 +166,7 @@ Säännöt:
 - Kirjoita selkeää yleiskieltä suomeksi, ei jargonia. Linjat matkustajan numeroina (esim. "ratikka 4", "bussi 55").
 - Priorisoi: 1) mitattu suuri lisäviive, 2) kasautumat (uusi työ linjalle, jolla on jo työ), 3) alkavat työt vilkkailla linjoilla, joiden tulkinta on "suuri".
 Vastaa pelkällä JSONilla ilman johdantoa tai markdownia: {"hsl": K, "kaupunki": K}, jossa K = {"otsikko": max 12 sanaa, "kohdat": [{"teksti": max 30 sanaa, "lupa_id": string|null}] (3–5 kpl), "suositus": max 25 sanaa}.
+Otsikon ja ensimmäisen kohdan pitää käsitellä suurimmat_nyt-listan ensimmäistä työtä (eniten lisäaikaa yhteensä), jotta katsaus on linjassa sivun pääotsikon kanssa. Työ, jolla on suuri lisäaika per ohitus mutta vähän ohituksia, mainitaan vasta sen jälkeen. Kerro, onko luku arvio vai todennettu.
 Käytä ensisijaisesti mitattu_24h-lukuja (lisäaika ajossa erottaa työmaan vaikutuksen pysäkkiruuhkasta).
 - "hsl" on HSL:n liikennesuunnittelijalle: mitä linjoille tapahtuu ja mihin pitää varautua (poikkeusreitit, aikataulut, tiedotus).
 - "kaupunki" on kaupungin lupakäsittelijälle: mitkä luvat aiheuttavat joukkoliikenteelle eniten haittaa ja missä ajoitusta tai ehtoja kannattaisi tarkistaa.`;
