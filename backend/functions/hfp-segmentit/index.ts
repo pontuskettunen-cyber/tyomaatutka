@@ -4,7 +4,8 @@
 // - Pysäkkiväli jaetaan ajoon (lähtö -> saapuminen seuraavalle pysäkille) ja seisontaan (saapuminen -> lähtö).
 // - Aikataulupoikkeaman muutos lasketaan erikseen ajolle ja seisonnalle.
 // - Kaikista väleistä tallennetaan 2 h koosteet; lupien pysäkkiväleiltä myös yksittäiset havainnot (mediaania varten).
-// Ajoneuvo- tai henkilötietoja ei tallenneta havaintoihin.
+// Havaintoon tallennetaan vuorotunniste (linja|suunta|päivä|lähtöaika), jotta saman vuoron viiveet voidaan
+// summata koko reitiltä. Ajoneuvo- tai henkilötietoja ei tallenneta havaintoihin.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import mqtt from "npm:mqtt@5";
@@ -84,7 +85,7 @@ async function run() {
           agg.set(k, a);
           pairs++;
           if (seur.has(`${s.stop}|${stop}`)) obs.push({ t: new Date(t).toISOString(), from_stop: s.stop, to_stop: stop, route: String(p.route), dir: Number(p.dir),
-            tt, ajo, seis, ddl, ddl_ajo: ddlAjo, ddl_seis: ddlSeis });
+            tt, ajo, seis, ddl, ddl_ajo: ddlAjo, ddl_seis: ddlSeis, vuoro: trip });
         }
       }
       st.set(key, { t, stop, dl, trip, arr_stop: null, arr_t: null, arr_dl: null, seen: true });
