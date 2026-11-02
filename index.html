@@ -2059,6 +2059,23 @@ function lValitseVali(e, key){
   S.lVali = S.lVali===key ? null : key; S.lSite = null; S.lReitti = false;
   lNauha(e); lSiteCard(e); lTabs(e); lKorosta(e);
 }
+/* Liikennevalot välillä: erotetaanko hidastus valoista vai työmaasta (HFP TLR/TLA, 7 vrk) */
+async function lValot(a, b){
+  const box = document.getElementById("lValot"); if(!box) return;
+  const k = a+"|"+b; S._valot ||= {};
+  if(!(k in S._valot)) S._valot[k] = await get(`v_vali_valot?from_stop=eq.${a}&to_stop=eq.${b}`).then(x=>x[0]||null).catch(()=>null);
+  const v = S._valot[k], box2 = document.getElementById("lValot"); if(!box2 || S.lVali !== k) return;
+  if(!v || !(v.n >= 5)){ box2.style.display = ""; box2.innerHTML = `<div><b>LIIKENNEVALOT</b> Valotietoa kerätään. Kun välillä on ajettu riittävästi, tähän tulee, kuinka paljon hidastuksesta selittyy liikennevaloilla.</div>`; return; }
+  if(!(v.n_valo > 0)){ box2.style.display = ""; box2.innerHTML = `<div><b>LIIKENNEVALOT</b> Välillä ei ole valoetuisuutta pyytäviä liikennevaloja (${nf(v.n)} ohitusta). Hidastus ei selity valoetuisuudella.</div>`; return; }
+  const ok = v.pyynnot ? Math.round(100*(v.myonnetty||0)/v.pyynnot) : null;
+  const ero = v.viive_evatty!=null && v.viive_ei_evatty!=null ? v.viive_evatty - v.viive_ei_evatty : null;
+  const tulkinta = v.n_evatty >= 5 && v.viive_ei_evatty!=null
+    ? (v.viive_ei_evatty > 10 ? `Myös silloin, kun valot antoivat etuisuuden, bussi jäi välillä aikataulusta keskimäärin ${sgn(v.viive_ei_evatty)}: hidastus ei selity pelkillä valoilla, työmaa on todennäköinen syy.`
+       : `Kun valot antoivat etuisuuden, bussi pysyi välillä lähes aikataulussa (${sgn(v.viive_ei_evatty)}). Hidastus syntyy pääosin silloin, kun valot eivät anna etuisuutta: syy on todennäköisemmin valoissa kuin työmaassa.`)
+    : `Evättyjä pyyntöjä on vielä liian vähän vertailuun.`;
+  box2.style.display = "";
+  box2.innerHTML = `<div><b>LIIKENNEVALOT</b> ${nf(v.n_valo)}/${nf(v.n)} ohituksessa bussi pyysi välillä valoetuisuutta. Pyynnöistä myönnettiin ${ok!=null?ok+" %":"–"}${v.n_evatty?`, evättiin ${nf(v.evatty)}`:""}.${ero!=null&&v.n_evatty>=5?` Kun etuisuus evättiin, bussi jäi välillä aikataulusta keskimäärin ${sgn(ero)} enemmän.`:""}</div><div class="note">${tulkinta}</div>`;
+}
 const valiPituus = pts => pts.reduce((a,p,i)=>i ? a + dmet(pts[i-1], p) : 0, 0);
 function etaisyysViivaan(c, pts){ let m = Infinity;
   for(let i=1;i<pts.length;i++){ const a=pts[i-1], b=pts[i]; const ax=(a[1]-c[1])*55400, ay=(a[0]-c[0])*110540, dx=(b[1]-a[1])*55400, dy=(b[0]-a[0])*110540, L2=dx*dx+dy*dy;
@@ -2085,9 +2102,11 @@ function lSiteCard(e){
       <div class="p">${nf(pit/1000,1)} km · välillä kulkevat linjat ${esc(linjat.slice(0,8).join(", "))}${linjat.length>8?"…":""}</div>
       <div class="facts"><div><b class="slow">${sgn(g.lisaviive_s)}</b><small>lisäaika per ajo verrattuna linjojen muihin väleihin (24 h)</small></div><div><b>${nf(g.n_24h)}</b><small>ajoa mitattu 24 h aikana</small></div><div><b>${nf(tyot.length)}</b><small>${tyot.length===1?"työmaa":"työmaata"} välin varrella</small></div></div>
       ${pitkä?`<div class="aibox" style="margin:0 0 8px;font-size:13px">Väli on pitkä (${nf(pit/1000,1)} km), koska osa vuoroista ohittaa pysäkkejä. Hidastus mitataan koko väliltä, joten kartta ei kerro, missä kohtaa väliä aika kuluu. Työmaa voi olla syy, mutta myös valot tai ruuhka samalla välillä.</div>`:""}
+      <div id="lValot" class="lvert" style="display:none"></div>
       <div class="note" style="margin-bottom:4px">Liitetty työmaihin (etäisyys katuviivasta):</div>
       ${tyot.map(t=>`<div style="display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:3px 0"><a href="#" data-lsite="${esc(t.x.lupa_id)}">${esc(title(t.x))}</a><span class="note">${t.d!=null?nf(Math.round(t.d))+" m":"–"}</span></div>`).join("")}`;
     document.getElementById("lSiteX").onclick = ()=>{ S.lVali = null; lSiteCard(e); lKorosta(e); };
+    lValot(g.from_stop, g.to_stop);
     el.querySelectorAll("[data-lsite]").forEach(a=>a.onclick=ev=>{ ev.preventDefault(); lValitse(e, a.dataset.lsite, true); });
     return;
   }
