@@ -7,7 +7,7 @@ Tuottaa data/ajantasaus.json:
   ajat = aikataulun mukainen ajoaika (min, mediaani) peräkkäisten ajantasauspysäkkien välillä arkipäivän vuoroissa.
 Reittitunnus ja suunta luetaan trip_id:stä (muoto ROUTE_PVM_PÄIVÄTYYPPI_SUUNTA_LÄHTÖAIKA), samat kuin HFP:ssä.
 """
-import csv, io, json, statistics, sys, urllib.request, zipfile, datetime, collections
+import os, csv, io, json, statistics, sys, urllib.request, zipfile, datetime, collections
 
 URL = "https://infopalvelut.storage.hsldev.com/gtfs/hsl.zip"
 path = sys.argv[1] if len(sys.argv) > 1 else "hsl.zip"
@@ -87,6 +87,8 @@ with zipfile.ZipFile(path) as z, z.open("stops.txt") as f:
         if sid in tps:
             pys[sid] = [r["stop_name"], round(float(r["stop_lat"]), 5), round(float(r["stop_lon"]), 5), r.get("stop_code") or ""]
 
-json.dump({"paivitetty": datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%MZ"), "lahde": "HSL GTFS (CC BY 4.0)", "linjat": out, "pysakit": pys},
+os.makedirs("data", exist_ok=True)
+json.dump({"paivitetty": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%MZ"), "lahde": "HSL GTFS (CC BY 4.0)", "linjat": out, "pysakit": pys},
           open("data/ajantasaus.json", "w"), ensure_ascii=False, separators=(",", ":"))
-print(f"linjasuuntia {len(out)}")
+print(f"linjasuuntia {len(out)}, ajantasauspysäkkejä {len(pys)}, suunnat {collections.Counter(k.split('|')[1] for k in out)}")
+print(json.dumps({k: out[k] for k in list(out)[:1]}, ensure_ascii=False)[:1500])
