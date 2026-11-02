@@ -6,6 +6,8 @@
 // - Kaikista väleistä tallennetaan 2 h koosteet; lupien pysäkkiväleiltä myös yksittäiset havainnot (mediaania varten).
 // Havaintoon tallennetaan vuorotunniste (linja|suunta|päivä|lähtöaika), jotta saman vuoron viiveet voidaan
 // summata koko reitiltä. Ajoneuvo- tai henkilötietoja ei tallenneta havaintoihin.
+// Liikennevaloetuisuus (TLR = pyyntö, TLA = vastaus ACK/NAK) lasketaan välikohtaisesti, jotta valojen ja työmaan
+// vaikutus voidaan erottaa: välin havaintoon tallennetaan pyyntöjen, myönnettyjen ja evättyjen määrä.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import mqtt from "npm:mqtt@5";
@@ -16,7 +18,8 @@ const BUCKET_MS = 2 * 3600_000;
 
 const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
-type St = { t: number; stop: number; dl: number | null; trip: string; arr_stop: number | null; arr_t: number | null; arr_dl: number | null; seen: boolean };
+type St = { t: number; stop: number; dl: number | null; trip: string; arr_stop: number | null; arr_t: number | null; arr_dl: number | null; seen: boolean;
+  vp?: Set<string>; vok?: number; vei?: number };
 type Agg = { bucket: string; from_stop: number; to_stop: number; route: string; dir: number; mode: string;
   n: number; sum_tt: number; sum_tt2: number; min_tt: number; max_tt: number; sum_ddl: number; n_ddl: number;
   sum_ddl_ajo: number; n_ajo: number; sum_seis: number; n_seis: number };
@@ -50,19 +53,28 @@ async function run() {
 
   const client = mqtt.connect(BROKER, { reconnectPeriod: 2000, connectTimeout: 10_000 });
   client.on("connect", () => client.subscribe(
-    ["dep", "ars", "pas"].flatMap((e) => [`/hfp/v2/journey/ongoing/${e}/bus/#`, `/hfp/v2/journey/ongoing/${e}/tram/#`]), { qos: 0 }));
+    ["dep", "ars", "pas", "tlr", "tla"].flatMap((e) => [`/hfp/v2/journey/ongoing/${e}/bus/#`, `/hfp/v2/journey/ongoing/${e}/tram/#`]), { qos: 0 }));
   client.on("message", (topic: string, msg: Uint8Array) => {
     msgs++;
     try {
       const o = JSON.parse(new TextDecoder().decode(msg));
       const ev = Object.keys(o)[0], p = o[ev];
+      if (ev === "TLR" || ev === "TLA") {
+        // valotapahtuma kirjataan ajoneuvon käynnissä olevalle pysäkkivälille
+        if (!p || p.oper == null || p.veh == null) return;
+        const sv = st.get(`${p.oper}/${p.veh}`); if (!sv) return;
+        const rid = String(p.tlp_requestid ?? p.tst);
+        if (ev === "TLR") { (sv.vp ??= new Set()).add(rid); }
+        else { (sv.vp ??= new Set()).add(rid); if (p.tlp_decision === "ACK") sv.vok = (sv.vok ?? 0) + 1; else if (p.tlp_decision === "NAK") sv.vei = (sv.vei ?? 0) + 1; }
+        return;
+      }
       if (!p || p.stop == null || !p.tst || p.oper == null || p.veh == null || !p.route) return;
       const key = `${p.oper}/${p.veh}`, t = Date.parse(p.tst), stop = Number(p.stop);
       const dl = typeof p.dl === "number" ? p.dl : null;
       const trip = `${p.route}|${p.dir}|${p.oday}|${p.start}`;
       const s = st.get(key);
       if (ev === "ARS") {
-        if (s && s.trip === trip) { s.arr_stop = stop; s.arr_t = t; s.arr_dl = dl; s.seen = true; }
+        if (s && s.trip === trip) { s.arr_stop = stop; s.arr_t = t; s.arr_dl = dl; s.seen = true; }  // valolaskurit säilyvät välin loppuun
         else st.set(key, { t, stop, dl, trip, arr_stop: stop, arr_t: t, arr_dl: dl, seen: true }); // vuoron alku: ei edellistä lähtöä
         return;
       }
@@ -92,7 +104,8 @@ async function run() {
           agg.set(k, a);
           pairs++;
           if (seur.has(`${s.stop}|${stop}`)) obs.push({ t: new Date(t).toISOString(), from_stop: s.stop, to_stop: stop, route: String(p.route), dir: Number(p.dir),
-            tt, ajo, seis, ddl, ddl_ajo: ddlAjo, ddl_seis: ddlSeis, vuoro: trip });
+            tt, ajo, seis, ddl, ddl_ajo: ddlAjo, ddl_seis: ddlSeis, vuoro: trip,
+            valo_pyynto: s.vp ? s.vp.size : 0, valo_ok: s.vok ?? 0, valo_ei: s.vei ?? 0 });
         }
       }
       st.set(key, { t, stop, dl, trip, arr_stop: null, arr_t: null, arr_dl: null, seen: true });
