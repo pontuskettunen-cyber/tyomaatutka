@@ -570,6 +570,11 @@ html.hsl #v-home .todo{padding:10px 14px}
 .eurobox>.note{font-size:11.5px}
 .rap-eur{background:var(--g);border-radius:8px;padding:10px 12px}
 @media(max-width:860px){.eurobox .eg{grid-template-columns:1fr}}
+.bdr.bdsite,.bdr.bdhead{grid-template-columns:minmax(120px,260px) 1fr 62px 92px 76px 82px}
+.bdr .beur{font:500 12.5px "IBM Plex Mono";color:var(--i2)}
+.bdr.bdhead{font-size:11px;color:var(--m);text-transform:uppercase;letter-spacing:.04em;cursor:default;padding-bottom:0;background:none!important}
+.bdr .r{text-align:right}
+@media(max-width:720px){.bdr.bdsite{grid-template-columns:1fr 60px 70px}.bdr .beur:last-child,.bdr.bdhead{display:none}}
 </style>
 </head>
 <body>
@@ -1077,11 +1082,11 @@ function renderBreakdown(){
   const top5 = bd.sites.slice(0,5).reduce((s,x)=>s+x.vehH,0);
   const bar = (label, v, href, sub) => `<div class="bdr">${href?`<a href="${href}">${esc(label)}</a>`:`<span>${esc(label)}</span>`}<div class="pb"><i style="width:${Math.max(2, v/(bd.sites[0]?.vehH||v||1)*100)}%"></i></div><b>${nf(v,1)} h</b><small>${nf(v/tot*100)} %${sub?" · "+sub:""}</small></div>`;
   let rows = "";
-  if(tab==="tyomaat") rows = bd.sites.slice(0,10).map(x=>{
+  if(tab==="tyomaat") rows = `<div class="bdr bdhead"><span>Työmaa</span><span></span><span class="r">Lisäaika</span><span>Osuus</span><span class="r">Kuljettajat</span><span class="r">Matkustajat</span></div>` + bd.sites.slice(0,10).map(x=>{
     const id = x.l.lupa_id, open = S.bdOpenSite===id;
     const lr = (S.mlinja[id]||[]).filter(r=>r.ikkuna===S.ik && r.jakso==="kaikki" && r.ohitukset>=MIN_N && /^\d{1,3}[A-Z]?$/.test(ln(r.route))).sort((a,b)=>(b.ohitukset*Math.max(0,b.lisa_ajo||0))-(a.ohitukset*Math.max(0,a.lisa_ajo||0)));
-    return `<div class="bdr bdsite ${open?"open":""}" data-site="${esc(id)}" role="button" tabindex="0"><span>${open?"▾":"▸"} ${esc(title(x.l))}</span><div class="pb"><i style="width:${Math.max(2, x.vehH/(bd.sites[0]?.vehH||1)*100)}%"></i></div><b>${nf(x.vehH,1)} h</b><small>${nf(x.vehH/tot*100)} % · ${x.n<30?"alustava":nf(x.n)+" ohitusta"}</small></div>`
-      + (open ? `<div class="bdsub">${lr.length ? `<table class="t"><thead><tr><th>Linja</th><th class="r">Ohituksia</th><th class="r">Lisäaika / ohitus</th><th class="r">Yhteensä</th></tr></thead><tbody>${lr.slice(0,8).map(r=>`<tr><td><span class="lbadge ${TRAM.has(ln(r.route))?"tram":""}" style="height:20px;min-width:30px;font-size:11.5px">${esc(ln(r.route))}</span> <span class="note">suunta ${r.dir}</span></td><td class="r">${nf(r.ohitukset)}</td><td class="r ${r.lisa_ajo>10?"slow":r.lisa_ajo<-10?"fast":""}">${sgn(r.lisa_ajo)}</td><td class="r">${r.lisa_ajo>0?nf(r.ohitukset*r.lisa_ajo/60)+" min":"–"}</td></tr>`).join("")}</tbody></table>` : `<div class="note">Linjakohtaista mittausta ei vielä ole riittävästi.</div>`}<a href="#/?l=${encodeURIComponent(id)}" style="font-size:13px">Avaa työmaan tiedot →</a></div>` : "");
+    return `<div class="bdr bdsite ${open?"open":""}" data-site="${esc(id)}" role="button" tabindex="0"><span>${open?"▾":"▸"} ${esc(title(x.l))}</span><div class="pb"><i style="width:${Math.max(2, x.vehH/(bd.sites[0]?.vehH||1)*100)}%"></i></div><b>${nf(x.vehH,1)} h</b><small>${nf(x.vehH/tot*100)} % · ${x.n<30?"alustava":nf(x.n)+" ohitusta"}</small><b class="beur" title="Kuljettajien työaika: ${nf(x.vehH,1)} h × ${EUR_AJO} €/h">${eur(x.vehH*EUR_AJO)}</b><b class="beur" title="Matkustajien aika: ${nf(x.vehH*S.load,0)} h × ${EUR_MATK} €/h (${S.load} matkustajaa vuorossa, oletus)">${eur(x.vehH*S.load*EUR_MATK)}</b></div>`
+      + (open ? `<div class="bdsub">${lr.length ? `<table class="t"><thead><tr><th>Linja</th><th class="r">Ohituksia</th><th class="r">Lisäaika / ohitus</th><th class="r">Yhteensä</th><th class="r">Kuljettajat</th><th class="r">Matkustajat</th></tr></thead><tbody>${lr.slice(0,8).map(r=>`<tr><td><span class="lbadge ${TRAM.has(ln(r.route))?"tram":""}" style="height:20px;min-width:30px;font-size:11.5px">${esc(ln(r.route))}</span> <span class="note">suunta ${r.dir}</span></td><td class="r">${nf(r.ohitukset)}</td><td class="r ${r.lisa_ajo>10?"slow":r.lisa_ajo<-10?"fast":""}">${sgn(r.lisa_ajo)}</td><td class="r">${r.lisa_ajo>0?nf(r.ohitukset*r.lisa_ajo/60)+" min":"–"}</td><td class="r">${r.lisa_ajo>0?eur(r.ohitukset*r.lisa_ajo/3600*EUR_AJO):"–"}</td><td class="r">${r.lisa_ajo>0?eur(r.ohitukset*r.lisa_ajo/3600*S.load*EUR_MATK):"–"}</td></tr>`).join("")}</tbody></table>` : `<div class="note">Linjakohtaista mittausta ei vielä ole riittävästi.</div>`}<a href="#/?l=${encodeURIComponent(id)}" style="font-size:13px">Avaa työmaan tiedot →</a></div>` : "");
   }).join("");
   if(tab==="linjat"){ const mx = bd.byLine[0]?.[1].h || 1; rows = bd.byLine.slice(0,10).map(([n,e])=>`<div class="bdr"><a href="#/linjat" onclick="S.lSel='${esc(n)}'"><span class="lbadge ${TRAM.has(n)?"tram":""}" style="height:20px;min-width:30px;font-size:11.5px">${esc(n)}</span></a><div class="pb"><i style="width:${Math.max(2,e.h/mx*100)}%"></i></div><b>${nf(e.h,1)} h</b><small>${e.sites.size} ${e.sites.size===1?"työmaa":"työmaata"}</small></div>`).join(""); }
   if(tab==="tyypit"){ const mx = bd.byCat[0]?.[1] || 1; rows = bd.byCat.map(([c,v])=>`<div class="bdr"><span>${esc(c)}</span><div class="pb"><i style="width:${Math.max(2,v/mx*100)}%"></i></div><b>${nf(v,1)} h</b><small>${nf(v/tot*100)} %</small></div>`).join(""); }
