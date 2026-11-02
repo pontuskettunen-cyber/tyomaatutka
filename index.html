@@ -317,6 +317,8 @@ footer{max-width:1360px;margin:0 auto;padding:0 28px 32px;color:var(--m);font-si
 .segctl button.on{background:var(--i);color:#fff}
 .lmap{height:300px;border:1px solid var(--l);border-radius:10px;margin:10px 0 0;overflow:hidden}
 @media(max-width:720px){.lmap{height:240px}}
+.tpm{background:#14181C;border:2px solid #fff;border-radius:2px;box-shadow:0 0 0 1px #14181C}
+.tpm.end{background:#fff;border-color:#14181C}
 </style>
 </head>
 <body>
@@ -575,6 +577,7 @@ const INFO = {
   kasautumat: ["Kasautumat", "Uusi ajoneuvoliikennettä haittaava työ alkaa linjalle, jolla on jo toinen työ alle 1,5 km päässä. Viiveet summautuvat samalle matkustajalle."],
   lisaaika: ["Lisäaika per ohitus", "Paljonko yksi bussi tai ratikka menettää aikaa työmaan pysäkkiväleillä verrattuna saman linjan muihin pysäkkiväleihin samaan aikaan. Mediaani; n = havaintojen määrä. Alle 30 havaintoa merkitään alustavaksi."],
   ajossa: ["Ajossa ja pysäkillä", "Ajossa = hidastuminen pysäkkien välillä, yleensä työmaan vaikutus. Pysäkillä = tavallista pidempi seisonta, usein muusta syystä kuten tungoksesta."],
+  ajantasaus: ["Ajantasausväli", "Aikataulussa kellonaika on vain ajantasauspysäkeillä. Etuajassa oleva vuoro odottaa niillä. Aikataulun väljennys tehdään kahden ajantasauspysäkin väliin, joten taulukko näyttää, mille väleille työmaiden lisäaika osuu. Lähde: HSL:n avoin aikataulu-data (GTFS), päivitetään viikoittain."],
   p90: ["Huonoin kymmenesosa", "Joka kymmenes vuoro menettää työmaiden kohdalla vähintään näin paljon aikaa. Matkustajalle tärkein luku: se ratkaisee, ehtiikö vaihtoon."],
   jakso: ["Mittausjakso", "Aikaväli, jolta näytetyt luvut on laskettu. Tarkennettu mittaus alkoi 2.11.2026 klo 6.35, joten aluksi jakso on lyhyempi kuin valittu 24 h tai 7 vrk."],
 };
@@ -1153,6 +1156,35 @@ function lineIndex(){
   return [...idx.values()];
 }
 
+/* Ajantasauspysäkit (HSL GTFS, laskettu viikoittain GitHub Actionsissa) */
+let ATP = null;
+function loadAT(){ if(!ATP) ATP = fetch("data/ajantasaus.json?d="+new Date().toISOString().slice(0,10)).then(r=>r.ok?r.json():null).catch(()=>null).then(d=>{ S.at = d; return d; }); return ATP; }
+function atValit(raw, dir, jakso, nauha){
+  const lin = S.at?.linjat?.[`${raw}|${dir}`]; if(!lin) return null;
+  const pys = lin.pysakit.map(p=>p[0]);
+  const raja = lin.pysakit.map((p,i)=>p[1]>=1?i:-1).filter(i=>i>=0); if(raja[0]!==0) raja.unshift(0);
+  const nm = i => S.at.pysakit?.[pys[i]]?.[0] || pys[i];
+  const valit = raja.slice(0,-1).map((a,k)=>({alku:nm(a), loppu:nm(raja[k+1]), tp:lin.pysakit[a][1]===1, min:lin.ajat?.[jakso]?.[k] ?? null, lisa:0, n:0, tyot:[]}));
+  (nauha||[]).forEach(r=>{
+    if((r.n||0) < 3) return;
+    const pos = (S.segs[r.lupa_id]||[]).map(g=>pys.indexOf(g.from_stop)).filter(i=>i>=0); if(!pos.length) return;
+    const i0 = Math.min(...pos); let k = 0; while(k < raja.length-2 && raja[k+1] <= i0) k++;
+    valit[k].lisa += r.lisa; valit[k].n++; valit[k].tyot.push(r.lupa_id);
+  });
+  return {valit, tpCount: lin.pysakit.filter(p=>p[1]===1).length, lin};
+}
+function atTaulu(e, d, k){
+  const raw = k.route || [...e.raw][0]; if(!S.at) return `<div class="note" style="margin-top:8px">Ladataan ajantasauspysäkkejä…</div>`;
+  const j = ["aamu","ilta","paiva"].find(x=>(S.ltila[e.name]||[]).some(r=>r.ikkuna===S.ik&&r.dir===d&&r.jakso===x&&r.vuoroja>=5)) || "aamu";
+  const A = atValit(raw, d, j, S.nauha[e.name+"|"+d]); if(!A) return "";
+  const rows = A.valit.filter(v=>v.n);
+  return `<div class="sec" style="margin-top:12px">Ajantasausvälit ${infoBtn("ajantasaus")}</div>
+    ${A.tpCount<=1?`<div class="note">Linjalla on ajantasaus vain lähtöpysäkillä (tyypillistä ratikoille), joten aikataulun väljennys tehdään koko linjan ajoaikaan, ei välipysäkeille.</div>`:""}
+    ${rows.length?`<table class="t"><thead><tr><th>Väli</th><th class="r">Aikataulu (${esc(JNAME[j].split(" ")[0].toLowerCase())})</th><th class="r">Työmaita</th><th class="r">Lisäaika</th></tr></thead><tbody>
+    ${rows.map(v=>`<tr><td>${esc(v.alku)} → ${esc(v.loppu)}</td><td class="r">${v.min!=null?nf(v.min,1)+" min":"–"}</td><td class="r">${v.n}</td><td class="r ${v.lisa>30?"slow":""}">${sgn(v.lisa)}</td></tr>`).join("")}</tbody></table>
+    <div class="note" style="margin-top:4px">Lisäaika = välin työmaiden mitatut lisäajat yhteensä (tavallinen ohitus). Aikataulun väljennys tehdään näille väleille.</div>`
+    : `<div class="note">Mitattuja työmaita ei vielä osu ajantasausväleille.</div>`}`;
+}
 const JNAME = {aamu:"Aamuruuhka 7–9", paiva:"Päivä 9–15", ilta:"Iltaruuhka 15–18", muu:"Muu aika", kaikki:"Kaikki"};
 function linjaVuorot(e){
   const dirs = [...new Set(e.vt.map(r=>r.dir))].sort();
@@ -1168,7 +1200,8 @@ function linjaVuorot(e){
       ${nh.length ? nauhaSVG(nh) : ""}
       <table class="t" style="margin-top:6px"><thead><tr><th>Jakso</th><th class="r">Vuoroja</th><th class="r">Mediaani</th><th class="r">Huonoin 10 %</th></tr></thead><tbody>
       ${["aamu","paiva","ilta","muu"].map(j=>all.find(r=>r.jakso===j)).filter(Boolean).map(r=>`<tr><td>${JNAME[r.jakso]}</td><td class="r">${nf(r.vuoroja)}</td><td class="r">${r.vuoroja>=5?sgn(r.med):"–"}</td><td class="r ${r.p90>120&&r.vuoroja>=5?"slow":""}">${r.vuoroja>=5?sgn(r.p90):"–"}</td></tr>`).join("")}
-      </tbody></table>`;
+      </tbody></table>
+      ${atTaulu(e, d, k)}`;
   }).join("") + `<div class="note" style="margin-top:6px">Lasketaan vuoro kerrallaan: jokaisen vuoron lisäaika kaikilta reitin työmailta summataan, ja sama pysäkkiväli lasketaan vuorolle vain kerran.</div>`;
 }
 function nauhaSVG(nh){
@@ -1188,6 +1221,8 @@ function sugCard(x){
     <b>${esc(c.otsikko||"")}</b><p>${esc(c.ehdotus||"")}</p>
     <p class="note">${esc(c.perustelu||"")}</p>
     ${(c.toimenpiteet||[]).length?`<ul>${c.toimenpiteet.map(t=>`<li>${esc(t)}</li>`).join("")}</ul>`:""}
+    ${(p.ajantasausvalit||[]).length?`<table class="t" style="margin:6px 0"><thead><tr><th>Ajantasausväli</th><th class="r">Nyt</th><th class="r">Ehdotus</th></tr></thead><tbody>${p.ajantasausvalit.filter(v=>v.ehdotus_min>0).map(v=>`<tr><td>${esc(v.alku)} → ${esc(v.loppu)}</td><td class="r">${v.aikataulu_min!=null?nf(v.aikataulu_min,1)+" min":"–"}</td><td class="r slow">${v.aikataulu_min!=null?nf(v.aikataulu_min+v.ehdotus_min,1)+" min":"+"+nf(v.ehdotus_min,1)+" min"}</td></tr>`).join("")}</tbody></table>`:""}
+    ${p.ajantasaus_huom?`<p class="note">${esc(p.ajantasaus_huom)}</p>`:""}
     ${c.purku?`<p class="note"><b>Purku:</b> ${esc(c.purku)}</p>`:""}
     <div class="sugf">${nf(p.vuoroja)} vuoroa · ${nf(p.mittauspaivia)} pv · mediaani ${sgn(p.mediaani_s)} · huonoin 10 % ${sgn(p.huonoin_10pros_s)} · ehdotettu lisäaika ${nf(p.ehdotettu_lisaaika_min,1)} min<br>Odottaa suunnittelijan päätöstä. Agentti ei muuta aikatauluja itse. · ${esc(x.malli||"")} ${ago(x.luotu)}</div></div>`;
 }
@@ -1244,6 +1279,7 @@ function renderLinjaDet(e){
     <div style="height:10px"></div></div>`;
   wireInfo(box);
   linjaKartta(e);
+  if(!S.at && e.vt.length) loadAT().then(d=>{ if(d && S.lSel===e.name) renderLinjaDet(e); });
 }
 const ROUTE_GEOM = new Map();
 async function routeGeom(raw){
@@ -1285,6 +1321,12 @@ async function linjaKartta(e){
     if(!geom.length) b.extend(lay.getBounds());
   });
   if(b.isValid()) m.fitBounds(b,{padding:[16,16]});
+  // ajantasauspysäkit
+  const at = await loadAT(); if(M.linja !== m || !at) return;
+  const tp = new Map();
+  [...e.raw].forEach(r=>["1","2"].forEach(d=>(at.linjat[`${r}|${d}`]?.pysakit||[]).forEach(p=>{ if(p[1]>=1 && at.pysakit[p[0]]) { const q = at.pysakit[p[0]]; tp.set(p[0], {n:q[0], lat:q[1], lon:q[2], ajt:p[1]===1}); } })));
+  tp.forEach(v=>L.marker([v.lat,v.lon],{icon:L.divIcon({className:"tpm"+(v.ajt?"":" end"), iconSize:[10,10]})})
+    .bindTooltip(`<b>${esc(v.n)}</b><br>${v.ajt?"Ajantasauspysäkki":"Päätepysäkki"}`,{direction:"top"}).addTo(m));
 }
 document.getElementById("lQ").oninput = e => { S.lQ = e.target.value; S.lSel = null; renderLinjat(); };
 document.querySelectorAll("#lMode button").forEach(b=>b.onclick=()=>{ S.lMode=b.dataset.m; S.lSel=null; document.querySelectorAll("#lMode button").forEach(x=>x.classList.toggle("on",x===b)); renderLinjat(); });

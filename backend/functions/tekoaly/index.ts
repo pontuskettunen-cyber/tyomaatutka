@@ -185,10 +185,56 @@ Vastaa pelkällä JSONilla ilman johdantoa: {"otsikko": max 12 sanaa, "kohdat": 
 /* ---------- 2c) aikatauluagentti ---------- */
 // Säännöt valitsevat ehdokkaat (linja-suunta-jakso, jossa huonoin 10 % vuoroista menettää työmailla > 2 min).
 // Agentti kirjoittaa jokaiselle perustellun ehdotuksen suunnittelijan päätettäväksi. Mitään ei muuteta automaattisesti.
-async function aikataulu() {
+/* Ajantasausvälit: mihin aikataulun väliin työmaiden lisäaika osuu.
+   Lähde: data/ajantasaus.json (GitHub Actions laskee HSL:n GTFS:stä viikoittain). */
+const AT_URL = "https://pontuskettunen-cyber.github.io/tyomaatutka/data/ajantasaus.json";
+let AT: any = null;
+async function ajantasaus() {
+  if (AT) return AT;
+  try { const r = await fetch(AT_URL + "?t=" + Date.now()); AT = r.ok ? await r.json() : { linjat: {}, pysakit: {} }; } catch { AT = { linjat: {}, pysakit: {} }; }
+  return AT;
+}
+async function ajantasausValit(route: string, dir: number, jakso: string, nauha: any[], L: Record<string, any>, ehdotusMin: number) {
+  const at = await ajantasaus();
+  const lin = at.linjat?.[`${route}|${dir}`];
+  if (!lin) return null;
+  const pys: number[] = lin.pysakit.map((p: number[]) => p[0]);
+  const raja = lin.pysakit.map((p: number[], i: number) => (p[1] >= 1 ? i : -1)).filter((i: number) => i >= 0);
+  if (raja[0] !== 0) raja.unshift(0);
+  const nimi = (i: number) => at.pysakit?.[String(pys[i])]?.[0] ?? String(pys[i]);
+  const ids = nauha.map((r) => r.lupa_id);
+  const { data: segs } = ids.length ? await db.from("lupa_segmentit").select("lupa_id,from_stop,to_stop").in("lupa_id", ids) : { data: [] };
+  const valit = raja.slice(0, -1).map((a: number, k: number) => ({
+    alku: nimi(a), loppu: nimi(raja[k + 1]), alku_on_ajantasauspysakki: lin.pysakit[a][1] === 1,
+    aikataulu_min: lin.ajat?.[jakso]?.[k] ?? null, lisa_s: 0, tyomaat: [] as string[], ehdotus_min: 0,
+  }));
+  for (const r of nauha) {
+    if (!(r.lisa > 0) || (r.n ?? 0) < 3) continue;
+    const pos = (segs ?? []).filter((g: any) => g.lupa_id === r.lupa_id).map((g: any) => pys.indexOf(g.from_stop)).filter((i: number) => i >= 0);
+    if (!pos.length) continue;
+    const i0 = Math.min(...pos);
+    let k = 0; while (k < raja.length - 2 && raja[k + 1] <= i0) k++;
+    valit[k].lisa_s += r.lisa;
+    valit[k].tyomaat.push((L[r.lupa_id]?.osoite ?? r.lupa_id).split(/,\s*/)[0]);
+  }
+  const yht = valit.reduce((s: number, v: any) => s + v.lisa_s, 0);
+  if (yht > 0) for (const v of valit) {
+    const osuus = v.lisa_s / yht;
+    v.ehdotus_min = osuus >= 0.2 ? Math.max(0.5, Math.round(ehdotusMin * osuus * 2) / 2) : 0;
+    v.lisa_s = Math.round(v.lisa_s);
+  }
+  const vainLahto = lin.pysakit.filter((p: number[]) => p[1] === 1).length <= 1;
+  return { valit: valit.filter((v: any) => v.lisa_s > 0), ajantasauspysakkeja: lin.pysakit.filter((p: number[]) => p[1] === 1).length,
+    huom: vainLahto ? "Linjalla on ajantasaus vain lähtöpysäkillä (tyypillistä raitiovaunuille): ajoajan lisäys tehdään koko linjan ajoaikaan ja päätepysäkin kääntöaikaan, ei välipysäkeille." : null };
+}
+
+async function aikataulu(testi = false) {
   const { data: viim } = await db.from("ai_suositus").select("luotu").order("luotu", { ascending: false }).limit(1);
-  if (viim?.[0] && Date.now() - +new Date(viim[0].luotu) < 3 * 3600_000) return { kirjoitettu: 0, ohitettu: "tuore ajo alle 3 h sitten" };
-  const { data: ehd } = await db.from("aikataulu_ehdokkaat").select("*").order("p90", { ascending: false }).limit(8);
+  if (!testi && viim?.[0] && Date.now() - +new Date(viim[0].luotu) < 3 * 3600_000) return { kirjoitettu: 0, ohitettu: "tuore ajo alle 3 h sitten" };
+  // testi: kevennetyt rajat, ei tallennusta – näyttää millaisen ehdotuksen agentti tekisi nykydatalla
+  const { data: ehd } = testi
+    ? await db.from("linja_tila").select("*").in("jakso", ["aamu", "ilta", "paiva"]).gte("vuoroja", 5).gt("p90", 30).order("p90", { ascending: false }).limit(2)
+    : await db.from("aikataulu_ehdokkaat").select("*").order("p90", { ascending: false }).limit(8);
   if (!ehd?.length) return { kirjoitettu: 0, ohitettu: "ei ehdokkaita" };
   const { data: snap } = await db.from("luvat_snapshot").select("snap_date").order("snap_date", { ascending: false }).limit(1);
   const JAKSO: Record<string, string> = { aamu: "aamuruuhka 7–9", paiva: "päivä 9–15", ilta: "iltaruuhka 15–18" };
@@ -200,10 +246,13 @@ async function aikataulu() {
     const L = Object.fromEntries((lv ?? []).map((r: any) => [r.lupa_id, r]));
     const { data: muut } = await db.from("linja_tila").select("jakso,vuoroja,med,p90").eq("route", e.route).eq("dir", e.dir).eq("ikkuna", "7d");
     const varmuus = e.paivia >= 3 && e.vuoroja >= 40 ? "vahva" : "alustava";
+    const ehdMin = Math.max(0.5, Math.round(e.p90 / 30) / 2);
+    const at = await ajantasausValit(e.route, e.dir, e.jakso, nauha ?? [], L, ehdMin);
     tapaukset.push({
+      ajantasausvalit: at?.valit ?? null, ajantasaus_huom: at?.huom ?? null,
       linja: ln(e.route), route: e.route, suunta: e.dir, jakso: e.jakso, jakso_nimi: JAKSO[e.jakso] ?? e.jakso,
       vuoroja: e.vuoroja, mittauspaivia: e.paivia, mediaani_s: Math.round(e.med), huonoin_10pros_s: Math.round(e.p90),
-      ehdotettu_lisaaika_min: Math.max(0.5, Math.round(e.p90 / 30) / 2), varmuus,
+      ehdotettu_lisaaika_min: ehdMin, varmuus,
       muut_jaksot: (muut ?? []).filter((m: any) => m.jakso !== e.jakso).map((m: any) => ({ jakso: m.jakso, vuoroja: m.vuoroja, mediaani_s: Math.round(m.med), p90_s: Math.round(m.p90) })),
       tyomaat_reitin_jarjestyksessa: (nauha ?? []).map((r: any) => ({ lupa_id: r.lupa_id, osoite: (L[r.lupa_id]?.osoite ?? "").split(/,\s*/)[0],
         tyo: (L[r.lupa_id]?.tarkoitus ?? "").split(/\s(?:LISÄYS|KORJAUS|MUUTOS)\b/)[0].slice(0, 90), paattyy: pvm(L[r.lupa_id]?.paattyy ?? null),
@@ -214,11 +263,13 @@ async function aikataulu() {
 Kirjoita jokaiselle tapaukselle ehdotus suunnittelijan päätettäväksi. Säännöt:
 - Käytä VAIN annettuja lukuja ja tietoja. Älä keksi syitä, pysäkkien nimiä tai päivämääriä.
 - Ehdota yhtä pääasiallista toimenpidettä: (a) aikataulun ajoajan väljennys jaksolle (käytä ehdotettu_lisaaika_min), (b) yhteydenotto kaupunkiin tai urakoitsijaan, jos yksi työmaa aiheuttaa yli puolet lisäajasta, tai (c) seuranta ilman muutosta, jos varmuus on alustava ja vaikutus rajautuu yhteen päivään.
+- Jos tapauksella on ajantasausvalit, kohdista väljennys niihin: kerro väli muodossa "alku → loppu: X min → Y min" (Y = aikataulu_min + ehdotus_min; jos aikataulu_min puuttuu, sano "+ehdotus_min min"). Älä ehdota lisäystä väleille, joita ei ole annettu. Jos ajantasaus_huom on annettu, kerro se lyhyesti.
 - Mainitse, milloin vaikutus todennäköisesti päättyy (suurimman työmaan päättymispäivä), jotta väljennys osataan purkaa.
 - Kerro varmuus rehellisesti. Jos varmuus on alustava, sano montako päivää lisää tarvitaan.
 - Suomeksi, selkeästi, ilman markdownia. Linjat matkustajan numeroina.
 Vastaa pelkällä JSON-taulukolla, yksi olio per tapaus samassa järjestyksessä:
-[{"route": string, "suunta": number, "jakso": string, "otsikko": max 10 sanaa, "ehdotus": max 30 sanaa, "perustelu": max 45 sanaa, "toimenpiteet": [max 3 lyhyttä kohtaa], "purku": max 20 sanaa}]`;
+[{"route": string, "suunta": number, "jakso": string, "otsikko": max 10 sanaa, "ehdotus": max 30 sanaa, "perustelu": max 45 sanaa, "toimenpiteet": [max 3 lyhyttä kohtaa], "purku": max 20 sanaa}]
+Kun ajantasausvälit on annettu, ensimmäinen toimenpide on välikohtainen muutos.`;
   const t = await claude(MALLI_KIRJOITUS, system, JSON.stringify(tapaukset), 6000);
   const arr = parseJSON(t);
   const rivit = (Array.isArray(arr) ? arr : []).map((x: any, i: number) => {
@@ -227,8 +278,10 @@ Vastaa pelkällä JSON-taulukolla, yksi olio per tapaus samassa järjestyksessä
     return { route: tap.route, dir: tap.suunta, jakso: tap.jakso, varmuus: tap.varmuus, malli: MALLI_KIRJOITUS,
       sisalto: { otsikko: x.otsikko, ehdotus: x.ehdotus, perustelu: x.perustelu, toimenpiteet: x.toimenpiteet ?? [], purku: x.purku },
       perusteet: { vuoroja: tap.vuoroja, mittauspaivia: tap.mittauspaivia, mediaani_s: tap.mediaani_s, huonoin_10pros_s: tap.huonoin_10pros_s,
-        ehdotettu_lisaaika_min: tap.ehdotettu_lisaaika_min, tyomaat: tap.tyomaat_reitin_jarjestyksessa.slice(0, 6) } };
+        ehdotettu_lisaaika_min: tap.ehdotettu_lisaaika_min, tyomaat: tap.tyomaat_reitin_jarjestyksessa.slice(0, 6),
+        ajantasausvalit: tap.ajantasausvalit, ajantasaus_huom: tap.ajantasaus_huom } };
   }).filter(Boolean);
+  if (testi) return { kirjoitettu: 0, testi: rivit };
   if (rivit.length) await db.from("ai_suositus").insert(rivit);
   return { kirjoitettu: rivit.length };
 }
@@ -280,6 +333,7 @@ Deno.serve(async (req) => {
   try {
     if (tila === "luokittele") { const r = await luokittele(); await db.from("tallennin_loki").insert({ funktio: "tekoaly-luokittele", rivit: r.luokiteltu }); return json({ ok: true, ...r }); }
     if (tila === "katsaus") { const r = await katsaus(); await db.from("tallennin_loki").insert({ funktio: "tekoaly-katsaus", rivit: r.kirjoitettu.length }); return json({ ok: true, ...r }); }
+    if (tila === "aikataulu-testi") return json({ ok: true, ...(await aikataulu(true)) });
     if (tila === "aikataulu") { const r = await aikataulu(); await db.from("tallennin_loki").insert({ funktio: "tekoaly-aikataulu", rivit: r.kirjoitettu, virhe: (r as any).ohitettu ?? null }); return json({ ok: true, ...r }); }
     if (tila === "viikko") { const r = await viikko(); await db.from("tallennin_loki").insert({ funktio: "tekoaly-viikko", rivit: r.kirjoitettu.length }); return json({ ok: true, ...r }); }
     if (tila === "kysy") return json({ ok: true, ...(await kysy(body)) });
