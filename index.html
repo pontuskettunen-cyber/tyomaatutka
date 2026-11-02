@@ -381,7 +381,8 @@ footer{max-width:1360px;margin:0 auto;padding:0 28px 32px;color:var(--m);font-si
   #v-linjat.on{display:flex;flex-direction:column;height:calc(100vh - var(--toph,76px) - 40px);min-height:560px}
   #v-linjat .lmain{flex:1;min-height:0}
   #v-linjat .lmapw .map{height:100%}
-  #v-linjat .lright{min-height:0}
+  #v-linjat .lright{min-height:0;overflow:hidden}
+  #v-linjat .lmain>*{min-height:0}
 }
 @media(max-width:1020px){.lmain{grid-template-columns:1fr}.lmapw .map{height:420px}.lc-tg{margin-left:0;align-items:flex-start}}
 .lmap{height:300px;border:1px solid var(--l);border-radius:10px;margin:10px 0 0;overflow:hidden}
@@ -2314,7 +2315,7 @@ async function load(){
     const [mt, mlj, kp] = await Promise.all([getAll("v_lupa_mitta","lupa_id,ikkuna,jakso").catch(()=>[]), getAll("v_lupa_mitta_linja","lupa_id,ikkuna,jakso,route,dir").catch(()=>[]), get("v_kok_paiva").catch(()=>[])]);
     S.paivat = kp;
     const [lt, lnh, sug] = await Promise.all([getAll("v_linja_tila","route,dir,ikkuna,jakso").catch(()=>[]), getAll("v_linja_nauha","route,dir,lupa_id").catch(()=>[]), get("v_ai_suositus").catch(()=>[])]);
-    S.ltila = {}; lt.forEach(r=>{ (S.ltila[ln(r.route)] ||= []).push(r); });
+    S.ltila = {}; lt.forEach(r=>{ r.dir = String(r.dir); (S.ltila[ln(r.route)] ||= []).push(r); });
     S.nauha = {}; lnh.forEach(r=>{ (S.nauha[ln(r.route)+"|"+r.dir] ||= []).push(r); });
     S.sug = sug;
     S.vaik = {}; (await getAll("v_lupa_vaikutus","lupa_id").catch(()=>[])).forEach(r=>S.vaik[r.lupa_id]=r);
