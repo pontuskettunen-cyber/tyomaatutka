@@ -1728,7 +1728,7 @@ function renderLinjat(){
     .sort((a,b)=>(q ? (b.name===q)-(a.name===q) : 0) || b.max-a.max || b.works.size-a.works.size || parseInt(a.name)-parseInt(b.name));
   const worst = all.filter(e=>e.max>0).sort((a,b)=>b.max-a.max)[0];
   document.getElementById("linjatBrief").innerHTML = worst
-    ? `Katutyöt koskettavat nyt <strong>${nf(all.filter(e=>e.works.size).length)} linjaa</strong>. Eniten lisäaikaa kertyy <strong>${worst.tram?"ratikka":"bussi"} ${esc(worst.name)}</strong>: ${worst.vt.length?`tavallinen vuoro ${sgn(worst.max)}, huonoin kymmenesosa ${sgn(worst.p90)} työmaiden kohdalla (mitattu vuoroittain).`:`arviolta ${sgn(worst.max)} per vuoro työmaa-alueiden kohdalla yhteensä.`}`
+    ? `Katutyöt koskettavat nyt <strong>${nf(all.filter(e=>e.works.size).length)} linjaa</strong>. Eniten lisäaikaa kertyy <strong>${worst.tram?"ratikka":"bussi"} ${esc(worst.name)}</strong>: ${worst.vt.length?`tavallinen vuoro hidastuu työmailla ${minuutteina(worst.max)}, joka kymmenes yli ${minuutteina(worst.p90)} (mitattu vuoroittain).`:`arviolta ${minuutteina(worst.max)} vuoroa kohden työmaa-alueiden kohdalla yhteensä.`}`
     : `Katutyöt koskettavat nyt <strong>${nf(all.filter(e=>e.works.size).length)} linjaa</strong>. Linjakohtainen lisäaika tarkentuu, kun mittausdataa kertyy.`;
   renderSug();
   document.getElementById("lTitle").textContent = `${nf(list.length)} linjaa`;
@@ -1736,7 +1736,7 @@ function renderLinjat(){
   el.innerHTML = list.slice(0,200).map(e=>`<div class="lrow ${S.lSel===e.name?"sel":""}" data-n="${esc(e.name)}">
     <span class="lbadge ${e.tram?"tram":""}">${esc(e.name)}</span>
     <div><b style="font-weight:500">${nf(e.sites)} ${e.sites===1?"työmaa-alue":"työmaa-aluetta"} reitillä</b><div class="m">${e.up.length?`${e.up.length} alkaa 14 pv sisällä · `:""}${e.measured} mitattu</div></div>
-    <div class="x ${e.max>30?"slow":""}">${e.sug.length?'<span class="aitag suuri" style="margin-right:6px">ehdotus</span>':""}${e.max>0?sgn(e.max):"–"}<small>${e.vt.length?`koko reitti, mitattu vuoroista · huonoimmat ${sgn(e.p90)}`:"työmaat yhteensä, arvio"}</small></div></div>`).join("") || `<div class="empty" style="padding:14px 16px">Ei linjoja tällä haulla.</div>`;
+    <div class="x ${e.max>30?"slow":""}">${e.sug.length?'<span class="aitag suuri" style="margin-right:6px">ehdotus</span>':""}${e.vt.length||e.max>0?sgn(e.max):"–"}<small>${e.vt.length?`koko reitti, mitattu vuoroista · huonoimmat ${sgn(e.p90)}`:"työmaat yhteensä, arvio"}</small></div></div>`).join("") || `<div class="empty" style="padding:14px 16px">Ei linjoja tällä haulla.</div>`;
   el.querySelectorAll(".lrow").forEach(d=>d.onclick=()=>{ S.lSel=d.dataset.n; renderLinjat(); if(innerWidth<1021) document.getElementById("lDet").scrollIntoView({behavior:"smooth"}); });
   if(!S.lSel && list[0]) S.lSel = list[0].name;
   renderLinjaDet(all.find(e=>e.name===S.lSel));
