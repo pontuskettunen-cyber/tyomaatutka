@@ -2,7 +2,7 @@
 
 Tuottaa data/ajantasaus.json:
   { "paivitetty": ..., "linjat": { "1004|1": { "pysakit": [[stop, tp], ...],      # yleisimmän ajoreitin pysäkit järjestyksessä, tp=1 ajantasauspysäkki
-                                              "vuoroja": n,
+                                              "vuoroja": n, "arki_vrk": vuoroja arkipäivässä, "arki_h": [lähtöjä tunneittain 0–23],
                                               "ajat": { "aamu": [min, ...], "ilta": [...], "paiva": [...] } } } }
   ajat = aikataulun mukainen ajoaika (min, mediaani) peräkkäisten rajapisteiden (ajantasauspysäkit + päätepysäkki) välillä arkipäivän vuoroissa.
   pysakit-merkintä: 1 = ajantasauspysäkki, 2 = päätepysäkki ilman ajantasausta, 0 = muu.
@@ -26,6 +26,9 @@ def jakso(start):
 patterns = collections.Counter()          # (route, dir, pattern) -> trips
 esim = {}                                 # (route, dir, pattern) -> esimerkkivuoro (muodon hakuun)
 ajat = collections.defaultdict(list)      # (route, dir, pattern, jakso) -> [[min between tps], ...]
+paiva = collections.Counter()             # (route, dir, pvm) -> arkipäivän vuorot (kaikki ajoreitit)
+tunti = collections.Counter()             # (route, dir, tunti) -> arkipäivien lähdöt yhteensä
+arkipvm = collections.defaultdict(set)    # (route, dir) -> arkipäivät, joina linja ajaa
 
 def flush(trip, rows):
     if not trip or not rows:
@@ -39,6 +42,10 @@ def flush(trip, rows):
     key = (route, d, pat)
     patterns[key] += 1
     esim.setdefault(key, trip)
+    if dtype not in ("La", "Su"):
+        paiva[(route, d, parts[1])] += 1
+        tunti[(route, d, int(start[:2]) % 24)] += 1
+        arkipvm[(route, d)].add(parts[1])
     j = jakso(start)
     if j and dtype not in ("La", "Su"):       # arkipäivät
         # rajapisteet: ajantasauspysäkit + päätepysäkki (HSL:n ratikoilla ajantasaus on vain lähtöpäässä)
@@ -74,6 +81,11 @@ for k, (pat, n) in best.items():
     route, d = k.split("|")
     # merkintä: 1 = ajantasauspysäkki, 2 = päätepysäkki (ei ajantasausta), 0 = muu
     e = {"pysakit": [[p[0], p[1] or (2 if i == len(pat) - 1 else 0)] for i, p in enumerate(pat)], "vuoroja": n, "ajat": {}}
+    # arkipäivän vuoromäärä ja lähdöt tunneittain: poikkeusreitin tunnistukseen (odotetut vs. havaitut ohitukset)
+    pv = sorted(arkipvm.get((route, d), ()))
+    if pv:
+        e["arki_vrk"] = int(statistics.median(paiva[(route, d, x)] for x in pv))
+        e["arki_h"] = [round(tunti[(route, d, h)] / len(pv), 1) for h in range(24)]
     for j in ("aamu", "paiva", "ilta"):
         L = [x for x in ajat.get((route, d, pat, j), []) if x]
         if L:
