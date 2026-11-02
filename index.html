@@ -8,7 +8,12 @@
 <title>Työmaatutka · katutöiden vaikutus joukkoliikenteeseen</title>
 <meta name="description" content="Työmaatutka mittaa, paljonko Helsingin katutyöt hidastavat busseja ja ratikoita, ja varoittaa etukäteen töistä, jotka osuvat joukkoliikenteen reiteille.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script>
+/* Teema: ?teema=hsl ottaa käyttöön HSL-henkisen värityksen (piilotettu esikatselu), ?teema=oma palauttaa. Valinta muistetaan. */
+(function(){ try{ var q = new URLSearchParams(location.search).get("teema"); if(q) localStorage.setItem("tt_teema", q);
+  if((q || localStorage.getItem("tt_teema")) === "hsl") document.documentElement.classList.add("hsl"); }catch(e){} })();
+</script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 :root{
@@ -488,6 +493,29 @@ tr.best td{background:#F0F8F3}
 .prose .lead{font-size:17px;line-height:1.55}
 .t.roolit td{vertical-align:top;font-size:13.5px}
 @media(max-width:860px){.navk,.navsep{display:none}}
+
+/* ===== HSL-henkinen teema (vain html.hsl) — ei HSL:n logoa eikä lisensoitua fonttia; pyöreä Nunito lähin avoin vastine ===== */
+html.hsl{--g:#F2F5F7;--p:#FFFFFF;--i:#1A1A1A;--i2:#3D4B57;--m:#5C6B78;--l:#DCE3E8;--l2:#EDF1F4;--a:#007AC9;--a-soft:#E6F2FA;--ind:#5C2D91;--r:14px}
+html.hsl body, html.hsl button, html.hsl input, html.hsl select, html.hsl textarea, html.hsl .leaflet-container{font-family:"Nunito",system-ui,sans-serif}
+html.hsl *{font-family:"Nunito",system-ui,sans-serif !important;font-variant-numeric:tabular-nums}
+html.hsl body{font-size:15.5px}
+html.hsl h1,html.hsl h2,html.hsl h3,html.hsl b,html.hsl strong{font-weight:800}
+html.hsl .brief .k,html.hsl .sec,html.hsl .lcard .k,html.hsl .mleg-g,html.hsl .now-k{letter-spacing:.02em;font-weight:800}
+html.hsl .top{box-shadow:0 1px 0 var(--l)}
+html.hsl nav a{font-weight:700;color:var(--i2)}
+html.hsl nav a.on{color:var(--a);border-bottom-width:3px}
+html.hsl .intro{background:#00385F;color:#fff;border-radius:14px}
+html.hsl .intro a{color:#9FD3F5}
+html.hsl .seg{border-radius:999px;padding:3px}
+html.hsl .seg button{border-radius:999px;font-weight:700}
+html.hsl .seg button.on{background:var(--a)}
+html.hsl .btn, html.hsl .ask button, html.hsl .lc-dd{border-radius:999px;font-weight:700}
+html.hsl .btn, html.hsl .ask button{background:var(--a)}
+html.hsl .panel, html.hsl .lcard, html.hsl .lcock, html.hsl .tile, html.hsl .card, html.hsl .todo{border-radius:16px}
+html.hsl .search, html.hsl input[type=search], html.hsl input[type=text]{border-radius:999px}
+html.hsl .lbadge{border-radius:8px;font-weight:800}
+html.hsl .livebtn.on{background:#00385F;border-color:#00385F}
+html.hsl .forpro{background:var(--a-soft);color:var(--a)}
 </style>
 </head>
 <body>
