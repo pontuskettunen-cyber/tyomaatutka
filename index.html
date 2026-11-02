@@ -348,6 +348,16 @@ footer{max-width:1360px;margin:0 auto;padding:0 28px 32px;color:var(--m);font-si
 @media(max-width:1180px){.strip.s3{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:860px){.todos{grid-template-columns:1fr}.strip.s3{grid-template-columns:1fr 1fr}.strip.s3 .tile:first-child{grid-column:1/-1}}
 .aiwhen{font:400 11.5px "IBM Plex Sans";color:var(--m);margin-left:6px;white-space:nowrap}
+.raplink{display:inline-block;font-size:13px;margin:-4px 0 12px;color:var(--a);text-decoration:none}
+.rap{max-width:780px;margin:0 auto;background:var(--p);border:1px solid var(--l);border-radius:14px;padding:22px 28px 26px}
+.rap-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}.rap-top a{color:var(--a);text-decoration:none;font-size:13.5px}
+.rap-k{font:500 11.5px "IBM Plex Mono";letter-spacing:.05em;text-transform:uppercase;color:var(--a)}
+.rap h1{font-size:26px;margin:6px 0 2px}.rap h3{margin:22px 0 8px}
+.rap-lead{font-size:17px;line-height:1.55;margin:14px 0}
+.rap-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:10px 0 4px}
+.rap-grid div{border:1px solid var(--l);border-radius:10px;padding:10px 12px}.rap-grid b{display:block;font:500 22px "IBM Plex Mono"}.rap-grid small{color:var(--m);font-size:12px}
+@media(max-width:720px){.rap{padding:16px}.rap-grid{grid-template-columns:1fr 1fr}}
+@media print{.top,.rap-top,footer,#sys{display:none!important}body{background:#fff}.rap{border:0;padding:0}.view{display:none!important}#v-raportti{display:block!important}}
 </style>
 </head>
 <body>
@@ -417,6 +427,9 @@ footer{max-width:1360px;margin:0 auto;padding:0 28px 32px;color:var(--m);font-si
     <div id="askOut"></div>
   </section>
 </section>
+
+<!-- ================= JÄLKIRAPORTTI ================= -->
+<section class="view" id="v-raportti"><div class="rap" id="rap"></div></section>
 
 <!-- ================= TYÖMAAT ================= -->
 <section class="view" id="v-tyot">
@@ -844,6 +857,44 @@ function varmuus(l){
   if(ph==="kaynnissa" && im) return {k:"arvio", lyhyt:"arvio", txt:`Arvio: työ oli käynnissä jo ennen mittauksen alkua, joten väliä verrataan linjan muihin väleihin. Luku on yläraja, koska osa väleistä on hitaita ilman työtäkin. Todennettu luku saadaan, kun työ päättyy${l.paattyy?" ("+fmtDate(l.paattyy)+")":""} ja samaa väliä mitataan ilman sitä.`};
   return null;
 }
+/* Jälkiraportti: mitä työ maksoi joukkoliikenteelle. Täyttyy itsestään, kun työ päättyy ja todennettu vaikutus on laskettu. */
+function renderRaportti(id){
+  const el = document.getElementById("rap"), l = S.byId[id], vk = S.vaik?.[id];
+  if(!l && !vk){ el.innerHTML = `<div class="empty">Raporttia ei löydy. <a href="#/">Takaisin tilannekuvaan</a></div>`; return; }
+  const osoite = l ? title(l) : (vk.osoite||id).split(/,\s*/).slice(0,2).join(", ");
+  const alkaa = l?.alkaa || vk?.alkaa, paattyy = l?.paattyy || vk?.paattyy;
+  const valmis = paattyy && +new Date(paattyy) < Date.now() && vk?.tila==="todennettu";
+  const kesto = alkaa && paattyy ? Math.max(1, Math.round((+new Date(paattyy) - +new Date(alkaa))/DAY)) : null;
+  const tod = vk?.tila==="todennettu" ? vk : null;
+  const m = mitta(id, "7d") || mitta(id, "24h");
+  const arvioS = m && m.n >= MIN_N ? m.lisa_ajo : null;
+  const perOhitus = tod ? tod.vaikutus_s : arvioS;
+  const vrkH = tod ? Math.max(0, tod.ajoneuvotunnit_vrk||0) : (m?.ajoneuvotunnit_vrk ?? null);
+  const yht = vrkH!=null && kesto ? vrkH*kesto : null;
+  const linjat = tod ? (tod.linjat||[]).map(x=>({route:x.route, dir:x.dir, s:x.ero, n:x.n_a})) : (S.mlinja[id]||[]).filter(r=>r.ikkuna===S.ik && r.jakso==="kaikki" && r.ohitukset>=MIN_N).map(r=>({route:r.route, dir:r.dir, s:r.lisa_ajo, n:r.ohitukset}));
+  const lin = linjat.filter(x=>/^\d{1,3}[A-Z]?$/.test(ln(x.route))).sort((a,b)=>b.s-a.s);
+  const tila = valmis ? `<span class="vchip tod">valmis · todennettu</span>` : `<span class="vchip">esikatselu</span>`;
+  const lause = perOhitus==null ? `Työstä ei ole vielä tarpeeksi mittauksia raporttiin.`
+    : `${kesto?`Työ kesti ${nf(kesto)} päivää (${fmtDate(alkaa)}–${fmtDate(paattyy)}). `:""}Se ${perOhitus>10?`lisäsi bussien ja ratikoiden ajoaikaa keskimäärin <b>${nf(Math.round(perOhitus))} s jokaista ohitusta kohden</b>`:`ei hidastanut joukkoliikennettä merkittävästi (${sgn(perOhitus)} per ohitus)`}${yht!=null&&perOhitus>10?`, koko kestolta yhteensä noin <b>${nf(yht,0)} ajoneuvotuntia</b>`:""}.`;
+  el.innerHTML = `
+    <div class="rap-top"><a href="#/?l=${encodeURIComponent(id)}">← Takaisin työmaahan</a><button class="share" onclick="window.print()">Tulosta / tallenna PDF</button></div>
+    <div class="rap-k">Jälkiraportti ${tila}</div>
+    <h1>${esc(osoite)}</h1>
+    <div class="note">${l?esc(purpose(l))+" · ":""}${esc(id)}</div>
+    <p class="rap-lead">${lause}</p>
+    ${!valmis?`<div class="varm ${tod?"tod":"arvio"}"><b>${tod?"Todennettu":"Esikatselu"}:</b> ${tod?`luvut perustuvat samaan pysäkkiväliin ${tod.vertailu==="ennen"?"ennen työn alkua":"työn päätyttyä"} ja työn aikana.`:`raportti valmistuu, kun työ päättyy${paattyy?" ("+fmtDate(paattyy)+")":""} ja samaa väliä on mitattu ilman työtä. Siihen asti luvut ovat arviota.`}</div>`:""}
+    <div class="rap-grid">
+      <div><b>${perOhitus!=null?sgn(perOhitus):"–"}</b><small>lisäaika per ohitus${tod?"":" (arvio)"}</small></div>
+      <div><b>${vrkH!=null?nf(vrkH,1)+" h":"–"}</b><small>lisäaikaa vuorokaudessa</small></div>
+      <div><b>${yht!=null?nf(yht,0)+" h":"–"}</b><small>koko kestolta${kesto?` (${nf(kesto)} pv)`:""}</small></div>
+      <div><b>${yht!=null?nf(yht*S.load,0)+" h":"–"}</b><small>matkustajille (${S.load} hlö/ajo, oletus)</small></div>
+    </div>
+    ${lin.length?`<h3>Linjat</h3><table class="t"><thead><tr><th>Linja</th><th class="r">Ohituksia</th><th class="r">Lisäaika per ohitus</th></tr></thead><tbody>
+      ${lin.slice(0,12).map(x=>`<tr><td><span class="chip">${esc(ln(x.route))}</span> <span class="note">suunta ${x.dir}</span></td><td class="r">${nf(x.n)}</td><td class="r ${x.s>10?"slow":""}">${sgn(x.s)}</td></tr>`).join("")}</tbody></table>`:""}
+    ${tod && arvioS!=null ? `<h3>Arvio vs. todennettu</h3><p>Ennen todennettua lukua tutka arvioi lisäajaksi ${sgn(arvioS)} per ohitus. Todennettu vaikutus oli ${sgn(tod.vaikutus_s)}. ${Math.abs(arvioS)>5?`Arvio ${arvioS>tod.vaikutus_s?"yliarvioi":"aliarvioi"} vaikutusta ${nf(Math.abs(arvioS-tod.vaikutus_s)/Math.abs(arvioS)*100)} %.`:""} Tätä vertailua käytetään arvioiden kalibrointiin.</p>`:""}
+    <h3>Miten luvut on laskettu</h3>
+    <p class="note">Lisäaika per ohitus: työmaan pysäkkivälien ajoaika verrattuna ${tod?"samaan väliin ilman työtä, samalla vuorokaudenjaksolla":"saman linjan muihin väleihin samaan aikaan (arvio)"}. Ruuhka ja sää kumoutuvat, koska vertailu tehdään samassa 2 tunnin jaksossa. Koko keston luku = lisäaika vuorokaudessa × kesto. Lähteet: HSL:n avoin ajoneuvodata (HFP), Helsingin kaupungin katuluvat. Työmaatutka ${new Date().toLocaleDateString("fi-FI")}.</p>`;
+}
 /* Yhden lauseen yhteenveto työmaasta ihmiselle */
 function tiivis(l, im, ml){
   const ph = phase(l).k, ls = lines(l.linjat).filter(n=>!/N$/.test(n));
@@ -962,6 +1013,7 @@ async function renderDetail(){
     ${l.ai_vaikutus?`<div class="aibox"><span class="ai-badge"><i></i>TEKOÄLYN TULKINTA LUVASTA</span><div style="margin-top:4px"><span class="aitag ${esc(l.ai_vaikutus)}">vaikutus: ${esc(l.ai_vaikutus)}</span> ${(l.ai_sulkee||[]).map(x=>`<span class="aitag pieni">${esc(String(x).replace("_"," "))}</span>`).join(" ")} <span class="note">${esc(l.ai_perustelu||"")}</span></div></div>`:""}
     ${tiivis(l, im, ml)}
     <div class="facts">${facts.map(f=>`<div><b>${f[0]}</b><small>${f[1]}</small></div>`).join("")}</div>
+    ${onRoute(l) && ph.k!=="tulossa" ? `<a class="raplink" href="#/raportti?l=${encodeURIComponent(l.lupa_id)}">${ph.k==="paattynyt"?"Avaa jälkiraportti":"Jälkiraportti (esikatselu)"} →</a>` : ""}
     ${(()=>{ const v = varmuus(l); return v ? `<div class="varm ${v.k}"><b>${esc(v.lyhyt[0].toUpperCase()+v.lyhyt.slice(1))}:</b> ${esc((t=>t[0].toUpperCase()+t.slice(1))(v.txt.replace(/^[^:]+:\s*/,"")))}${im&&im.tod&&im.arvio!=null?` <span class="note">(Pelkkä vertailu linjan muihin väleihin antaisi ${sgn(im.arvio)}.)</span>`:""}</div>` : ""; })()}
     ${onRoute(l) && ph.k==="kaynnissa" && LV.on ? `<div id="nowPass"></div>` : ""}
     ${im && im.kind==="ennen" ? `<div class="note" style="margin:-6px 0 8px">Ennen ja jälkeen: ajoaika ${sgn(im.pct,1," %")} perustasosta, yleinen ruuhka vähennetty.</div>`:""}
@@ -1525,7 +1577,7 @@ function setHash(path, l){ const h = "#/"+path+(l?"?l="+encodeURIComponent(l):""
 function route(nav){
   const {path, l} = parseHash();
   if(path==="live"){ history.replaceState(null,"","#/"); S.forceLive = true; }
-  const v = ["tyot","menetelma","linjat"].includes(path) ? path : "home";
+  const v = ["tyot","menetelma","linjat","raportti"].includes(path) ? path : "home";
   document.querySelectorAll(".view").forEach(x=>x.classList.toggle("on", x.id==="v-"+v));
   document.querySelectorAll("nav a").forEach(a=>a.classList.toggle("on", (a.dataset.r||"home")===(v==="home"?"home":v) || (a.dataset.r===""&&v==="home")));
   if(!S.loaded) return;
@@ -1539,6 +1591,7 @@ function route(nav){
     if((changed || nav==="first") && S.byId[S.sel] && l){ const c = centroid(S.byId[S.sel].geom||{coordinates:[]}); if(c) M.home.setView(c,16); } }
   if(v==="tyot") renderTyot();
   if(v==="linjat") renderLinjat();
+  if(v==="raportti") renderRaportti(l);
   if(nav==="hash") window.scrollTo(0,0);
 }
 window.addEventListener("hashchange", ()=>route("hash"));
