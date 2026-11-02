@@ -1150,7 +1150,7 @@ function naytaEn(){
     <p class="tiivis">Työ osuisi <b>${nf(new Set(L2.map(e=>e.n)).size)} linjaan</b> (${esc(nimiL.join(", "))}${new Set(L2.map(e=>e.n)).size>6?"…":""}), noin <b>${nf(tot)} ohitusta arkipäivänä</b>. Arvioitu lisäaika <b>${sgn(s)} per ohitus</b>, eli noin <b>${nf(H(tot,s),1)} h vuorokaudessa</b>${paras && koko.ok && koko.h>0 && paras.h < koko.h*0.8 ? `. Ajoittamalla työn ${paras.t.toLowerCase().replace("vain ","")} haitta pienenee noin ${nf(Math.round((1-paras.h/koko.h)*100))} %` : ""}.</p>
     <div class="facts">
       <div><b>${nf(H(tot,lo),1)}–${nf(H(tot,hi),1)} h</b><small>lisäaikaa / arkipäivä (tyypillinen – pahin kymmenesosa)</small></div>
-      <div><b>${kesto && koko.h ? nf(H(tot,s)*kesto,0)+" h" : "–"}</b><small>koko kestolta${kesto?` (${kesto} pv)`:""}</small></div>
+      <div><b>${kesto && koko.h ? nf(H(tot,s)*kesto,0)+" h" : "–"}</b><small>koko työn ajalta${kesto?` (${kesto} pv, ${EN.lupa?"luvan mukaan":"valitut päivät"})`:""}</small></div>
       <div><b>${kesto && koko.h ? nf(H(tot,s)*kesto*S.load,0)+" h" : "–"}</b><small>matkustajille (${S.load} hlö/ajo, oletus)</small></div>
     </div>
     <div class="sec">Paras ajoitus</div>
@@ -1238,7 +1238,7 @@ function renderRaportti(id){
     <div class="rap-grid">
       <div><b>${perOhitus!=null?sgn(perOhitus):"–"}</b><small>lisäaika per ohitus${tod?"":" (arvio)"}</small></div>
       <div><b>${vrkH!=null?nf(vrkH,1)+" h":"–"}</b><small>${taysi?"lisäaikaa vuorokaudessa":"lisäaikaa mittausjaksolla ("+per.dur+")"}</small></div>
-      <div><b>${yht!=null?nf(yht,0)+" h":"–"}</b><small>koko kestolta${kesto?` (${nf(kesto)} pv)`:""}</small></div>
+      <div><b>${yht!=null?nf(yht,0)+" h":"–"}</b><small>koko työn ajalta${kesto?` (${nf(kesto)} pv, luvan mukaan)`:""}</small></div>
       <div><b>${yht!=null?nf(yht*S.load,0)+" h":"–"}</b><small>matkustajille (${S.load} hlö/ajo, oletus)</small></div>
     </div>
     ${lin.length?`<h3>Linjat</h3><table class="t"><thead><tr><th>Linja</th><th class="r">Ohituksia</th><th class="r">Lisäaika per ohitus</th></tr></thead><tbody>
