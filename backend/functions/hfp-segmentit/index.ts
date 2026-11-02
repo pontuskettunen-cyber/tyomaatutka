@@ -24,8 +24,15 @@ type Agg = { bucket: string; from_stop: number; to_stop: number; route: string; 
 async function run() {
   // 1) edellisen jakson tila (alle 5 min vanha)
   const st = new Map<string, St>();
-  const { data: prev } = await db.from("hfp_tila").select("*").gt("t", new Date(Date.now() - 5 * 60_000).toISOString());
-  for (const r of prev ?? []) st.set(r.veh, { t: +new Date(r.t), stop: r.stop, dl: r.dl, trip: r.trip,
+  // ruuhkassa liikkeellä on yli 1000 ajoneuvoa: haetaan sivuina (PostgREST palauttaa enintään 1000 riviä)
+  const prev: any[] = [];
+  const raja = new Date(Date.now() - 5 * 60_000).toISOString();
+  for (let from = 0; from < 20000; from += 1000) {
+    const { data } = await db.from("hfp_tila").select("*").gt("t", raja).order("veh").range(from, from + 999);
+    prev.push(...(data ?? []));
+    if (!data || data.length < 1000) break;
+  }
+  for (const r of prev) st.set(r.veh, { t: +new Date(r.t), stop: r.stop, dl: r.dl, trip: r.trip,
     arr_stop: r.arr_stop, arr_t: r.arr_t ? +new Date(r.arr_t) : null, arr_dl: r.arr_dl, seen: false });
   // 2) seurattavat parit
   const seur = new Set<string>();

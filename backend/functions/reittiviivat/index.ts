@@ -5,6 +5,18 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+
+// PostgREST palauttaa enintään 1000 riviä: haetaan sivuina
+async function kaikki(mk: () => any) {
+  const out: any[] = [];
+  for (let off = 0; off < 50000; off += 1000) {
+    const { data, error } = await mk().range(off, off + 999);
+    if (error) throw error;
+    out.push(...(data ?? []));
+    if (!data || data.length < 1000) break;
+  }
+  return out;
+}
 const URL_ = "https://services1.arcgis.com/sswNXkUiRoWtrx0t/ArcGIS/rest/services/HSL_linjasto_ja_pysakit/FeatureServer/2/query";
 const MAX_POIKKEAMA = 70; // m: pysäkin etäisyys reittiviivasta
 
@@ -48,8 +60,7 @@ async function haeReitit(routes: string[]) {
 }
 
 async function run(kaikki: boolean) {
-  const { data: segs, error } = await db.from("v_lupa_segmentit").select("from_stop,to_stop,from_lat,from_lon,to_lat,to_lon,linjat,viiva");
-  if (error) throw error;
+  const segs = await kaikki(() => db.from("v_lupa_segmentit").select("from_stop,to_stop,from_lat,from_lon,to_lat,to_lon,linjat,viiva").order("lupa_id").order("from_stop").order("to_stop"));
   const uniq = new Map<string, any>();
   for (const s of segs ?? []) {
     if (!kaikki && s.viiva) continue;

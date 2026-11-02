@@ -8,6 +8,18 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+
+// PostgREST palauttaa enintään 1000 riviä: haetaan sivuina
+async function kaikki(mk: () => any) {
+  const out: any[] = [];
+  for (let off = 0; off < 50000; off += 1000) {
+    const { data, error } = await mk().range(off, off + 999);
+    if (error) throw error;
+    out.push(...(data ?? []));
+    if (!data || data.length < 1000) break;
+  }
+  return out;
+}
 const AKEY = Deno.env.get("ANTHROPIC_API_KEY");
 const MALLI_NOPEA = "claude-haiku-5-5";
 const MALLI_KIRJOITUS = "claude-sonnet-5-5";
@@ -58,7 +70,7 @@ async function faktat() {
     "lupa_id,layer,osoite,tarkoitus,kaupunginosa,alkaa,paattyy,segmentteja,linjat,ohitukset_24h,ajoja_vrk,lisaviive_s,ajoneuvotunnit_24h,indeksi_24h,perustaso_ikkunat,geom,ai_sijainti,ai_vaikutus,ai_sulkee");
   if (error) throw new Error(error.message);
   const luvat = (data ?? []) as any[];
-  const { data: mt } = await db.from("lupa_mitta").select("lupa_id,ikkuna,jakso,n,lisa_ajo,lisa_seis,ajoneuvotunnit_vrk").in("ikkuna", ["24h", "7d", "ed7d"]);
+  const mt = await kaikki(() => db.from("lupa_mitta").select("lupa_id,ikkuna,jakso,n,lisa_ajo,lisa_seis,ajoneuvotunnit_vrk").in("ikkuna", ["24h", "7d", "ed7d"]).order("lupa_id").order("ikkuna").order("jakso"));
   const M: Record<string, any> = {};
   for (const r of mt ?? []) (M[r.lupa_id] ??= {})[`${r.ikkuna}|${r.jakso}`] = r;
   const mm = (id: string, ik: string, j = "kaikki") => { const r = M[id]?.[`${ik}|${j}`]; return r && r.n >= 5 ? r : null; };
@@ -106,9 +118,9 @@ async function faktat() {
 async function luokittele() {
   const { data: snap } = await db.from("luvat_snapshot").select("snap_date").order("snap_date", { ascending: false }).limit(1);
   const pv = snap?.[0]?.snap_date;
-  const { data: valmiit } = await db.from("lupa_ai").select("lupa_id");
+  const valmiit = await kaikki(() => db.from("lupa_ai").select("lupa_id").order("lupa_id"));
   const tehty = new Set((valmiit ?? []).map((r: any) => r.lupa_id));
-  const { data: reitti } = await db.from("lupa_segmentit").select("lupa_id");
+  const reitti = await kaikki(() => db.from("lupa_segmentit").select("lupa_id").order("lupa_id").order("from_stop").order("to_stop"));
   const reitilla = new Set((reitti ?? []).map((r: any) => r.lupa_id));
   const { data: luvat } = await db.from("luvat_snapshot").select("lupa_id,layer,osoite,tarkoitus,alkaa,paattyy").eq("snap_date", pv);
   const jono = (luvat ?? []).filter((l: any) => !tehty.has(l.lupa_id) && (!l.paattyy || +new Date(l.paattyy) > Date.now() - DAY))
