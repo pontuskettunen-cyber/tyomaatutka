@@ -291,6 +291,9 @@ footer{max-width:1360px;margin:0 auto;padding:0 28px 32px;color:var(--m);font-si
 .spark{display:flex;align-items:flex-end;gap:3px;height:38px;margin-top:4px}.spark i{width:9px;background:#C9CDC4;border-radius:2px}.spark i.today{background:var(--a);opacity:.5}
 @media(max-width:720px){.bdr{grid-template-columns:1fr 60px;}.bdr .pb,.bdr small{display:none}}
 .gloss dt{font-weight:600;margin-top:10px;color:var(--i)}.gloss dd{margin:2px 0 0;color:var(--i2)}
+.bdsite{cursor:pointer;border-radius:6px;padding:2px 4px;margin:0 -4px}.bdsite:hover,.bdsite.open{background:#FBF4EF}
+.bdsite span{color:var(--a)}
+.bdsub{margin:2px 0 8px 18px;padding:8px 10px;border-left:2px solid var(--a-line);background:var(--g);border-radius:0 8px 8px 0}
 </style>
 </head>
 <body>
@@ -548,6 +551,7 @@ function tile(val, label, key, bd, href){
   return href ? `<a class="tile" href="${href}">${inner}</a>` : `<div class="tile">${inner}</div>`;
 }
 let _pop;
+addEventListener("scroll", ()=>{ if(_pop) _pop.style.display="none"; }, {passive:true});
 function wireInfo(root){
   root.querySelectorAll(".info").forEach(b=>b.onclick=e=>{
     e.preventDefault(); e.stopPropagation();
@@ -607,7 +611,12 @@ function renderBreakdown(){
   const top5 = bd.sites.slice(0,5).reduce((s,x)=>s+x.vehH,0);
   const bar = (label, v, href, sub) => `<div class="bdr">${href?`<a href="${href}">${esc(label)}</a>`:`<span>${esc(label)}</span>`}<div class="pb"><i style="width:${Math.max(2, v/(bd.sites[0]?.vehH||v||1)*100)}%"></i></div><b>${nf(v,1)} h</b><small>${nf(v/tot*100)} %${sub?" · "+sub:""}</small></div>`;
   let rows = "";
-  if(tab==="tyomaat") rows = bd.sites.slice(0,10).map(x=>bar(title(x.l), x.vehH, "#/?l="+encodeURIComponent(x.l.lupa_id), x.n<30?"alustava":"n="+nf(x.n))).join("");
+  if(tab==="tyomaat") rows = bd.sites.slice(0,10).map(x=>{
+    const id = x.l.lupa_id, open = S.bdOpenSite===id;
+    const lr = (S.mlinja[id]||[]).filter(r=>r.ikkuna===S.ik && r.jakso==="kaikki" && r.ohitukset>=MIN_N && /^\d{1,3}[A-Z]?$/.test(ln(r.route))).sort((a,b)=>(b.ohitukset*Math.max(0,b.lisa_ajo||0))-(a.ohitukset*Math.max(0,a.lisa_ajo||0)));
+    return `<div class="bdr bdsite ${open?"open":""}" data-site="${esc(id)}" role="button" tabindex="0"><span>${open?"▾":"▸"} ${esc(title(x.l))}</span><div class="pb"><i style="width:${Math.max(2, x.vehH/(bd.sites[0]?.vehH||1)*100)}%"></i></div><b>${nf(x.vehH,1)} h</b><small>${nf(x.vehH/tot*100)} % · ${x.n<30?"alustava":"n="+nf(x.n)}</small></div>`
+      + (open ? `<div class="bdsub">${lr.length ? `<table class="t"><thead><tr><th>Linja</th><th class="r">Ohituksia</th><th class="r">Lisäaika / ohitus</th><th class="r">Yhteensä</th></tr></thead><tbody>${lr.slice(0,8).map(r=>`<tr><td><span class="lbadge ${TRAM.has(ln(r.route))?"tram":""}" style="height:20px;min-width:30px;font-size:11.5px">${esc(ln(r.route))}</span> <span class="note">suunta ${r.dir}</span></td><td class="r">${nf(r.ohitukset)}</td><td class="r ${r.lisa_ajo>10?"slow":r.lisa_ajo<-10?"fast":""}">${sgn(r.lisa_ajo)}</td><td class="r">${r.lisa_ajo>0?nf(r.ohitukset*r.lisa_ajo/60)+" min":"–"}</td></tr>`).join("")}</tbody></table>` : `<div class="note">Linjakohtaista mittausta ei vielä ole riittävästi.</div>`}<a href="#/?l=${encodeURIComponent(id)}" style="font-size:13px">Avaa työmaan tiedot →</a></div>` : "");
+  }).join("");
   if(tab==="linjat"){ const mx = bd.byLine[0]?.[1].h || 1; rows = bd.byLine.slice(0,10).map(([n,e])=>`<div class="bdr"><a href="#/linjat" onclick="S.lSel='${esc(n)}'"><span class="lbadge ${TRAM.has(n)?"tram":""}" style="height:20px;min-width:30px;font-size:11.5px">${esc(n)}</span></a><div class="pb"><i style="width:${Math.max(2,e.h/mx*100)}%"></i></div><b>${nf(e.h,1)} h</b><small>${e.sites.size} ${e.sites.size===1?"työmaa":"työmaata"}</small></div>`).join(""); }
   if(tab==="tyypit"){ const mx = bd.byCat[0]?.[1] || 1; rows = bd.byCat.map(([c,v])=>`<div class="bdr"><span>${esc(c)}</span><div class="pb"><i style="width:${Math.max(2,v/mx*100)}%"></i></div><b>${nf(v,1)} h</b><small>${nf(v/tot*100)} %</small></div>`).join(""); }
   const days = (S.paivat||[]).slice(-14);
@@ -623,6 +632,8 @@ function renderBreakdown(){
       <div class="note" style="max-width:520px">${tr ? `Edellinen valmis vuorokausi (${fmtDate(tr.last.pv)}) ${nf(tr.last.ajoneuvotunnit,1)} h; vertailupäivä samaa päivätyyppiä (${fmtDate(tr.prev.pv)}) ${nf(tr.prev.ajoneuvotunnit,1)} h.` : `Vertailu edelliseen vuorokauteen näkyy, kun kaksi saman päivätyypin vuorokautta on mitattu kokonaan (arkipäivät 3.11. alkaen). Arkea ei verrata viikonloppuun, koska liikennemäärät eroavat.`}</div></div>
   </div>`;
   el.querySelectorAll("#bdTabs button").forEach(b=>b.onclick=()=>{ S.bdTab=b.dataset.t; renderBreakdown(); });
+  el.querySelectorAll(".bdsite").forEach(r=>{ const t=()=>{ S.bdOpenSite = S.bdOpenSite===r.dataset.site ? null : r.dataset.site; renderBreakdown(); }; r.onclick=t; r.onkeydown=e=>{ if(e.key==="Enter"){ e.preventDefault(); t(); } }; });
+  if(_pop) _pop.style.display="none";
 }
 
 document.getElementById("gloss").innerHTML = Object.values(INFO).map(([h,t])=>`<dt>${esc(h)}</dt><dd>${esc(t)}</dd>`).join("");
