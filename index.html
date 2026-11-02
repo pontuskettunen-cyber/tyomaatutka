@@ -373,6 +373,8 @@ tr.best td{background:#F0F8F3}
 .ltxt .lbody{font-size:14px;line-height:1.55;margin-top:6px}.ltxt .lbody p{margin:0 0 6px}
 .ltxt .share{position:absolute;top:8px;right:8px}
 #enPanel{overflow-y:auto}
+.enpt{background:#fff;border:3px solid #C2410C;border-radius:50%;box-shadow:0 1px 3px rgba(0,0,0,.25);cursor:grab}
+.enpt:active{cursor:grabbing}
 </style>
 </head>
 <body>
@@ -453,7 +455,7 @@ tr.best td{background:#F0F8F3}
         <select id="enLupa" class="search" style="max-width:340px"><option value="">Valitse alkava lupa…</option></select>
         <div class="seg"><button id="enUndo" type="button">Kumoa piste</button><button id="enClear" type="button">Tyhjennä</button></div>
       </div>
-      <div class="note" style="padding:6px 16px 8px;border-bottom:1px solid var(--l)">Klikkaa kartalle pisteitä kadun suuntaisesti: työalue piirtyy niiden väliin. Vieritys zoomaa.</div>
+      <div class="note" style="padding:6px 16px 8px;border-bottom:1px solid var(--l)">Klikkaa kartalle pisteitä kadun suuntaisesti: työalue piirtyy niiden väliin. Pisteitä voi raahata. <b>Esc</b> tai <b>Ctrl+Z</b> peruu edellisen muutoksen. Vieritys zoomaa.</div>
       <div class="map" id="mapE"></div>
     </div>
     <div class="panel" id="enPanel">
@@ -901,7 +903,20 @@ function varmuus(l){
   return null;
 }
 /* ================= ENNAKKOARVIO ================= */
-const EN = { pts:[], lupa:null, layer:null, segL:null, timer:null, res:null };
+const EN = { pts:[], lupa:null, layer:null, segL:null, timer:null, res:null, hist:[], drag:null };
+/* Muutoshistoria: Esc tai Ctrl+Z palauttaa edellisen tilan (myös kesken raahauksen) */
+function enTalleta(){ EN.hist.push({pts:EN.pts.map(p=>p.slice()), lupa:EN.lupa}); if(EN.hist.length > 50) EN.hist.shift(); }
+function enKumoa(){
+  if(EN.drag){ const d = EN.drag; EN.drag = null; d.m.dragging.disable(); d.m.setLatLng(d.orig); EN.pts[d.i] = [d.orig.lat, d.orig.lng]; drawEn(); return; }
+  const h = EN.hist.pop(); if(!h) return;
+  EN.pts = h.pts; EN.lupa = h.lupa; document.getElementById("enLupa").value = h.lupa || "";
+  drawEn(); laskeEn();
+}
+addEventListener("keydown", e=>{
+  if(!document.getElementById("v-ennakko")?.classList.contains("on")) return;
+  if(e.target.closest && e.target.closest("input,select,textarea")) return;
+  if(e.key==="Escape" || ((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==="z")){ e.preventDefault(); enKumoa(); }
+});
 const fsY = t => { const d = new Date(t); return d.getFullYear()!==new Date().getFullYear() ? `${d.getDate()}.${d.getMonth()+1}.${d.getFullYear()}` : fmtShort(t); };
 const dmet = (a,b) => Math.hypot((a[0]-b[0])*111320, (a[1]-b[1])*55600);
 function tiheyta(pts, step=15){ // pisteet [lat,lon] 15 m välein, jotta myös pisteiden väliin osuvat pysäkkivälit löytyvät
@@ -920,9 +935,9 @@ function haittaMalli(){
 function initEnnakko(l){
   if(!M.en){
     M.en = mkMap("mapE"); M.en.setView([60.172,24.94],14);
-    M.en.on("click", e=>{ EN.lupa = null; document.getElementById("enLupa").value = ""; EN.pts.push([e.latlng.lat, e.latlng.lng]); drawEn(); laskeEn(); });
-    document.getElementById("enUndo").onclick = ()=>{ EN.pts.pop(); drawEn(); laskeEn(); };
-    document.getElementById("enClear").onclick = ()=>{ EN.pts = []; EN.lupa = null; document.getElementById("enLupa").value = ""; drawEn(); laskeEn(); };
+    M.en.on("click", e=>{ enTalleta(); if(EN.lupa){ EN.lupa = null; EN.pts = []; } document.getElementById("enLupa").value = ""; EN.pts.push([e.latlng.lat, e.latlng.lng]); drawEn(); laskeEn(); });
+    document.getElementById("enUndo").onclick = ()=>enKumoa();
+    document.getElementById("enClear").onclick = ()=>{ enTalleta(); EN.pts = []; EN.lupa = null; document.getElementById("enLupa").value = ""; drawEn(); laskeEn(); };
     document.querySelectorAll('#enHaitta input, #enA, #enP').forEach(x=>x.onchange = ()=>naytaEn());
     const d0 = new Date(Date.now()+7*DAY), d1 = new Date(Date.now()+21*DAY);
     document.getElementById("enA").value = d0.toISOString().slice(0,10); document.getElementById("enP").value = d1.toISOString().slice(0,10);
@@ -937,6 +952,7 @@ function initEnnakko(l){
 }
 function valitseLupaEn(id){
   const l = S.byId[id]; if(!l){ return; }
+  enTalleta();
   EN.lupa = id; document.getElementById("enLupa").value = id;
   EN.pts = geomPisteet(l.geom);
   if(l.alkaa) document.getElementById("enA").value = new Date(l.alkaa).toISOString().slice(0,10);
@@ -951,7 +967,18 @@ function drawEn(){
   const l = EN.lupa && S.byId[EN.lupa];
   EN.layer = L.layerGroup().addTo(M.en);
   if(l) L.geoJSON(l.geom,{style:{color:"#C2410C",weight:2,fillColor:"#C2410C",fillOpacity:.3}}).addTo(EN.layer);
-  else if(EN.pts.length){ L.polyline(EN.pts,{color:"#C2410C",weight:10,opacity:.45,lineCap:"round"}).addTo(EN.layer); EN.pts.forEach(p=>L.circleMarker(p,{radius:4,color:"#C2410C",weight:2,fillColor:"#fff",fillOpacity:1}).addTo(EN.layer)); }
+  else if(EN.pts.length){
+    const line = L.polyline(EN.pts,{color:"#C2410C",weight:10,opacity:.45,lineCap:"round",interactive:false}).addTo(EN.layer);
+    // pisteitä voi raahata; Esc kesken raahauksen palauttaa pisteen paikalleen
+    EN.pts.forEach((p,i)=>{
+      const m = L.marker(p,{draggable:true, icon:L.divIcon({className:"enpt", iconSize:[14,14]}), keyboard:false}).addTo(EN.layer);
+      m.bindTooltip("Raahaa siirtääksesi · Esc peruu",{direction:"top", offset:[0,-6]});
+      m.on("dragstart", ()=>{ enTalleta(); EN.drag = {m, i, orig:m.getLatLng()}; });
+      m.on("drag", ()=>{ const ll = m.getLatLng(); EN.pts[i] = [ll.lat, ll.lng]; line.setLatLngs(EN.pts); });
+      m.on("dragend", ()=>{ if(!EN.drag) return; EN.drag = null; laskeEn(); });
+      m.on("click", ev=>L.DomEvent.stopPropagation(ev));
+    });
+  }
 }
 function laskeEn(){
   clearTimeout(EN.timer);
