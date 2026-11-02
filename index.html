@@ -1073,7 +1073,7 @@ function drawEn(){
   // "?" työalueen kohdalla: kertoo mikä oranssi alue on
   if(EN.pts.length){
     const c = l ? (centroid(l.geom) || L.latLngBounds(EN.pts).getCenter()) : L.latLngBounds(EN.pts).getCenter();
-    const q = L.marker(c,{icon:L.divIcon({className:"enq", html:"?", iconSize:[22,22]}), keyboard:false, zIndexOffset:-100}).addTo(EN.layer);
+    const q = L.marker(c,{icon:L.divIcon({className:"enq", html:"?", iconSize:[22,22], iconAnchor:[-12,26]}), keyboard:false, zIndexOffset:-100}).addTo(EN.layer);
     q.bindPopup(l ? `<b>Työalue</b><br>${esc(shortStreet(l))}: luvan sijainti lupahakemuksesta.<br>Tutka laskee linjat, jotka kulkevat alle 40 m päästä.<br>Tyhjennä ja klikkaa kartalle, jos haluat piirtää oman alueen.`
                   : `<b>Työalue</b><br>Itse piirretty alue.<br>Tutka laskee linjat, jotka kulkevat alle 40 m päästä.<br>Raahaa valkoisia pisteitä siirtääksesi aluetta.`, {maxWidth:260});
     q.on("click", ev=>L.DomEvent.stopPropagation(ev));
