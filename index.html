@@ -160,7 +160,7 @@ a.tile:hover{border-color:#C9CDC4}
 .tiles{filter:grayscale(1) contrast(.88) brightness(1.07)}
 .pin{background:transparent;border:0}
 .leaflet-container{font-family:"IBM Plex Sans",sans-serif}
-.leaflet-tooltip{font-size:12.5px;border-radius:8px;border:1px solid var(--l);box-shadow:0 4px 14px rgba(20,24,29,.12)}
+.leaflet-tooltip{white-space:normal;width:max-content;max-width:290px;font-size:12.5px;border-radius:8px;border:1px solid var(--l);box-shadow:0 4px 14px rgba(20,24,29,.12)}
 
 /* Detail */
 .det{padding:18px 18px 8px}
@@ -230,6 +230,7 @@ table.t .r{text-align:right;white-space:nowrap;font-family:"IBM Plex Mono"}
 .pchip.tram{background:#00985F}
 .pchip span{opacity:.8;font-weight:400;padding:0 3px}
 .pclear{border:1px solid var(--l);background:var(--p);border-radius:6px;padding:3px 9px;font-size:12.5px;color:var(--i2);margin-left:auto}
+.leaflet-tooltip.clamped:before{display:none}
 .leaflet-tooltip.pinned{padding:3px 7px;font-size:12px;line-height:1.35;border:1.5px solid #14181D;box-shadow:0 2px 8px rgba(20,24,29,.18)}
 @media(max-width:860px){nav a{padding:0 9px;font-size:13.5px}}
 
@@ -750,6 +751,20 @@ const segColor = v => v == null ? "#8A9198" : v > 10 ? "#B42318" : "#8A9198";
 const baseCover = l => Math.min(1, (l.perustaso_ikkunat||0)/12);
 
 /* ---------- kartat ---------- */
+/* Kuplat pysyvät kartan sisällä: jos tooltip menisi reunan yli, se siirretään sisäpuolelle. */
+(function(){
+  const orig = L.Tooltip.prototype._setPosition;
+  L.Tooltip.prototype._setPosition = function(pos){
+    orig.call(this, pos);
+    const map = this._map, el = this._container; if(!map || !el) return;
+    const p = L.DomUtil.getPosition(el), cp = map.layerPointToContainerPoint(p), sz = map.getSize();
+    const w = el.offsetWidth, h = el.offsetHeight, m = 8;
+    const dx = cp.x < m ? m - cp.x : cp.x + w > sz.x - m ? Math.max(m - cp.x, sz.x - m - (cp.x + w)) : 0;
+    const dy = cp.y < m ? m - cp.y : cp.y + h > sz.y - m ? Math.max(m - cp.y, sz.y - m - (cp.y + h)) : 0;
+    el.classList.toggle("clamped", !!(dx || dy));
+    if(dx || dy) L.DomUtil.setPosition(el, p.add([dx, dy]));
+  };
+})();
 function mkMap(id, extra){
   const m = L.map(id,{zoomControl:true, scrollWheelZoom:true, wheelPxPerZoomLevel:90, wheelDebounceTime:25, zoomSnap:0.25, zoomDelta:0.5, preferCanvas:true, ...(extra||{})}).setView([60.18,24.94],13);
   L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,className:"tiles",attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}).addTo(m);
