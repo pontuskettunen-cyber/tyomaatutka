@@ -575,6 +575,14 @@ html.hsl #v-home .todo{padding:10px 14px}
 .subnav a.on{color:var(--a);border-bottom-color:var(--a)}
 .h2links{display:flex;gap:18px;align-items:baseline}
 #worstLine{font-size:13px}
+.tstats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:2px}
+.tstat{display:flex;flex-direction:column;align-items:flex-start;gap:1px;text-align:left;font:inherit;color:inherit;background:var(--p);border:1px solid var(--l);border-radius:var(--r);padding:10px 14px;cursor:pointer}
+.tstat:hover{border-color:var(--a)}
+.tstat b{font:600 24px/1.1 "IBM Plex Mono";letter-spacing:-.02em}
+.tstat span{font-weight:600;font-size:13.5px}.tstat small{color:var(--m);font-size:12px}
+.cl-list{list-style:none;padding:0!important}.cl-list li{padding:8px 0;border-top:1px solid #F4D9A6}.cl-list li:first-child{border-top:0}
+.cl-l{font-size:13px;color:var(--i2);margin:2px 0 4px}.cl-ch{display:flex;gap:4px;flex-wrap:wrap}
+@media(max-width:860px){.tstats{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -763,7 +771,7 @@ html.hsl #v-home .todo{padding:10px 14px}
 
 <!-- ================= TYÖMAAT ================= -->
 <section class="view" id="v-tyot">
-  <div class="brief"><div class="k">Työmaat</div><p id="tyotBrief">Ladataan…</p></div>
+  <div id="tyotBrief" style="margin-bottom:14px"><div class="note">Ladataan…</div></div>
   <div id="clash"></div>
   <div class="toolbar">
     <div class="seg" id="fWhen">
@@ -776,7 +784,7 @@ html.hsl #v-home .todo{padding:10px 14px}
   </div>
   <div class="split fit">
     <div class="panel">
-      <div class="ph"><h2 id="listTitle">Työt</h2><div class="legend"><span id="listOrder">Järjestys: haitta</span></div></div>
+      <div class="ph"><h2 id="listTitle">Työt</h2><div class="legend"><span id="listOrder">Järjestys: haitta</span> <button class="info" type="button" data-info="tyolista" aria-label="Mitä luvut tarkoittavat?">i</button></div></div>
       <div class="list" id="list"></div>
     </div>
     <div class="panel mapp"><div class="map" id="map2"></div></div>
@@ -1014,6 +1022,7 @@ const INFO = {
   p90: ["Huonoin kymmenesosa", "Joka kymmenes vuoro saa työmaiden kohdalla vähintään näin paljon lisäaikaa. Matkustajalle tärkein luku: se ratkaisee, ehtiikö vaihtoon."],
   puskuri: ["Viivevara", "Kuinka monta minuuttia vuoro voi myöhästyä ilman, että saman auton tai vaunun seuraava lähtö myöhästyy. Luku tulee HSL:n avoimesta aikataulusta (max_delay, päiväajan vuorojen mediaani). Ratikoilla se on tarkistettu vaunukierroista: se on kääntöaika päätepysäkillä miinus noin 3–4 minuuttia. Alle näkyy, kuinka suuren osan varasta työmaat vievät huonoimmassa kymmenesosassa vuoroista. Alle 50 %: viive mahtuu aikatauluun eikä maksa mitään. 50–100 %: vara on vähissä. Yli 100 %: viive voi siirtyä seuraaviin lähtöihin. 0 min tarkoittaa tiukkaa aikataulua: kääntöaika on vain minimin verran, joten jo pieni viive voi siirtyä seuraavaan lähtöön. Matkan aikana aikataulussa voi silti olla väljyyttä, jota tämä luku ei näe. Busseilla luku on aikataulun arvo, ei vielä mitattu."],
   eurot: ["Miten eurot lasketaan", "Aikataulu: lisäaika × 50 €/h, eli bussin ajotunnin kuljettajakulu (Väylävirasto, hankearvioinnin yksikköarvot 2022: 49,70 €/h). Pieni viive ei maksa mitään, koska se mahtuu aikataulun väljyyteen. Rahaa se maksaa vasta, kun aikataulua pidennetään tai linjalle tarvitaan lisäauto. Matkustajat: lisäaika × 20 matkustajaa vuorossa (oletus) × 5 €/h, eli matkustajan ajan arvo, jota käytetään liikennehankkeiden arvioinnissa. Se ei ole kassasta lähtevää rahaa. Säästetyt eurot lasketaan samoilla hinnoilla mitatusta erosta, kun työ päättyy tai järjestelyä muutetaan ja samaa kohtaa voidaan verrata ennen ja jälkeen."],
+  tyolista: ["Listan luvut", "Käynnissä olevilla töillä oikea sarake kertoo, paljonko pidempään ohi ajaminen kestää (lisäaika per ohitus) ja paljonko lisäaikaa on kertynyt yhteensä. Alkavilla töillä se kertoo, montako ohitusta samalta katuosuudelta on jo mitattu ennen työtä vertailuksi. Klikkaa työtä nähdäksesi sen kartalla, tuplaklikkaa avataksesi tiedot."],
   jakso: ["Luvut ajalta", "Aikaväli, jolta näytetyt luvut on laskettu. Tarkennettu mittaus alkoi aamulla 2.11.2026, joten aluksi jakso on lyhyempi kuin valittu 24 h tai 7 vrk."],
 };
 const infoBtn = k => `<button class="info" data-info="${k}" aria-label="Mitä tämä tarkoittaa?">i</button>`;
@@ -1827,9 +1836,26 @@ function renderTyot(){
   const lineSet = new Set(upR.flatMap(l=>lines(l.linjat)));
   const runR = all.filter(l=>phase(l).k==="kaynnissa" && onRoute(l));
   document.getElementById("listOrder").textContent = S.fWhen==="tulossa" ? "Järjestys: alkamispäivä" : "Järjestys: haitta, suurin ensin";
-  document.getElementById("tyotBrief").innerHTML = `Käynnissä on <strong>${nf(runR.length)} katutyötä</strong> bussi- tai ratikkareittien varrella. Lista on järjestetty haitan mukaan: ensimmäisenä työ, joka aiheuttaa busseille ja ratikoille eniten lisäaikaa yhteensä. Seuraavan 14 päivän aikana alkaa <strong>${nf(up.length)} katutyötä</strong>. Niistä <strong>${nf(upR.length)}</strong> on bussi- tai ratikkareitin varrella, ja ne koskettavat ${nf(lineSet.size)} linjaa. Ne löytyvät suodattimella <em>Alkavat 2 viikon sisällä</em>.<br><span class="note">Listan oikea sarake: käynnissä oleville, paljonko pidempään ohi ajaminen kestää ja paljonko lisäaikaa on kertynyt yhteensä; alkaville töille, montako ohitusta samalta katuosuudelta on jo mitattu ennen työtä vertailuksi. Klikkaa työtä nähdäksesi sen kartalla, tuplaklikkaa avataksesi tiedot.</span>`;
   const cl = clashes();
-  document.getElementById("clash").innerHTML = cl.length ? `<div class="warn"><h4>Päällekkäiset työt samoilla linjoilla (${cl.length})</h4><div class="note" style="margin-bottom:6px">Uusi ajoneuvoliikennettä haittaava työ alkaa linjalle, jolla on jo toinen työ alle 1,5 km päässä. Viiveet kasautuvat samalle matkustajalle.</div><ul>${cl.slice(0,5).map(c=>`<li><b>${esc(title(c.a))}</b> alkaa ${fmtDate(c.a.alkaa)} linjoilla ${c.shared.slice(0,6).map(esc).join(", ")}${c.shared.length>6?"…":""}, joilla on jo työ ${nf(c.dist/1000,1)} km päässä (<b>${esc(title(c.b))}</b>). Käynnissä yhtä aikaa ${fmtShort(c.lo)}${c.hi<8e15?"–"+fmtShort(c.hi).replace(/\.$/,""):""}.</li>`).join("")}</ul></div>` : "";
+  const byNew = new Map(); cl.forEach(c=>{ const k = c.a.lupa_id; const g = byNew.get(k) || {a:c.a, muut:[], linjat:new Set()}; g.muut.push(c); c.shared.forEach(x=>g.linjat.add(x)); byNew.set(k, g); });
+  const ryhmat = [...byNew.values()].sort((x,y)=>new Date(x.a.alkaa)-new Date(y.a.alkaa));
+  const tile = (n, t, sub, act) => `<button type="button" class="tstat" data-act="${act}"><b>${nf(n)}</b><span>${t}</span>${sub?`<small>${sub}</small>`:""}</button>`;
+  document.getElementById("tyotBrief").innerHTML = `<div class="tstats">
+    ${tile(runR.length, "käynnissä bussi- tai ratikkareitillä", "järjestetty haitan mukaan", "kaynnissa")}
+    ${tile(upR.length, "alkaa 14 päivän sisällä reitillä", `${nf(lineSet.size)} linjaa · kaikkiaan ${nf(up.length)} alkavaa työtä`, "tulossa")}
+    ${ryhmat.length ? tile(ryhmat.length, ryhmat.length===1?"alkava työ osuu linjalle, jolla on jo työ":"alkavaa työtä osuu linjoille, joilla on jo työ", "viiveet kasautuvat samalle matkustajalle", "clash") : ""}
+  </div>`;
+  document.querySelectorAll("#tyotBrief .tstat").forEach(b=>b.onclick=()=>{ const a = b.dataset.act;
+    if(a==="clash"){ document.getElementById("clash").scrollIntoView({behavior:"smooth", block:"center"}); return; }
+    document.querySelector(`#fWhen button[data-v="${a}"]`)?.click(); });
+  const rivi = g => `<li><div><b>${esc(title(g.a))}</b> <span class="note">alkaa ${fmtDate(g.a.alkaa)}</span></div>
+      <div class="cl-l">Samoilla linjoilla jo käynnissä: ${g.muut.sort((x,y)=>x.dist-y.dist).map(c=>`${esc(title(c.b))} <span class="note">${nf(c.dist/1000,1)} km</span>`).join(" · ")}</div>
+      <div class="cl-ch">${[...g.linjat].slice(0,10).map(x=>`<span class="chip">${esc(x)}</span>`).join("")}${g.linjat.size>10?`<span class="chip">+${g.linjat.size-10}</span>`:""}</div></li>`;
+  document.getElementById("clash").innerHTML = ryhmat.length ? `<div class="warn"><h4>Päällekkäiset työt samoilla linjoilla</h4><div class="note" style="margin-bottom:6px">Alkava, ajoneuvoliikennettä haittaava työ osuu linjalle, jolla on jo toinen työ alle 1,5 km päässä.</div>
+    <ul class="cl-list">${ryhmat.slice(0, S.clashAll ? 99 : 3).map(rivi).join("")}</ul>
+    ${ryhmat.length>3?`<button type="button" class="ai-more" id="clashMore">${S.clashAll?"Näytä vähemmän ↑":`Näytä kaikki ${ryhmat.length} ↓`}</button>`:""}</div>` : "";
+  const cm = document.getElementById("clashMore"); if(cm) cm.onclick = ()=>{ S.clashAll = !S.clashAll; renderTyot(); };
+  wireInfo(document.getElementById("v-tyot"));
   const items = filtered();
   document.getElementById("listTitle").textContent = `${nf(items.length)} työtä`;
   const el = document.getElementById("list");
