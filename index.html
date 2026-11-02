@@ -524,13 +524,19 @@ html.hsl #v-home .nowrow{align-items:center;margin-bottom:10px;gap:16px}
 html.hsl #v-home .nowrow .headline{font-size:20px;line-height:1.3}
 html.hsl #v-home .now-k{margin-bottom:4px}
 html.hsl #v-home .nowctl{display:flex;align-items:center;gap:10px;flex:none}
-html.hsl #v-home .omalinja{margin:0;padding:0;border:0;background:none;flex-wrap:nowrap;gap:0}
-html.hsl #v-home .omalinja label{display:none}
-html.hsl #v-home .omarow{gap:0;border:1px solid var(--l);border-radius:999px;background:var(--p);padding:3px}
-html.hsl #v-home .omarow input{width:170px;border:0;border-radius:999px;font-size:14.5px;padding:6px 12px;background:none}
-html.hsl #v-home .omarow input:focus{outline:0}
-html.hsl #v-home .omarow:focus-within{border-color:var(--a);box-shadow:0 0 0 3px var(--a-soft)}
-html.hsl #v-home .omarow .btn{padding:6px 14px;font-size:13.5px;white-space:nowrap}
+html.hsl .top .omalinja{margin:0 0 0 auto;padding:0;border:0;background:none;flex-wrap:nowrap;gap:0;flex:none}
+html.hsl .top .omalinja label{display:none}
+html.hsl .top .omarow{gap:0;border:1px solid var(--l);border-radius:999px;background:var(--g);padding:2px}
+html.hsl .top .omarow input{width:150px;border:0;border-radius:999px;font-size:13.5px;padding:5px 12px;background:none}
+html.hsl .top .omarow input:focus{outline:0}
+html.hsl .top .omarow:focus-within{border-color:var(--a);background:var(--p);box-shadow:0 0 0 3px var(--a-soft)}
+html.hsl .top .omarow .btn{width:30px;height:30px;padding:0;border-radius:50%;font-size:15px;line-height:30px;text-align:center}
+html.hsl .top .in{gap:16px}
+html.hsl .top .live{flex:none}
+html.hsl .top .live #status{max-width:190px;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:1250px){html.hsl .top .live #status{display:none}html.hsl .top .live{padding:7px}}
+@media(max-width:860px){html.hsl .top .omalinja{display:none}}
+html.hsl #v-home .nowrow .headline{max-width:none}
 html.hsl #v-home .strip.s3 .tile{display:flex;align-items:center;gap:12px;padding:8px 14px;position:relative}
 html.hsl #v-home .strip.s3 .tile b{font-size:24px;flex:none;overflow:visible}
 html.hsl #v-home .strip.s3 .tile small{white-space:normal;font-size:12px;line-height:1.3;min-width:0}
@@ -619,9 +625,13 @@ html.hsl #v-home .todo{padding:10px 14px}
 /* Uusi ilme: siirretään oma linja -haku otsikkoriville ja "Tänään huomioitavaa" + tekoälykatsaus kartan alle */
 (function(){ if(!document.documentElement.classList.contains("hsl")) return;
   const h = document.getElementById("v-home"), row = h.querySelector(".nowrow"), ik = document.getElementById("ikSel");
-  const ctl = document.createElement("div"); ctl.className = "nowctl"; row.replaceChild(ctl, ik);
-  ctl.append(document.getElementById("omaForm"), ik);
-  const q = document.getElementById("omaQ"); q.placeholder = "Oma linja, esim. 55"; q.setAttribute("aria-label","Mitä linjaa ajat tai käytät? Näe linjasi työmaat ja paljonko ne hidastavat.");
+  /* Linjahaku yläpalkkiin: toimii jokaiselta sivulta ja vie Linjat-näkymään */
+  const f = document.getElementById("omaForm"), live = document.querySelector(".top .live");
+  live.before(f); live.style.marginLeft = "0";
+  const q = document.getElementById("omaQ"); q.placeholder = "Hae linja, esim. 55"; q.setAttribute("aria-label","Hae linja: näe linjan työmaat ja paljonko ne hidastavat");
+  const b = f.querySelector("button"); b.textContent = "→"; b.title = "Näytä linja"; b.setAttribute("aria-label","Näytä linja");
+  /* Tilapalkin teksti lyhyeksi: koko teksti näkyy vihjeenä */
+  const st = document.getElementById("status"); new MutationObserver(()=>{ live.title = st.textContent; }).observe(st,{childList:true,characterData:true,subtree:true});
   const split = h.querySelector(".split.fit"); split.after(h.querySelector(".todo-sec")); h.querySelector(".todo-sec").after(document.getElementById("aiBox"));
 })();
 </script>
