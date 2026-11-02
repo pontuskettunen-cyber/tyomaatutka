@@ -460,9 +460,9 @@ tr.best td{background:#F0F8F3}
       <div class="det">
         <div class="sec" style="margin-top:0">Työn haitta liikenteelle</div>
         <div class="enopt" id="enHaitta">
-          <label><input type="radio" name="haitta" value="pieni"> <b>Pieni</b><span>jalkakäytävä tai kadun reuna, kaistat auki</span></label>
-          <label><input type="radio" name="haitta" value="kohtalainen" checked> <b>Kohtalainen</b><span>kaista kapenee tai yksi kaista suljetaan</span></label>
-          <label><input type="radio" name="haitta" value="suuri"> <b>Suuri</b><span>useampi kaista tai koko katu suljetaan</span></label>
+          <label><input type="radio" name="haitta" value="pieni"> <b>Pieni</b><span>kaistat auki · tyypillinen mitattu työ</span></label>
+          <label><input type="radio" name="haitta" value="kohtalainen" checked> <b>Kohtalainen</b><span>kaista kapenee · haitallisin neljännes</span></label>
+          <label><input type="radio" name="haitta" value="suuri"> <b>Suuri</b><span>kaistoja suljetaan · haitallisin kymmenesosa</span></label>
         </div>
         <div class="enrow"><label>Alkaa<input type="date" id="enA"></label><label>Päättyy<input type="date" id="enP"></label></div>
         <div id="enOut"><div class="empty">Piirrä työalue tai valitse lupa, niin arvio lasketaan.</div></div>
@@ -902,20 +902,20 @@ function varmuus(l){
 }
 /* ================= ENNAKKOARVIO ================= */
 const EN = { pts:[], lupa:null, layer:null, segL:null, timer:null, res:null };
+const fsY = t => { const d = new Date(t); return d.getFullYear()!==new Date().getFullYear() ? `${d.getDate()}.${d.getMonth()+1}.${d.getFullYear()}` : fmtShort(t); };
 const dmet = (a,b) => Math.hypot((a[0]-b[0])*111320, (a[1]-b[1])*55600);
 function tiheyta(pts, step=15){ // pisteet [lat,lon] 15 m välein, jotta myös pisteiden väliin osuvat pysäkkivälit löytyvät
   const out = []; for(let i=0;i<pts.length;i++){ out.push(pts[i]); if(i<pts.length-1){ const d = dmet(pts[i],pts[i+1]), n = Math.floor(d/step); for(let k=1;k<n;k++) out.push([pts[i][0]+(pts[i+1][0]-pts[i][0])*k/n, pts[i][1]+(pts[i+1][1]-pts[i][1])*k/n]); } }
   return out.slice(0, 400);
 }
 function geomPisteet(g){ const rings = []; const walk = c => { if(typeof c[0][0]==="number") rings.push(c.map(p=>[p[1],p[0]])); else c.forEach(walk); }; walk(g.coordinates); return rings.flatMap(r=>tiheyta(r, 20)).slice(0,400); }
-/* Lisäaika per ohitus haittaluokittain: mitattu käynnissä olevista töistä (tekoälyn luokittelema haitta) */
+/* Lisäaika per ohitus: mitattu jakauma käynnissä olevista reitin varren töistä.
+   Tekoälyn haittaluokka ei vielä erottele mitattua vaikutusta, joten arvio asetetaan jakaumaan riskin mukaan:
+   pieni = tyypillinen työ (mediaani), kohtalainen = haitallisin neljännes (p75), suuri = haitallisin kymmenesosa (p90). */
 function haittaMalli(){
-  const by = {pieni:[], kohtalainen:[], suuri:[]};
-  S.luvat.filter(l=>phase(l).k==="kaynnissa" && onRoute(l)).forEach(l=>{ const im = impact(l); if(!im || im.kind!=="v2" || im.n < 20) return;
-    const k = l.ai_vaikutus==="suuri" ? "suuri" : l.ai_vaikutus==="kohtalainen" ? "kohtalainen" : l.ai_vaikutus ? "pieni" : null; if(k) by[k].push(im.s); });
-  const q = (a,p) => { const b = a.slice().sort((x,y)=>x-y); const i = (b.length-1)*p, lo = Math.floor(i); return b.length ? b[lo] + (b[Math.ceil(i)]-b[lo])*(i-lo) : null; };
-  const out = {}; Object.entries(by).forEach(([k,a])=>{ out[k] = {n:a.length, med:q(a,.5), lo:q(a,.25), hi:q(a,.75)}; });
-  return out;
+  const a = S.luvat.filter(l=>phase(l).k==="kaynnissa" && onRoute(l)).map(l=>impact(l)).filter(im=>im && im.kind==="v2" && im.n >= 20).map(im=>im.s).sort((x,y)=>x-y);
+  const q = p => a.length ? a[Math.floor((a.length-1)*p)] : null;
+  return {n:a.length, p50:q(.5), p75:q(.75), p90:q(.9), osuus20: a.length ? a.filter(x=>x>20).length/a.length : null};
 }
 function initEnnakko(l){
   if(!M.en){
@@ -984,9 +984,10 @@ function naytaEn(){
   const L2 = [...linjat.values()].map(e=>({...e, vrk:Object.values(e.j).reduce((a,b)=>a+b,0)})).sort((a,b)=>b.vrk-a.vrk);
   const ohit = j => L2.reduce((s,e)=>s+(j? (e.j[j]||0) : e.vrk),0);
   const haitta = document.querySelector('#enHaitta input:checked').value;
-  const HM = haittaMalli(), m = HM[haitta] && HM[haitta].n >= 3 ? HM[haitta] : null;
-  const s = m ? m.med : ({pieni:5, kohtalainen:25, suuri:60})[haitta];
-  const lo = m ? m.lo : s*0.5, hi = m ? m.hi : s*1.6;
+  const HM = haittaMalli(), m = HM.n >= 20 ? HM : null;
+  const kv = {pieni:"p50", kohtalainen:"p75", suuri:"p90"}[haitta];
+  const s = Math.max(0, m ? m[kv] : ({pieni:5, kohtalainen:20, suuri:45})[haitta]);
+  const lo = Math.max(0, m ? m.p50 : 5), hi = Math.max(s, m ? m.p90 : 45);
   const tot = ohit(), H = (o, x) => o*x/3600;
   const sk = [
     {k:"koko", t:"Koko vuorokauden", j:["aamu","paiva","ilta","muu"]},
@@ -1002,7 +1003,7 @@ function naytaEn(){
   const kas = S.luvat.filter(x=>x.lupa_id!==EN.lupa && onRoute(x) && x.geom && phase(x).k!=="paattynyt" && x.ai_vaikutus!=="ei" && x.ai_vaikutus!=="pieni").map(x=>{ const c = centroid(x.geom); const d = c ? c0.distanceTo(c) : 1e9; const yht = lines(x.linjat).filter(n=>nimet.has(n));
       const ov = a && p ? (!x.paattyy || +new Date(x.paattyy) >= +new Date(a)) && (!x.alkaa || +new Date(x.alkaa) <= +new Date(p)+DAY) : true; return {x, d, yht, ov}; })
     .filter(o=>o.d < 1500 && o.d > 30 && o.yht.length && o.ov).sort((a,b)=>a.d-b.d).slice(0,4);
-  const kesk = m ? `${nf(m.n)} mitatun ${haitta==="pieni"?"pienen":haitta==="suuri"?"suuren":"kohtalaisen"} haitan työn mediaani (vaihteluväli ${sgn(lo)}…${sgn(hi)})` : `oletusarvo, koska tämän haittaluokan mitattuja töitä on vielä alle 3`;
+  const kesk = m ? `${nf(m.n)} käynnissä olevan reitin varren työn mitatusta jakaumasta ${({p50:"mediaani (tyypillinen työ)",p75:"haitallisimman neljänneksen raja",p90:"haitallisimman kymmenesosan raja"})[kv]}; vaihteluväli tyypillisestä haitallisimpaan kymmenesosaan ${sgn(lo)}…${sgn(hi)}. Nyt ${nf(Math.round((m.osuus20||0)*100))} % mitatuista töistä lisää yli 20 s per ohitus` : `oletusarvo, koska mitattuja töitä on vielä alle 20`;
   EN.calc = {haitta, s:Math.round(s), lo:Math.round(lo), hi:Math.round(hi), perusta:kesk, alkaa:a, paattyy:p, kesto,
     linjat:L2.slice(0,12).map(e=>({linja:e.n, suunta:+e.d, ratikka:e.tram, ohitukset_arkipaiva:Math.round(e.vrk), aamuruuhka:Math.round(e.j.aamu||0), iltaruuhka:Math.round(e.j.ilta||0)})),
     ohitukset_arkipaiva:Math.round(tot), lisaaika_h_vrk:+H(tot,s).toFixed(1), ajoitus:sk.filter(x=>x.ok).map(x=>({vaihtoehto:x.t, lisaaika_h_vrk:+x.h.toFixed(1)})),
@@ -1013,7 +1014,7 @@ function naytaEn(){
   out.innerHTML = `
     <p class="tiivis">Työ osuisi <b>${nf(new Set(L2.map(e=>e.n)).size)} linjaan</b> (${esc(nimiL.join(", "))}${new Set(L2.map(e=>e.n)).size>6?"…":""}), noin <b>${nf(tot)} ohitusta arkipäivänä</b>. Arvioitu lisäaika <b>${sgn(s)} per ohitus</b>, eli noin <b>${nf(H(tot,s),1)} h vuorokaudessa</b>${paras && koko.ok && koko.h>0 && paras.h < koko.h*0.8 ? `. Ajoittamalla työn ${paras.t.toLowerCase().replace("vain ","")} haitta pienenee noin ${nf(Math.round((1-paras.h/koko.h)*100))} %` : ""}.</p>
     <div class="facts">
-      <div><b>${nf(H(tot,lo),1)}–${nf(H(tot,hi),1)} h</b><small>lisäaikaa / arkipäivä (vaihteluväli)</small></div>
+      <div><b>${nf(H(tot,lo),1)}–${nf(H(tot,hi),1)} h</b><small>lisäaikaa / arkipäivä (tyypillinen – pahin kymmenesosa)</small></div>
       <div><b>${kesto && koko.h ? nf(H(tot,s)*kesto,0)+" h" : "–"}</b><small>koko kestolta${kesto?` (${kesto} pv)`:""}</small></div>
       <div><b>${kesto && koko.h ? nf(H(tot,s)*kesto*S.load,0)+" h" : "–"}</b><small>matkustajille (${S.load} hlö/ajo, oletus)</small></div>
     </div>
@@ -1021,7 +1022,7 @@ function naytaEn(){
     <table class="t"><tbody>${sk.map(x=>`<tr class="${x===paras?"best":""}"><td>${esc(x.t)}${x===paras?' <span class="vchip tod">pienin haitta</span>':""}</td><td class="r">${x.ok?nf(x.h,1)+" h / vrk":'<span class="note">ei vielä dataa</span>'}</td><td class="r note">${x===koko||!x.ok||!koko.ok?"":(koko.h?"−"+nf(Math.round((1-x.h/koko.h)*100))+" %":"")}</td></tr>`).join("")}</tbody></table>
     ${puuttuu.length?`<div class="note" style="margin-top:4px">Liikennemääriä ei ole vielä mitattu kaikille vuorokaudenajoille (puuttuu: ${puuttuu.map(j=>({aamu:"aamu 6–10",paiva:"päivä 10–14",ilta:"ilta 14–18",muu:"ilta–yö 18–6"})[j]).join(", ")}). Keruu alkoi 2.11., joten luvut täydentyvät vuorokauden kuluessa, ja vuorokausiluvut ovat siihen asti alakanttiin.</div>`:""}
     <div class="note" style="margin-top:4px">Oletus: kun työtä ei tehdä, kaistat ovat auki eikä haittaa synny.</div>
-    ${kas.length?`<div class="sec">Kasautuu samoille linjoille</div><ul class="kas">${kas.map(o=>`<li><a href="#/?l=${encodeURIComponent(o.x.lupa_id)}">${esc(shortStreet(o.x))}</a> ${nf(o.d/1000,1)} km päässä, linjat ${esc(o.yht.slice(0,5).join(", "))}${o.x.alkaa?` · ${fmtShort(o.x.alkaa)}–${o.x.paattyy?fmtShort(o.x.paattyy):""}`:""}</li>`).join("")}</ul>`:""}
+    ${kas.length?`<div class="sec">Kasautuu samoille linjoille</div><ul class="kas">${kas.map(o=>`<li><a href="#/?l=${encodeURIComponent(o.x.lupa_id)}">${esc(shortStreet(o.x))}</a> ${nf(o.d/1000,1)} km päässä, linjat ${esc(o.yht.slice(0,5).join(", "))}${o.x.alkaa?` · ${fsY(o.x.alkaa)}–${o.x.paattyy?fsY(o.x.paattyy):""}`:""}</li>`).join("")}</ul>`:""}
     <div class="sec">Linjat</div>
     <table class="t"><thead><tr><th>Linja</th><th class="r">Ohituksia / arkipäivä</th><th class="r">Aamu 6–10</th><th class="r">Lisäaika / vrk</th></tr></thead><tbody>
     ${L2.slice(0,10).map(e=>`<tr><td><span class="chip">${esc(e.n)}</span> <span class="note">suunta ${e.d}</span></td><td class="r">${nf(e.vrk)}</td><td class="r">${nf(e.j.aamu||0)}</td><td class="r">${nf(H(e.vrk,s)*60,0)} min</td></tr>`).join("")}</tbody></table>
