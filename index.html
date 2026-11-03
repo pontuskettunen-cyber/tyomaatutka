@@ -2949,7 +2949,7 @@ async function renderKehitys(){
 const AI_TOIM = {luokittele:"Lupatekstin luku", katsaus:"Tilannekatsaus", viikko:"Viikkokatsaus", aikataulu:"Aikatauluagentti",
   "aikataulu-testi":"Aikatauluagentti (testi)", lausunto:"Lausuntoluonnos", kysy:"Kysy tutkalta"};
 const AI_ALKU = "2026-11-03";
-const usd = v => v == null ? "–" : "$" + (v < 0.01 && v > 0 ? "<0,01" : nf(v, v < 10 ? 2 : 0));
+const usd = v => v == null ? "–" : "$" + (v < 0.01 && v > 0 ? nf(v, 4) : nf(v, v < 10 ? 2 : 0));
   const el = document.getElementById("aiMitt"); if(!el) return;
   let rows;
   try{ rows = await get("v_ai_paiva?limit=2000"); }catch(e){ el.innerHTML = `<div class="empty">Käyttölokia ei saatu ladattua.</div>`; return; }
