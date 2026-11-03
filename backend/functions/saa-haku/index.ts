@@ -7,8 +7,8 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 
 const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 const FMISID = 100971; // Helsinki Kaisaniemi
-const PARAM = "t2m,ri_10min,snow_aws,ws_10min,wawa";
-const MAP: Record<string, string> = { t2m: "t2m", ri_10min: "ri", snow_aws: "lumi", ws_10min: "tuuli", wawa: "wawa" };
+const PARAM = "t2m,ri_10min,r_1h,snow_aws,ws_10min,wawa";
+const MAP: Record<string, string> = { t2m: "t2m", ri_10min: "ri", r_1h: "r1h", snow_aws: "lumi", ws_10min: "tuuli", wawa: "wawa" };
 
 async function hae(alku: Date, loppu: Date) {
   const u = `https://opendata.fmi.fi/wfs?service=WFS&version=2.0.0&request=getFeature&storedquery_id=fmi::observations::weather::simple` +
