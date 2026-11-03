@@ -586,6 +586,17 @@ html.hsl #v-home .todo{padding:10px 14px}
 .st.kiire{background:#FEE2E2;color:#B42318}
 .saa-k{text-transform:none;letter-spacing:0;color:var(--m)}
 .saa-var{text-transform:none;letter-spacing:0;color:#B45309;font-weight:700}
+.wcard{display:flex;align-items:center;gap:12px;background:var(--p);border:1px solid var(--l);border-radius:var(--r);padding:6px 12px}
+.wnow{display:flex;align-items:center;gap:6px}.wnow b{font:600 22px/1 "IBM Plex Mono";display:block}.wnow small{display:block;font-size:11.5px;color:var(--m);white-space:nowrap}
+.wstrip{display:flex;gap:6px;text-align:center;border-left:1px solid var(--l);padding-left:10px}
+.wstrip div{display:flex;flex-direction:column;align-items:center;gap:0;font-size:11.5px;min-width:30px}.wstrip small{font-size:10.5px;color:var(--m)}.wstrip span{font-weight:600}.wstrip i{font-style:normal;font-size:10px;color:#2F80ED}
+.wfoot{display:flex;align-items:center;gap:4px;font-size:10.5px;line-height:1.2;color:var(--m);border-left:1px solid var(--l);padding-left:10px}
+.wleg{display:inline-flex;align-items:center;gap:4px;margin-left:8px;text-transform:none;letter-spacing:0;font-weight:400;font-size:11px;color:var(--m)}.wleg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-left:6px}
+#saaBox{flex:none}
+html.hsl #v-home .nowrow{align-items:center}
+@media(max-width:1250px){.wstrip div:nth-child(n+4){display:none}}
+@media(max-width:1000px){.wfoot{display:none}}
+
 </style>
 </head>
 <body>
@@ -616,7 +627,7 @@ html.hsl #v-home .todo{padding:10px 14px}
     <div class="nowrow">
       <div style="min-width:0"><div class="now-k"><span class="dot on"></span><span id="briefWhen">Tilanne nyt</span></div>
       <h1 class="headline" id="brief">Ladataan tilannekuvaa…</h1></div>
-      <div class="seg ik" id="ikSel"><button data-ik="24h" class="on">24 h</button><button data-ik="7d">7 vrk</button></div>
+      <div id="saaBox"></div><div class="seg ik" id="ikSel"><button data-ik="24h" class="on">24 h</button><button data-ik="7d">7 vrk</button></div>
     </div>
     <div class="strip s3" id="kpis"></div>
     <div id="breakdown"></div>
@@ -919,6 +930,52 @@ const EUR_AJO = 50, EUR_MATK = 5;
 const KIIRE = /(vesijohtovuoto|vuotav|vuoto\b|putkirikk|johtovaurio|vesivahin|sortum|hätätyö)/i;
 const kiireellinen = l => !!l && KIIRE.test(l.tarkoitus||"") && !/tulvasuojel/i.test(l.tarkoitus||"");
 const SAA_IKON = {"lumisade":"❄","jäätävä sade":"⚠","räntä, liukasta":"⚠","rankkasade":"☔","sade":"🌧","kova pakkanen":"🥶","pouta":""};
+/* Sääikonit (oma SVG, ei fonttiriippuvuutta). Lajit: aurinko, puolipilvi, pilvi, sade, lumi, räntä, sumu, ukkonen. */
+function wIcon(k, z=28){
+  const sun = `<circle cx="12" cy="12" r="5" fill="#F5B301"/>${[0,45,90,135,180,225,270,315].map(a=>`<line x1="12" y1="2.5" x2="12" y2="5" stroke="#F5B301" stroke-width="1.8" stroke-linecap="round" transform="rotate(${a} 12 12)"/>`).join("")}`;
+  const cloud = (dx=0,dy=0,c="#B9C3CC") => `<path transform="translate(${dx} ${dy})" d="M7 19h10.5a4 4 0 0 0 .4-8 5.5 5.5 0 0 0-10.6 1.2A3.4 3.4 0 0 0 7 19z" fill="${c}"/>`;
+  const drops = c => [6,10,14].map(x=>`<line x1="${x+2}" y1="20" x2="${x}" y2="23.5" stroke="${c}" stroke-width="1.8" stroke-linecap="round"/>`).join("");
+  const flakes = [7,12,17].map(x=>`<circle cx="${x}" cy="22" r="1.4" fill="#5B8DEF"/>`).join("");
+  const body = {
+    aurinko: sun,
+    puolipilvi: `<g transform="translate(-3 -3) scale(.85)">${sun}</g>${cloud(2,2,"#C9D1D8")}`,
+    pilvi: cloud(0,0,"#AEB8C2"),
+    sade: `${cloud(0,-3,"#98A5B2")}${drops("#2F80ED")}`,
+    lumi: `${cloud(0,-3,"#AEB8C2")}${flakes}`,
+    rantta: `${cloud(0,-3,"#98A5B2")}<line x1="8" y1="20" x2="6" y2="23.5" stroke="#2F80ED" stroke-width="1.8" stroke-linecap="round"/><circle cx="13" cy="22" r="1.4" fill="#5B8DEF"/><line x1="18" y1="20" x2="16" y2="23.5" stroke="#2F80ED" stroke-width="1.8" stroke-linecap="round"/>`,
+    sumu: `${cloud(0,-4,"#C3CBD2")}<line x1="4" y1="19" x2="20" y2="19" stroke="#AEB8C2" stroke-width="1.8" stroke-linecap="round"/><line x1="6" y1="22.5" x2="18" y2="22.5" stroke="#AEB8C2" stroke-width="1.8" stroke-linecap="round"/>`,
+    ukkonen: `${cloud(0,-3,"#8D99A6")}<path d="M12 17l-2.5 4h3l-2 3.5" fill="none" stroke="#F5B301" stroke-width="1.8" stroke-linejoin="round"/>`
+  }[k] || cloud();
+  return `<svg width="${z}" height="${z}" viewBox="0 0 24 25" aria-hidden="true">${body}</svg>`;
+}
+/* Ilmatieteen laitoksen WeatherSymbol3 -> ikoni ja teksti */
+const WS3 = n => n<=1?["aurinko","selkeää"]:n<=2?["puolipilvi","puolipilvistä"]:n<=3?["pilvi","pilvistä"]:n<=23?["sade","sadekuuroja"]:n<=33?["sade","sadetta"]:n<=53?["lumi","lumisadetta"]:n<=64?["ukkonen","ukkosta"]:n<=83?["rantta","räntää"]:["sumu","sumua"];
+/* WMO wawa (havainto) -> ikoni ja teksti */
+const WAWA = w => w==null||w<4?null:w<=10?["sumu","utua"]:w<=35?["sumu","sumua"]:w<=58?["sade","tihkua"]:w<=63?["sade","sadetta"]:w<=66?["rantta","jäätävää sadetta"]:w<=68?["rantta","räntää"]:w<=78?["lumi","lumisadetta"]:w<=84?["sade","sadekuuroja"]:w<=87?["lumi","lumikuuroja"]:["ukkonen","raekuuroja"];
+async function loadEnnuste(){
+  try{
+    const u = `https://opendata.fmi.fi/wfs?service=WFS&version=2.0.0&request=getFeature&storedquery_id=fmi::forecast::edited::weather::scandinavia::point::simple&place=kaisaniemi,helsinki&parameters=Temperature,Precipitation1h,WeatherSymbol3&timestep=60&endtime=${new Date(Date.now()+14*3600e3).toISOString().slice(0,19)}Z`;
+    const t = await fetch(u).then(r=>r.text()), g = {};
+    for(const m of t.matchAll(/<BsWfs:Time>([^<]+)<\/BsWfs:Time>\s*<BsWfs:ParameterName>([^<]+)<\/BsWfs:ParameterName>\s*<BsWfs:ParameterValue>([^<]+)</g)) (g[m[1]] ??= {})[m[2]] = +m[3];
+    S.ennuste = Object.entries(g).map(([k,v])=>({t:+new Date(k), lampo:v.Temperature, sade:v.Precipitation1h, sym:v.WeatherSymbol3})).filter(x=>Number.isFinite(x.lampo)).sort((a,b)=>a.t-b.t);
+  }catch(e){ S.ennuste = []; }
+}
+function saaKortti(){
+  const n = S.saaNyt, e = (S.ennuste||[]);
+  if(!n && !e.length) return "";
+  const nytE = e.find(x=>x.t >= Date.now()-3600e3);
+  const hav = n ? WAWA(n.wawa) : null;
+  const [ik, txt] = hav || (n && n.ri > 0.2 ? ["sade","sadetta"] : nytE ? WS3(nytE.sym) : ["pilvi","poutaa"]);
+  const lampo = n ? n.t2m : nytE?.lampo;
+  const tulevat = e.filter(x=>x.t > Date.now()).filter((x,i)=>i%2===1).slice(0,6);
+  const vNyt = (S.varoitukset||[]).filter(v=>{ const t = Date.now(); return (!v.alkaa || +new Date(v.alkaa) <= t + 12*3600e3) && (!v.paattyy || +new Date(v.paattyy) > t); });
+  const hh = t => new Date(t).toLocaleTimeString("fi-FI",{hour:"2-digit",timeZone:"Europe/Helsinki"}).replace(/^0/,"");
+  return `<div class="wcard" title="Havainto: Ilmatieteen laitos, Helsinki Kaisaniemi${n?" klo "+new Date(n.t).toLocaleTimeString("fi-FI",{hour:"2-digit",minute:"2-digit"}):""}. Ennuste: Ilmatieteen laitos.">
+    <div class="wnow">${wIcon(ik,34)}<div><b>${lampo!=null?Math.round(lampo)+"°":"–"}</b><small>${esc(txt)}</small></div></div>
+    <div class="wstrip">${tulevat.slice(0,5).map(x=>{ const [k] = WS3(x.sym); return `<div><small>${hh(x.t)}</small>${wIcon(k,20)}<span>${Math.round(x.lampo)}°</span>${x.sade>=0.2?`<i>${nf(x.sade,1)}</i>`:""}</div>`; }).join("")}</div>
+    <div class="wfoot">${vNyt.length?`<span class="saa-var">⚠ ${esc(vNyt[0].tapahtuma||"säävaroitus")}</span>`:`<span>Sää mukana<br>tutkassa</span>`}${infoBtn("saa")}</div>
+  </div>`;
+}
 const saaNyt = () => { const w = (S.saa||[]).filter(x=>x.n>=3); return w.length ? w[w.length-1] : null; };
 const saaJakso = (alku, loppu) => (S.saa||[]).filter(x=>{ const t = +new Date(x.bucket); return t >= alku && t < loppu; });
 const eur = v => { const a = Math.abs(v); const r = a >= 10000 ? Math.round(v/1000)*1000 : a >= 1000 ? Math.round(v/100)*100 : Math.round(v/10)*10; return nf(r)+" €"; };
@@ -1050,6 +1107,7 @@ const INFO = {
   puskuri: ["Viivevara", "Kuinka monta minuuttia vuoro voi myöhästyä ilman, että saman auton tai vaunun seuraava lähtö myöhästyy. Luku tulee HSL:n avoimesta aikataulusta (max_delay, päiväajan vuorojen mediaani). Ratikoilla se on tarkistettu vaunukierroista: se on kääntöaika päätepysäkillä miinus noin 3–4 minuuttia. Alle näkyy, kuinka suuren osan varasta työmaat vievät huonoimmassa kymmenesosassa vuoroista. Alle 50 %: viive mahtuu aikatauluun eikä maksa mitään. 50–100 %: vara on vähissä. Yli 100 %: viive voi siirtyä seuraaviin lähtöihin. 0 min tarkoittaa tiukkaa aikataulua: kääntöaika on vain minimin verran, joten jo pieni viive voi siirtyä seuraavaan lähtöön. Matkan aikana aikataulussa voi silti olla väljyyttä, jota tämä luku ei näe. Busseilla luku on aikataulun arvo, ei vielä mitattu."],
   eurot: ["Miten eurot lasketaan", "Aikataulu: lisäaika × 50 €/h, eli bussin ajotunnin kuljettajakulu (Väylävirasto, hankearvioinnin yksikköarvot 2022: 49,70 €/h). Pieni viive ei maksa mitään, koska se mahtuu aikataulun väljyyteen. Rahaa se maksaa vasta, kun aikataulua pidennetään tai linjalle tarvitaan lisäauto. Matkustajat: lisäaika × 20 matkustajaa vuorossa (oletus) × 5 €/h, eli matkustajan ajan arvo, jota käytetään liikennehankkeiden arvioinnissa. Se ei ole kassasta lähtevää rahaa. Säästetyt eurot lasketaan samoilla hinnoilla mitatusta erosta, kun työ päättyy tai järjestelyä muutetaan ja samaa kohtaa voidaan verrata ennen ja jälkeen."],
   tyolista: ["Listan luvut", "Käynnissä olevilla töillä oikea sarake kertoo, paljonko pidempään ohi ajaminen kestää (lisäaika per ohitus) ja paljonko lisäaikaa on kertynyt yhteensä. Alkavilla töillä se kertoo, montako ohitusta samalta katuosuudelta on jo mitattu ennen työtä vertailuksi. Klikkaa työtä nähdäksesi sen kartalla, tuplaklikkaa avataksesi tiedot."],
+  saa: ["Sää tutkassa", "Sää vaikuttaa kaikkiin linjoihin, joten tutka vertaa työmaan pysäkkiväliä saman linjan muihin väleihin samassa kahden tunnin jaksossa: yleinen sää kumoutuu. Sadejaksot näkyvät työmaan kaaviossa taustavärinä, Helsinkiä koskevat säävaroitukset tilannekuvassa, ja lupateksteistä tunnistetaan kiireelliset korjaukset kuten vesijohtovuodot. Havainnot: Ilmatieteen laitos, Kaisaniemi, 10 minuutin välein. Ennuste: Ilmatieteen laitos."],
   jakso: ["Luvut ajalta", "Aikaväli, jolta näytetyt luvut on laskettu. Tarkennettu mittaus alkoi aamulla 2.11.2026, joten aluksi jakso on lyhyempi kuin valittu 24 h tai 7 vrk."],
 };
 const infoBtn = k => `<button class="info" data-info="${k}" aria-label="Mitä tämä tarkoittaa?">i</button>`;
@@ -1211,6 +1269,7 @@ function renderBrief(){
   const bd = breakdown();
   const vehH = bd.total;
   const tr = trend();
+  const sb = document.getElementById("saaBox"); if(sb){ sb.innerHTML = saaKortti(); wireInfo(sb); }
   document.getElementById("kpis").innerHTML =
     tile(nf(vehH,1)+" h" + (tr ? ` <span class="trend ${tr.cls}">${tr.txt}</span>` : ""), (per.full ? `kaikkien bussien ja ratikoiden lisäaika yhteensä vuorokaudessa${S.ik==="7d"?" (keskimäärin)":""}` : `kaikkien bussien ja ratikoiden lisäaika yhteensä ${per.dur} aikana`) + `<span class="tsub">${(()=>{ const n = bd.sites.reduce((a,x)=>a+(x.n||0),0); return n ? `${nf(Math.round(n/100)*100)} työmaan ohitusta × keskimäärin ${Math.round(vehH*3600/n)} s` : ""; })()} · ${bd.nTod ? `todennettu ${nf(bd.totTod,1)} h, loput arviota` : "alustava arvio"}</span>`, "menetetty", "bd") +
     tile(nf(runR.length), `katutyötä bussi- tai ratikkareitillä<span class="tsub">${nf(run.length)} käynnissä kaikkiaan · ${nf(lineSet.size)} linjaa</span>`, "reitilla", null, "#/tyot") +
@@ -1710,7 +1769,7 @@ function chartSVG(series, l){
   for(let k=Math.ceil((t0-tzo)/step)*step+tzo; k<=now; k+=step){ const t = new Date(k); g += `<line x1="${X(k)}" x2="${X(k)}" y1="${mt}" y2="${H-mb}" stroke="#F3F4F1"/><text x="${X(k)}" y="${H-8}" text-anchor="middle" font-size="10.5" fill="#6B737B">${step>=DAY||t.getHours()===0?wd[t.getDay()]+" "+t.getDate()+".":"klo "+t.getHours()}</text>`; }
   let mark = "";
   (S.saa||[]).forEach(w=>{ if(w.luokka==="pouta") return; const a = +new Date(w.bucket), b = a + 2*3600e3; if(b < t0 || a > now) return;
-    const c = w.luokka==="lumisade" ? "#DBEAFE" : /liukas|jäätävä/.test(w.luokka) ? "#FEF3C7" : w.luokka==="rankkasade" ? "#BFDBFE" : "#E0F2FE";
+    const c = w.luokka==="lumisade" ? "#C7D2FE" : /liukas|jäätävä/.test(w.luokka) ? "#FDE68A" : w.luokka==="rankkasade" ? "#93C5FD" : "#CFE6FB";
     g = `<rect x="${X(Math.max(a,t0)).toFixed(1)}" y="${mt}" width="${Math.max(1,X(Math.min(b,now))-X(Math.max(a,t0))).toFixed(1)}" height="${ih}" fill="${c}"><title>${esc(w.luokka)} ${nf(w.sade_mm,1)} mm</title></rect>` + g; });
   if(l.alkaa){ const ta = +new Date(l.alkaa);
     if(ta>=t0 && ta<=now) mark = `<line x1="${X(ta)}" x2="${X(ta)}" y1="${mt}" y2="${H-mb}" stroke="#C2410C" stroke-dasharray="3 3"/><text x="${X(ta)+4}" y="${mt+10}" font-size="10.5" fill="#C2410C">työ alkaa</text>`;
@@ -1766,7 +1825,7 @@ async function renderDetail(){
     ${onRoute(l)?`<div class="sec">Linjat työmaan kohdalla <span class="note" style="text-transform:none;letter-spacing:0;font-weight:400">${S.ik==="7d"?"7 vrk":"24 h"}</span></div>
     ${ml.filter(r=>r.ohitukset>=MIN_N).length?`<table class="t"><thead><tr><th>Linja</th><th class="r">Ohituksia</th><th class="r">Ajossa</th><th class="r">Pysäkillä</th></tr></thead><tbody>${ml.filter(r=>r.ohitukset>=MIN_N).slice(0,10).map(r=>`<tr><td><span class="chip">${esc(ln(r.route))}</span> <span class="note">suunta ${r.dir}</span></td><td class="r">${nf(r.ohitukset)}</td><td class="r ${r.lisa_ajo>10?"slow":r.lisa_ajo<-10?"fast":""}">${r.ohitukset>=MIN_N?sgn(r.lisa_ajo):"–"}</td><td class="r">${r.ohitukset>=MIN_N?sgn(r.lisa_seis):"–"}</td></tr>`).join("")}</tbody></table>${ml.filter(r=>r.ohitukset<MIN_N).length?`<div class="note" style="margin-top:4px">+${ml.filter(r=>r.ohitukset<MIN_N).length} linjaa, joilla alle ${MIN_N} ohitusta.</div>`:""}<div class="note" style="margin-top:4px">Ajossa = lisäaika pysäkkien välillä verrattuna saman linjan muihin väleihin (mediaani). Pysäkillä = pidempi seisonta. Alle ${MIN_N} ohitusta: ei lukua.</div>`
     : ls.length?`<table class="t"><thead><tr><th>Linja</th><th class="r">Ohituksia / 24 h</th><th class="r">Lisäviive</th></tr></thead><tbody>${ls.slice(0,10).map(r=>`<tr><td><span class="chip">${esc(ln(r.route))}</span> <span class="note">suunta ${r.dir}</span></td><td class="r">${nf(r.ohitukset_24h)}</td><td class="r ${r.lisaviive_s>10?"slow":r.lisaviive_s<-10?"fast":""}">${sgn(r.lisaviive_s)}</td></tr>`).join("")}</tbody></table>`:`<div class="chips">${lines(l.linjat).map(r=>`<span class="chip">${esc(r)}</span>`).join("")}</div>`}
-    <div class="sec">Lisäaika per ohitus kahden tunnin jaksoissa ${(S.saa||[]).some(w=>w.luokka!=="pouta")?'<span class="note" style="text-transform:none;letter-spacing:0;font-weight:400">· sininen tausta = sadetta (Ilmatieteen laitos)</span>':""}</div>
+    <div class="sec">Lisäaika per ohitus kahden tunnin jaksoissa ${(S.saa||[]).some(w=>w.luokka!=="pouta")?'<span class="wleg"><i style="background:#CFE6FB"></i>sade<i style="background:#93C5FD"></i>rankkasade<i style="background:#C7D2FE"></i>lumi<i style="background:#FDE68A"></i>liukas</span>':""}</div>
     <div class="chart" id="chart"><div class="empty">Ladataan…</div></div>`:`<div class="note" style="margin-top:6px">Luvan alueen ohi ei kulje bussi- tai ratikkareittejä (alle 40 m), joten työ ei vaikuta suoraan joukkoliikenteeseen.</div>`}
     ${im && im.vehH > 0.05 ? `<div class="sec">Mitä tämä maksaa</div>
     <div class="calc">
@@ -2736,6 +2795,7 @@ async function load(){
     S.nauha = {}; lnh.forEach(r=>{ (S.nauha[ln(r.route)+"|"+r.dir] ||= []).push(r); });
     S.sug = sug;
     get("v_hairiot").then(h=>{ S.hairiot = Array.isArray(h) && h.length ? h : null; }).catch(()=>{ S.hairiot = null; });
+    Promise.all([get("v_saa_nyt").then(x=>{ S.saaNyt = x && x[0] || null; }).catch(()=>{}), loadEnnuste()]).then(()=>{ if(document.getElementById("v-home").classList.contains("on")) renderBrief(); });
     get("v_saa_varoitukset?order=alkaa.desc").then(w=>{ S.varoitukset = Array.isArray(w) ? w : []; }).catch(()=>{ S.varoitukset = []; });
     get(`v_saa_2h?bucket=gte.${new Date(Date.now()-8*DAY).toISOString()}&order=bucket.asc`).then(w=>{ S.saa = Array.isArray(w) ? w : []; if(document.getElementById("v-home").classList.contains("on")) renderBrief(); }).catch(()=>{ S.saa = []; });
     S.vaik = {}; (await getAll("v_lupa_vaikutus","lupa_id").catch(()=>[])).forEach(r=>S.vaik[r.lupa_id]=r);
