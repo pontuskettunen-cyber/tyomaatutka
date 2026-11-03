@@ -661,6 +661,23 @@ html.hsl .lbadge{border-radius:5px;font-weight:700}
 html.hsl .lbadge:not(.tram){background:#007AC9}
 html.hsl .num{background:#0074BF!important}
 html.hsl .subnav a.on{color:#0074BF;border-bottom-color:#0074BF}
+
+/* Tekoäly tuotannossa */
+.strip.s5{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:10px 0 12px}
+.ai-tiles .tile b{display:block;font:500 22px/1.2 "IBM Plex Mono";letter-spacing:-.02em}
+.ai-tiles .tile small{display:block;color:var(--m);font-size:12.5px;line-height:1.3;margin-top:2px}
+.ai-t td,.ai-t th{font-size:13.5px}
+.ts-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:12px;margin:12px 0 16px}
+.ts{background:var(--p);border:1px solid var(--l);border-radius:var(--r);padding:14px 16px}
+.ts h4{margin:0;font-size:15.5px}
+.ts-malli{display:inline-block;margin:4px 0 8px;font-size:12px;color:var(--m);background:var(--l2);padding:2px 9px;border-radius:999px}
+.ts dl{margin:0;display:grid;grid-template-columns:76px 1fr;gap:6px 10px}
+.ts dt{font-size:12px;font-weight:700;color:var(--m);padding-top:2px}
+.ts dd{margin:0;font-size:13.5px;line-height:1.5;color:var(--i2)}
+.ai-lappu{display:block;margin-top:8px;font-size:12px;color:var(--m)}
+.ts-yht{max-width:1100px}.ts-yht th{width:170px;text-align:left;vertical-align:top;font-size:13.5px}.ts-yht td{font-size:13.5px;line-height:1.55}
+html.hsl .ts{border:0;border-radius:16px}html.hsl .ts-malli{background:#EBF6FD;color:#003456}
+@media(max-width:900px){.strip.s5{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
 <body>
@@ -743,15 +760,15 @@ html.hsl .subnav a.on{color:#0074BF;border-bottom-color:#0074BF}
   const st = document.getElementById("status"); new MutationObserver(()=>{ live.title = st.textContent; }).observe(st,{childList:true,characterData:true,subtree:true});
   const split = h.querySelector(".split.fit"); split.after(h.querySelector(".todo-sec")); h.querySelector(".todo-sec").after(document.getElementById("aiBox"));
   /* Valikko: Tilannekuva · Linjat · Ennakkoarvio · Pilotti ja menetelmä. Työmaat ja Tietoa ovat alasivuja. */
-  window.NAV_ALIAS = { tyot: "home", menetelma: "hsl", raportti: "home" };
+  window.NAV_ALIAS = { tyot: "home", menetelma: "hsl", raportti: "home", kehitys: "hsl" };
   const nav = document.querySelector(".top nav");
   nav.querySelectorAll('a[data-r="tyot"], a[data-r="menetelma"], .navk, .navsep').forEach(x=>x.style.display="none");
   const ph = nav.querySelector('a[data-r="hsl"]'); ph.textContent = "Pilotti ja menetelmä";
   const sub = (pairs, cur) => { const d = document.createElement("div"); d.className = "subnav"; d.innerHTML = pairs.map(([href,t,k])=>`<a href="${href}" class="${k===cur?"on":""}">${t}</a>`).join(""); return d; };
-  const A = [["#/","Yleiskuva","home"],["#/tyot","Kaikki työmaat","tyot"]], B = [["#/hsl","Pilotti HSL:ssä","hsl"],["#/menetelma","Menetelmä ja lähteet","menetelma"]];
+  const A = [["#/","Yleiskuva","home"],["#/tyot","Kaikki työmaat","tyot"]], B = [["#/hsl","Pilotti HSL:ssä","hsl"],["#/kehitys","Tekoäly tuotannossa","kehitys"],["#/menetelma","Menetelmä ja lähteet","menetelma"]];
   h.prepend(sub(A,"home"));
   document.addEventListener("DOMContentLoaded", ()=>{ document.getElementById("v-tyot").prepend(sub(A,"tyot"));
-    document.getElementById("v-hsl").prepend(sub(B,"hsl")); document.getElementById("v-menetelma").prepend(sub(B,"menetelma")); });
+    document.getElementById("v-hsl").prepend(sub(B,"hsl")); document.getElementById("v-menetelma").prepend(sub(B,"menetelma")); document.getElementById("v-kehitys").prepend(sub(B,"kehitys")); });
 })();
 </script>
 
@@ -834,6 +851,76 @@ html.hsl .subnav a.on{color:#0074BF;border-bottom-color:#0074BF}
 
     <h3>Kustannukset nyt</h3>
     <p>Demo pyörii maksuttomilla palvelutasoilla: tietokanta (Supabase, noin 10 % kapasiteetista käytössä), sivusto (GitHub Pages) ja viikoittainen aikatauludatan käsittely (GitHub Actions). Ainoa käytön mukaan maksava osa on kielimalli: kutsut on rajattu ajastettuihin katsauksiin ja enintään 300 kysymykseen päivässä. Kaikki data on avointa, eikä järjestelmä käsittele henkilötietoja.</p>
+  </div>
+</section>
+
+<!-- ================= KEHITYSMALLI: tekoälyn käyttö, kustannukset ja tuoteseloste ================= -->
+<section class="view" id="v-kehitys">
+  <div class="prose">
+    <h2>Tekoäly tuotannossa: käyttö, kustannukset ja vastuu</h2>
+    <p class="lead">Kielimalli on tutkassa työkalu, ei musta laatikko. Jokaisesta kutsusta kirjataan, mikä toiminto sitä käytti, paljonko se maksoi, kauanko se kesti ja onnistuiko se. Jokaisella tekoälyä käyttävällä toiminnolla on tuoteseloste: mitä se tekee, mitä sille annetaan, missä ihminen päättää ja mitä siitä tiedetään.</p>
+
+    <h3>Käyttö ja kustannukset</h3>
+    <div id="aiMitt"><div class="empty">Ladataan…</div></div>
+  </div>
+
+  <div class="prose" style="max-width:none">
+    <h3>Tuoteseloste</h3>
+    <p style="max-width:820px">Malliseloste jokaisesta toiminnosta, jossa tutka käyttää kielimallia. Rakenne noudattaa samaa ajatusta kuin Helsingin kaupungin julkinen tekoälyrekisteri.</p>
+    <div class="ts-grid">
+      <article class="ts">
+        <h4>Lupatekstin luku</h4><span class="ts-malli">Claude Haiku 5.5 · tunnin välein</span>
+        <dl>
+          <dt>Tarkoitus</dt><dd>Päättelee katuluvan vapaasta tekstistä, sulkeeko työ kaistan, raitiotien tai pysäkin.</dd>
+          <dt>Syöte</dt><dd>Luvan osoite, tyyppi ja kuvaus kaupungin avoimesta datasta, enintään 500 merkkiä.</dd>
+          <dt>Ihminen</dt><dd>Tulkinta näytetään merkittynä tekoälyn päätelmäksi. Se ei vaikuta mitattuihin lukuihin. Sillä rajataan päällekkäisten töiden listasta pois työt, jotka eivät luvan mukaan haittaa ajoneuvoliikennettä.</dd>
+          <dt>Tiedetään</dt><dd>Haittaluokka (pieni, kohtalainen, suuri) ei erotellut mitattua haittaa. Siksi ennakkoarvio perustuu mittaukseen.</dd>
+        </dl>
+      </article>
+      <article class="ts">
+        <h4>Tilanne- ja viikkokatsaus</h4><span class="ts-malli">Claude Sonnet 5.5 · 6 kertaa päivässä ja viikoittain</span>
+        <dl>
+          <dt>Tarkoitus</dt><dd>Kirjoittaa lyhyen katsauksen HSL:n ja kaupungin näkökulmasta.</dd>
+          <dt>Syöte</dt><dd>Valmiiksi lasketut luvut: pahimmat työmaat, linjat ja alkavat työt.</dd>
+          <dt>Ihminen</dt><dd>Katsaus on luettavaksi, ei päätökseksi. Ohje kieltää keksimästä lukuja, nimiä ja syitä.</dd>
+          <dt>Tiedetään</dt><dd>Tarkistettavissa: jokaisen luvun voi tarkistaa sivulta. Järjestelmällinen arviointi puuttuu.</dd>
+        </dl>
+      </article>
+      <article class="ts">
+        <h4>Aikatauluagentti</h4><span class="ts-malli">Laskenta + Claude Sonnet 5.5 · päivittäin</span>
+        <dl>
+          <dt>Tarkoitus</dt><dd>Ehdottaa aikataulun väljennystä linjoille, joilla työmaa toistuvasti vie viivevaran.</dd>
+          <dt>Syöte</dt><dd>Laskennan valitsemat tapaukset ja mitatut ajoajat. Malli kirjoittaa vain perustelut.</dd>
+          <dt>Ihminen</dt><dd><b>Aikataulusuunnittelija päättää.</b> Agentti ei muuta mitään itse.</dd>
+          <dt>Tiedetään</dt><dd>Ehdotusten hyväksyntää ei vielä kirjata. Se on pilotin ensimmäinen laatumittari.</dd>
+        </dl>
+      </article>
+      <article class="ts">
+        <h4>Lausunto- ja tiedoteluonnos</h4><span class="ts-malli">Claude Sonnet 5.5 · pyynnöstä</span>
+        <dl>
+          <dt>Tarkoitus</dt><dd>Luonnostelee HSL:n lausunnon tulevasta työstä ja matkustajatiedotteen.</dd>
+          <dt>Syöte</dt><dd>Työn tiedot ja tutkan ennakkoarvio.</dd>
+          <dt>Ihminen</dt><dd><b>Luonnos, jonka ihminen tarkistaa ja allekirjoittaa.</b> Ei lähde mihinkään automaattisesti.</dd>
+          <dt>Tiedetään</dt><dd>Pilotissa mitataan valmisteluaika luonnoksen kanssa ja ilman sekä tarvittujen korjausten määrä.</dd>
+        </dl>
+      </article>
+      <article class="ts">
+        <h4>Kysy tutkalta</h4><span class="ts-malli">Claude Haiku 5.5 tai Sonnet 5.5 · pyynnöstä</span>
+        <dl>
+          <dt>Tarkoitus</dt><dd>Vastaa vapaisiin kysymyksiin tutkan omilla luvuilla.</dd>
+          <dt>Syöte</dt><dd>Käyttäjän kysymys ja valitun työmaan luvut. <b>Kysymystä ei tallenneta.</b></dd>
+          <dt>Ihminen</dt><dd>Vastaus on merkitty tekoälyn vastaukseksi. Enintään 300 kysymystä päivässä.</dd>
+          <dt>Tiedetään</dt><dd>Malli voi tulkita kysymyksen väärin. Vastaukseen ei liitetä lähdeviitteitä, ja se on tunnettu puute.</dd>
+        </dl>
+      </article>
+    </div>
+
+    <table class="t ts-yht"><tbody>
+      <tr><th>Henkilötiedot</th><td>Tutka ei käsittele henkilötietoja. Ajoneuvodata on ajoneuvotasolla, luvat ja sää ovat avointa dataa. Kielimallille ei lähetetä henkilötietoja. Kysy tutkalta -kenttään kirjoitettu teksti välittyy mallille, mutta tutka ei tallenna sitä.</td></tr>
+      <tr><th>EU:n tekoälyasetus</th><td>Oma arvio: ei suuririskinen. Toiminnot eivät kuulu asetuksen liitteen III käyttötarkoituksiin, eivätkä ne tee päätöksiä ihmisistä. Keskustelutoimintoa koskee läpinäkyvyysvelvoite: käyttäjän pitää tietää puhuvansa tekoälylle. Arvio tarkistettaisiin HSL:n tietosuoja- ja lakiasiantuntijoiden kanssa.</td></tr>
+      <tr><th>Lokitus ja seuranta</th><td>Jokaisesta kutsusta kirjataan toiminto, malli, tokenit, vasteaika, onnistuminen ja katkennut vastaus. Kehotteita ja vastauksia ei kirjata. Virheet kirjataan myös erilliseen ajolokiin.</td></tr>
+      <tr><th>Mallin vaihtuminen</th><td>Malliversio on kiinnitetty koodiin, joten malli ei vaihdu huomaamatta. Vaihtoa varten tarvitaan vertailuaineisto, jossa samat syötteet ajetaan vanhalla ja uudella mallilla. Sitä ei vielä ole.</td></tr>
+    </tbody></table>
   </div>
 </section>
 
@@ -2828,7 +2915,7 @@ async function ask(q){
   out.innerHTML = `<div class="answer note">Haetaan vastausta…</div>`;
   try{
     const r = await fn({tila:"kysy", kysymys:q, lupa_id:S.sel});
-    out.innerHTML = `<div class="answer">${r.vastaus ? linkLupa(r.vastaus) : esc(r.virhe||"Vastausta ei saatu.")}</div>`;
+    out.innerHTML = `<div class="answer">${r.vastaus ? linkLupa(r.vastaus)+`<small class="ai-lappu">Tekoälyn vastaus tutkan luvuista. Tarkista tärkeät luvut sivulta.</small>` : esc(r.virhe||"Vastausta ei saatu.")}</div>`;
   }catch(e){ out.innerHTML = `<div class="answer">Yhteysvirhe.</div>`; }
 }
 document.getElementById("askForm").onsubmit = e => { e.preventDefault(); const q = document.getElementById("askQ").value.trim(); if(q) ask(q); };
@@ -2857,13 +2944,51 @@ async function loadAI(){
   }catch(e){}
 }
 
+/* ================= tekoälyn käyttö ja kustannukset (LLMOps) ================= */
+async function renderKehitys(){
+const AI_TOIM = {luokittele:"Lupatekstin luku", katsaus:"Tilannekatsaus", viikko:"Viikkokatsaus", aikataulu:"Aikatauluagentti",
+  "aikataulu-testi":"Aikatauluagentti (testi)", lausunto:"Lausuntoluonnos", kysy:"Kysy tutkalta"};
+const AI_ALKU = "2026-11-03";
+const usd = v => v == null ? "–" : "$" + (v < 0.01 && v > 0 ? "<0,01" : nf(v, v < 10 ? 2 : 0));
+  const el = document.getElementById("aiMitt"); if(!el) return;
+  let rows;
+  try{ rows = await get("v_ai_paiva?limit=2000"); }catch(e){ el.innerHTML = `<div class="empty">Käyttölokia ei saatu ladattua.</div>`; return; }
+  if(!rows.length){ el.innerHTML = `<div class="empty">Kirjaus alkoi ${fmtShort(AI_ALKU)}${new Date(AI_ALKU).getFullYear()}. Ensimmäiset luvut näkyvät, kun seuraava ajastettu tekoälyajo on tehty (lupatekstit tunnin välein).</div>`; return; }
+  const raja = new Date(Date.now()-7*864e5).toLocaleDateString("sv-SE",{timeZone:"Europe/Helsinki"});
+  const v7 = rows.filter(r=>r.pv > raja);
+  const paivat = new Set(v7.map(r=>r.pv)).size;
+  const sum = (a,k) => a.reduce((s,r)=>s+(+r[k]||0),0);
+  const K = sum(v7,"kutsut"), U = sum(v7,"usd"), E = sum(v7,"virheet"), KA = sum(v7,"katkenneet");
+  const msKa = K ? v7.reduce((s,r)=>s+(r.ms_ka||0)*(r.kutsut-r.virheet),0)/Math.max(1,K-E) : null;
+  const msP90 = Math.max(0,...v7.map(r=>r.ms_p90||0));
+  const kk = paivat >= 2 ? U/paivat*30 : null;
+  const tiles = [
+    [usd(U), `kustannus ${paivat<7 ? paivat+" päivän aikana" : "7 päivän aikana"}`],
+    [kk!=null ? "≈ "+usd(kk) : "–", kk!=null ? "kuukaudessa nykyisellä käytöllä" : "kuukausiarvio, kun dataa on kahdelta päivältä"],
+    [nf(K), "kielimallikutsua"],
+    [msKa!=null ? nf(msKa/1000,1)+" s" : "–", `vasteaika keskimäärin · hitain 10 %: yli ${nf(msP90/1000,1)} s`],
+    [nf(E)+(E&&K?` <small class="cunit">${nf(E/K*100,1)} %</small>`:""), "epäonnistunutta kutsua"+(KA?` · ${nf(KA)} katkesi pituusrajaan`:"")],
+  ];
+  // toiminnoittain 7 pv
+  const by = {}; v7.forEach(r=>{ const k=r.tila+"|"+r.malli; (by[k] ||= {tila:r.tila, malli:r.malli, kutsut:0, virheet:0, syote:0, tuotos:0, usd:0, ms:0}); const b=by[k];
+    b.kutsut+=r.kutsut; b.virheet+=r.virheet; b.syote+=+r.syote||0; b.tuotos+=+r.tuotos||0; b.usd+=+r.usd||0; b.ms+=(r.ms_ka||0)*(r.kutsut-r.virheet); });
+  const lista = Object.values(by).sort((a,b)=>b.usd-a.usd);
+  const mn = m => /haiku/.test(m) ? "Haiku" : /sonnet/.test(m) ? "Sonnet" : m;
+  el.innerHTML = `
+    <div class="strip s5 ai-tiles">${tiles.map(([b,s])=>`<div class="tile"><b>${b}</b><small>${s}</small></div>`).join("")}</div>
+    <table class="t ai-t"><thead><tr><th>Toiminto</th><th>Malli</th><th class="r">Kutsut</th><th class="r">Tokenit sisään / ulos</th><th class="r">Kustannus</th><th class="r">Per kutsu</th><th class="r">Vasteaika</th><th class="r">Virheet</th></tr></thead><tbody>
+    ${lista.map(b=>`<tr><td>${AI_TOIM[b.tila]||b.tila}</td><td>${mn(b.malli)}</td><td class="r">${nf(b.kutsut)}</td><td class="r">${nf(b.syote)} / ${nf(b.tuotos)}</td><td class="r">${usd(b.usd)}</td><td class="r">${b.kutsut?usd(b.usd/b.kutsut):"–"}</td><td class="r">${b.kutsut>b.virheet?nf(b.ms/(b.kutsut-b.virheet)/1000,1)+" s":"–"}</td><td class="r">${b.virheet?`<b style="color:#B91C1C">${nf(b.virheet)}</b>`:"0"}</td></tr>`).join("")}
+    </tbody></table>
+    <p class="note">Kirjaus alkoi ${fmtShort(AI_ALKU)}${new Date(AI_ALKU).getFullYear()}${paivat<7?`, joten luvut perustuvat ${paivat} päivään`:""}. Hinnat ovat Anthropicin listahintoja dollareina, koska se laskuttaa dollareissa: Haiku 5.5 0,10 / 0,50 $ ja Sonnet 5.5 2 / 10 $ miljoonaa tokenia kohden (sisään / ulos). Kalliimpi malli on käytössä vain siellä, missä kirjoitetaan ihmiselle luettavaa tekstiä.</p>`;
+}
+
 /* ================= reititys ================= */
 function parseHash(){ const h = location.hash.replace(/^#\/?/,""); const [path, qs] = h.split("?"); const p = new URLSearchParams(qs||""); return {path: path||"", l: p.get("l")}; }
 function setHash(path, l){ const h = "#/"+path+(l?"?l="+encodeURIComponent(l):""); if(location.hash!==h) history.replaceState(null,"",h); }
 function route(nav){
   const {path, l} = parseHash();
   if(path==="live"){ history.replaceState(null,"","#/"); S.forceLive = true; }
-  const v = ["tyot","menetelma","linjat","raportti","ennakko","hsl"].includes(path) ? path : "home";
+  const v = ["tyot","menetelma","linjat","raportti","ennakko","hsl","kehitys"].includes(path) ? path : "home";
   document.querySelectorAll(".view").forEach(x=>x.classList.toggle("on", x.id==="v-"+v));
   const va = (window.NAV_ALIAS||{})[v] || v;
   document.querySelectorAll("nav a").forEach(a=>a.classList.toggle("on", (a.dataset.r||"home")===(va==="home"?"home":va) || (a.dataset.r===""&&va==="home")));
@@ -2879,6 +3004,7 @@ function route(nav){
   if(v==="linjat") renderLinjat(); else if(typeof lLiveStop==="function" && LL.on){ lLiveStop(); }
   if(v==="raportti") renderRaportti(l);
   if(v==="ennakko") initEnnakko(l);
+  if(v==="kehitys") renderKehitys();
   if(nav==="hash") window.scrollTo(0,0);
 }
 window.addEventListener("hashchange", ()=>route("hash"));
