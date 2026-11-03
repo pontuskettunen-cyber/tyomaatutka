@@ -31,14 +31,34 @@ const CORS = {
 };
 const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { ...CORS, "content-type": "application/json" } });
 
+/* Käyttöloki (LLMOps): jokaisesta kutsusta mittarit tauluun ai_kaytto. Sisältöä ei tallenneta. */
+let TILA = "?";
+async function kirjaa(rivi: Record<string, unknown>) {
+  try { await db.from("ai_kaytto").insert({ tila: TILA, ...rivi }); } catch { /* loki ei saa kaataa varsinaista työtä */ }
+}
 async function claude(model: string, system: string, user: string, max = 1500): Promise<string> {
-  const r = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: { "x-api-key": AKEY!, "anthropic-version": "2023-06-01", "content-type": "application/json" },
-    body: JSON.stringify({ model, max_tokens: max, system, messages: [{ role: "user", content: user }] }),
-  });
-  if (!r.ok) throw new Error(`Claude ${r.status}: ${(await r.text()).slice(0, 200)}`);
+  const t0 = Date.now();
+  let r: Response;
+  try {
+    r = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "x-api-key": AKEY!, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+      body: JSON.stringify({ model, max_tokens: max, system, messages: [{ role: "user", content: user }] }),
+    });
+  } catch (e) {
+    await kirjaa({ malli: model, ms: Date.now() - t0, ok: false, virhe: ("verkko: " + (e as Error).message).slice(0, 200) });
+    throw e;
+  }
+  if (!r.ok) {
+    const txt = (await r.text()).slice(0, 200);
+    await kirjaa({ malli: model, ms: Date.now() - t0, ok: false, virhe: `HTTP ${r.status}: ${txt}` });
+    throw new Error(`Claude ${r.status}: ${txt}`);
+  }
   const d = await r.json();
+  const u = d.usage ?? {};
+  await kirjaa({ malli: model, ms: Date.now() - t0, ok: true, katkesi: d.stop_reason === "max_tokens",
+    syote: u.input_tokens ?? null, tuotos: u.output_tokens ?? null,
+    cache_luku: u.cache_read_input_tokens ?? null, cache_kirj: u.cache_creation_input_tokens ?? null });
   return (d.content ?? []).map((c: any) => c.text ?? "").join("");
 }
 function parseJSON(t: string): any {
@@ -363,6 +383,7 @@ Deno.serve(async (req) => {
   let body: any = {};
   try { if (req.method === "POST") body = await req.json(); } catch { /* tyhjä */ }
   const tila = url.searchParams.get("tila") ?? body?.tila ?? "tila";
+  TILA = tila;
   if (tila === "tila") return json({ ok: true, avain: !!AKEY });
   if (!AKEY) return json({ ok: false, virhe: "Tekoälykerros odottaa API-avainta (ANTHROPIC_API_KEY)." }, 200);
   try {
