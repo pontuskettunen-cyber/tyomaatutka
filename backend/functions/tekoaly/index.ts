@@ -43,8 +43,8 @@ async function claude(model: string, system: string, user: string, max = 1500): 
     r = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: { "x-api-key": AKEY!, "anthropic-version": "2023-06-01", "content-type": "application/json" },
-      // Päättely pois: malli kirjoittaa valmiiksi lasketuista luvuista. Päättely söi koko tokenirajan ja vastaus jäi tyhjäksi (loki 3.11.2026).
-      body: JSON.stringify({ model, max_tokens: max, system, messages: [{ role: "user", content: user }], thinking: { type: "disabled" } }),
+      // Päättely pois (Sonnet: "between_tools" = ei päättelyä ilman työkaluja; API hylkää "disabled"): malli kirjoittaa valmiiksi lasketuista luvuista. Päättely söi koko tokenirajan ja vastaus jäi tyhjäksi (loki 3.11.2026).
+      body: JSON.stringify({ model, max_tokens: max, system, messages: [{ role: "user", content: user }], ...(/sonnet|opus/.test(model) ? { thinking: { type: "between_tools" } } : {}) }),
     });
   } catch (e) {
     await kirjaa({ malli: model, ms: Date.now() - t0, ok: false, virhe: ("verkko: " + (e as Error).message).slice(0, 200) });
