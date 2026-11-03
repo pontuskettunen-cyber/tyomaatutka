@@ -598,6 +598,14 @@ html.hsl #v-home .nowrow{align-items:center}
 @media(max-width:1000px){.wfoot{display:none}}
 
 .wmm{font-size:10.5px!important;color:var(--m)}
+.olo{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin:10px 0 2px;padding:8px 14px;background:var(--p);border:1px solid var(--l);border-radius:var(--r);font-size:13px}
+.olo-k{font-weight:700;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--m);display:inline-flex;align-items:center;gap:4px}
+.olo-nyt{color:#1D4ED8}
+.olo-cs{display:flex;flex-wrap:wrap;gap:6px}
+.olo-c{padding:3px 9px;border-radius:999px;background:var(--l2);font-size:12.5px;white-space:nowrap}.olo-c b{font-family:"IBM Plex Mono"}
+.olo-c.huono{background:#DBEAFE;color:#1E3A8A}.olo-c.ok{background:#DCFCE7;color:#14532D}.olo-c.kertyy{color:var(--m)}.olo-c small{font-size:10.5px}
+.olo-h{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:12.5px;color:var(--m)}.olo-h a{display:inline-flex;align-items:center;gap:3px;text-decoration:none;color:var(--i2)}
+.saat td,.saat th{padding:5px 8px}
 </style>
 </head>
 <body>
@@ -631,6 +639,7 @@ html.hsl #v-home .nowrow{align-items:center}
       <div id="saaBox"></div><div class="seg ik" id="ikSel"><button data-ik="24h" class="on">24 h</button><button data-ik="7d">7 vrk</button></div>
     </div>
     <div class="strip s3" id="kpis"></div>
+    <div id="olot"></div>
     <div id="breakdown"></div>
   </div>
   <section class="todo-sec">
@@ -978,6 +987,43 @@ function saaKortti(){
     ${vNyt.length?`<div class="wfoot"><span class="saa-var">⚠ ${esc(vNyt[0].tapahtuma||"säävaroitus")}</span></div>`:""}
   </div>`;
 }
+/* Sään vaikutus: mitattu kerroin poutaan verrattuna. Näytetään vasta, kun jaksoja on riittävästi. */
+const SAA_LUOKAT = [["sade","Sade"],["rankkasade","Rankkasade"],["lumisade","Lumisade"],["räntä, liukasta","Räntä, liukas"],["jäätävä sade","Jäätävä sade"],["kova pakkanen","Kova pakkanen"]];
+const SAA_MIN_J = 3;
+const pctS = v => (v>=0?"+":"−")+nf(Math.abs(v*100),1)+" %";
+function olosuhteetHTML(){
+  if(!S.saaK) return "";
+  const K = Object.fromEntries((S.saaK||[]).map(k=>[k.luokka,k]));
+  const nyt = saaNyt(), nytK = nyt && nyt.luokka!=="pouta" ? K[nyt.luokka] : null;
+  const chips = SAA_LUOKAT.filter(([k])=>["sade","rankkasade","lumisade","räntä, liukasta"].includes(k)).map(([k,t])=>{
+    const x = K[k], ok = x && x.kerroin!=null && x.jaksot >= SAA_MIN_J;
+    return `<span class="olo-c ${ok?(x.kerroin>0.02?"huono":"ok"):"kertyy"}" title="${ok?`Mitattu ${nf(x.jaksot)} kahden tunnin jaksosta, ${nf(x.n)} ohitusta`:`Mitattu ${nf(x?.jaksot||0)}/${SAA_MIN_J} jaksoa: luku valmistuu, kun tätä säätä on ollut riittävästi`}">${t} <b>${ok?pctS(x.kerroin):"kertyy"}</b>${ok?"":` <small>${nf(x?.jaksot||0)}/${SAA_MIN_J}</small>`}</span>`; }).join("");
+  const sade = K["sade"], herkat = (S.saaL||[]).filter(l=>l.luokka==="sade" && l.jaksot>=SAA_MIN_J && l.n>=300).sort((a,b)=>b.kerroin-a.kerroin).slice(0,4);
+  const nytTxt = nytK && nytK.jaksot>=SAA_MIN_J ? `<b class="olo-nyt">Nyt ${esc(nyt.luokka)}: bussit noin ${pctS(nytK.kerroin)} poutaa hitaampia</b>` : nyt && nyt.luokka!=="pouta" ? `<b class="olo-nyt">Nyt ${esc(nyt.luokka)}</b>` : `<span class="note">Nyt poutaa</span>`;
+  return `<div class="olo"><span class="olo-k">Sään vaikutus busseihin ${infoBtn("saavaik")}</span>${nytTxt}<span class="olo-cs">${chips}</span>${herkat.length?`<span class="olo-h">Herkimmät sateella: ${herkat.map(l=>`<a href="#/linjat" onclick="S.lSel='${esc(ln(l.route))}'"><span class="lbadge ${TRAM.has(ln(l.route))?"tram":""}" style="height:18px;min-width:26px;font-size:11px">${esc(ln(l.route))}</span> ${pctS(l.kerroin)}</a>`).join(" ")}</span>`:""}</div>`;
+}
+function saaTyomaaHTML(l){
+  const T = (S.saaT||{})[l.lupa_id]; if(!S.saaK) return "";
+  const K = Object.fromEntries((S.saaK||[]).map(k=>[k.luokka,k]));
+  const rivit = SAA_LUOKAT.filter(([k])=>["sade","rankkasade","lumisade","räntä, liukasta"].includes(k)).map(([k,t])=>{
+    const x = (T||[]).find(y=>y.luokka===k);
+    if(!x || x.jaksot < 2 || x.n < 30) return `<tr><td>${t}</td><td colspan="3" class="note">${x?`alustava: ${nf(x.n)} ohitusta`:"ei vielä mitattu"}</td></tr>`;
+    const ero = x.lisa_s - x.odotettu_s;
+    return `<tr><td>${t}</td><td class="r ${x.lisa_s>10?"slow":""}">${sgn(x.lisa_s)}</td><td class="r">${sgn(x.odotettu_s)}</td><td class="r ${ero>8?"slow":ero<-8?"fast":""}"><b>${sgn(ero)}</b></td></tr>`; }).join("");
+  const pahin = (T||[]).filter(y=>y.jaksot>=2 && y.n>=30).map(y=>({...y, ero:y.lisa_s-y.odotettu_s})).sort((a,b)=>b.ero-a.ero)[0];
+  const tulkinta = !pahin ? "Kun tätä katua ohitetaan sateella, lumella tai liukkaalla, tutka mittaa paljonko sää lisää haittaa. Dataa kertyy jokaisesta säätapahtumasta."
+    : pahin.ero > 8 ? `<b>${esc(SAA_LUOKAT.find(z=>z[0]===pahin.luokka)?.[1]||pahin.luokka)} pahentaa tätä työmaata:</b> ohitus hidastuu ${sgn(pahin.lisa_s)}, kun muualla kaupungissa samassa säässä hidastuminen olisi ${sgn(pahin.odotettu_s)}. Erotus ${sgn(pahin.ero)} per ohitus johtuu todennäköisesti työmaasta, esimerkiksi kavennetusta kaistasta.`
+    : `Sää ei pahenna tätä työmaata muuta kaupunkia enemmän (${esc(pahin.luokka)}: ${sgn(pahin.ero)}).`;
+  return `<div class="sec">Sää ja tämä työmaa ${infoBtn("saavaik")}</div>
+    <table class="t saat"><thead><tr><th>Sää</th><th class="r">Työmaan välit</th><th class="r">Muu kaupunki</th><th class="r">Työmaan osuus</th></tr></thead><tbody>${rivit}</tbody></table>
+    <div class="note" style="margin:4px 0 10px">${tulkinta} <span style="opacity:.8">Lisäaika per ohitus poutaan verrattuna, sama vuorokaudenaika.</span></div>`;
+}
+function saaLinjaK(e){
+  const r = (S.saaL||[]).filter(x=>e.raw.has(x.route) && x.jaksot>=SAA_MIN_J && x.n>=150);
+  if(!r.length) return null;
+  const by = {}; r.forEach(x=>{ const b = by[x.luokka] ||= {w:0,s:0}; b.w += x.n; b.s += x.n*x.kerroin; });
+  return Object.entries(by).map(([k,v])=>({luokka:k, kerroin:v.s/v.w})).sort((a,b)=>b.kerroin-a.kerroin);
+}
 const saaNyt = () => { const w = (S.saa||[]).filter(x=>x.n>=3); return w.length ? w[w.length-1] : null; };
 const saaJakso = (alku, loppu) => (S.saa||[]).filter(x=>{ const t = +new Date(x.bucket); return t >= alku && t < loppu; });
 const eur = v => { const a = Math.abs(v); const r = a >= 10000 ? Math.round(v/1000)*1000 : a >= 1000 ? Math.round(v/100)*100 : Math.round(v/10)*10; return nf(r)+" €"; };
@@ -1110,6 +1156,7 @@ const INFO = {
   eurot: ["Miten eurot lasketaan", "Aikataulu: lisäaika × 50 €/h, eli bussin ajotunnin kuljettajakulu (Väylävirasto, hankearvioinnin yksikköarvot 2022: 49,70 €/h). Pieni viive ei maksa mitään, koska se mahtuu aikataulun väljyyteen. Rahaa se maksaa vasta, kun aikataulua pidennetään tai linjalle tarvitaan lisäauto. Matkustajat: lisäaika × 20 matkustajaa vuorossa (oletus) × 5 €/h, eli matkustajan ajan arvo, jota käytetään liikennehankkeiden arvioinnissa. Se ei ole kassasta lähtevää rahaa. Säästetyt eurot lasketaan samoilla hinnoilla mitatusta erosta, kun työ päättyy tai järjestelyä muutetaan ja samaa kohtaa voidaan verrata ennen ja jälkeen."],
   tyolista: ["Listan luvut", "Käynnissä olevilla töillä oikea sarake kertoo, paljonko pidempään ohi ajaminen kestää (lisäaika per ohitus) ja paljonko lisäaikaa on kertynyt yhteensä. Alkavilla töillä se kertoo, montako ohitusta samalta katuosuudelta on jo mitattu ennen työtä vertailuksi. Klikkaa työtä nähdäksesi sen kartalla, tuplaklikkaa avataksesi tiedot."],
   saa: ["Sää tutkassa", "Sää vaikuttaa kaikkiin linjoihin, joten tutka vertaa työmaan pysäkkiväliä saman linjan muihin väleihin samassa kahden tunnin jaksossa: yleinen sää kumoutuu. Sadejaksot näkyvät työmaan kaaviossa taustavärinä, Helsinkiä koskevat säävaroitukset tilannekuvassa, ja lupateksteistä tunnistetaan kiireelliset korjaukset kuten vesijohtovuodot. Mittauspiste: Ilmatieteen laitoksen havaintoasema Helsinki Kaisaniemi (Kaisaniemen puisto, rautatieaseman vieressä). Lämpötila ja sade mitataan 10 minuutin välein, sademäärä on aseman tunnittainen kertymä millimetreinä. Säätilan kuvaus (esim. pilvistä) ja tulevat tunnit ovat Ilmatieteen laitoksen ennustetta samalle pisteelle. Yksi asema kuvaa koko kaupunkia: paikallinen kuuro voi osua toisaalle."],
+  saavaik: ["Sään vaikutus, näin se mitataan", "Jokaisen pysäkkivälin ajoaikaa verrataan saman välin omaan poutatasoon samassa vuorokaudenjaksossa (aamu, päivä, iltapäivän ruuhka, ilta, yö) ja päivätyypissä (arki, viikonloppu). Näin ruuhka ei sekoitu säähän. Kaupungin luku on kaikkien välien painotettu keskiarvo. Työmaalle verrataan, paljonko sen välit hidastuvat samassa säässä kuin muu kaupunki: ero kertoo, pahentaako sää työmaan haittaa (esim. kavennettu kaista ja lumivallit). Linjalle lasketaan hidastuminen prosentteina ja minuutteina koko vuorolla, ja sitä verrataan aikataulun viivevaraan. Sääluokka tulee Ilmatieteen laitoksen Kaisaniemen havainnoista. Luku näytetään vasta, kun säätä on mitattu vähintään 3 kahden tunnin jakson ajan. Ennen sitä näkyy 'kertyy'."],
   jakso: ["Luvut ajalta", "Aikaväli, jolta näytetyt luvut on laskettu. Tarkennettu mittaus alkoi aamulla 2.11.2026, joten aluksi jakso on lyhyempi kuin valittu 24 h tai 7 vrk."],
 };
 const infoBtn = k => `<button class="info" data-info="${k}" aria-label="Mitä tämä tarkoittaa?">i</button>`;
@@ -1273,6 +1320,7 @@ function renderBrief(){
   const vehH = bd.total;
   const tr = trend();
   const sb = document.getElementById("saaBox"); if(sb){ sb.innerHTML = saaKortti(); wireInfo(sb); }
+  const ol = document.getElementById("olot"); if(ol){ ol.innerHTML = olosuhteetHTML(); wireInfo(ol); }
   document.getElementById("kpis").innerHTML =
     tile(nf(vehH,1)+" h" + (tr ? ` <span class="trend ${tr.cls}">${tr.txt}</span>` : ""), (per.full ? `kaikkien bussien ja ratikoiden lisäaika yhteensä vuorokaudessa${S.ik==="7d"?" (keskimäärin)":""}` : `kaikkien bussien ja ratikoiden lisäaika yhteensä ${per.dur} aikana`) + `<span class="tsub">${(()=>{ const n = bd.sites.reduce((a,x)=>a+(x.n||0),0); return n ? `${nf(Math.round(n/100)*100)} työmaan ohitusta × keskimäärin ${Math.round(vehH*3600/n)} s` : ""; })()} · ${bd.nTod ? `todennettu ${nf(bd.totTod,1)} h, loput arviota` : "alustava arvio"}</span>`, "menetetty", "bd") +
     tile(nf(runR.length), `katutyötä bussi- tai ratikkareitillä<span class="tsub">${nf(run.length)} käynnissä kaikkiaan · ${nf(lineSet.size)} linjaa</span>`, "reitilla", null, "#/tyot") +
@@ -1829,7 +1877,7 @@ async function renderDetail(){
     ${ml.filter(r=>r.ohitukset>=MIN_N).length?`<table class="t"><thead><tr><th>Linja</th><th class="r">Ohituksia</th><th class="r">Ajossa</th><th class="r">Pysäkillä</th></tr></thead><tbody>${ml.filter(r=>r.ohitukset>=MIN_N).slice(0,10).map(r=>`<tr><td><span class="chip">${esc(ln(r.route))}</span> <span class="note">suunta ${r.dir}</span></td><td class="r">${nf(r.ohitukset)}</td><td class="r ${r.lisa_ajo>10?"slow":r.lisa_ajo<-10?"fast":""}">${r.ohitukset>=MIN_N?sgn(r.lisa_ajo):"–"}</td><td class="r">${r.ohitukset>=MIN_N?sgn(r.lisa_seis):"–"}</td></tr>`).join("")}</tbody></table>${ml.filter(r=>r.ohitukset<MIN_N).length?`<div class="note" style="margin-top:4px">+${ml.filter(r=>r.ohitukset<MIN_N).length} linjaa, joilla alle ${MIN_N} ohitusta.</div>`:""}<div class="note" style="margin-top:4px">Ajossa = lisäaika pysäkkien välillä verrattuna saman linjan muihin väleihin (mediaani). Pysäkillä = pidempi seisonta. Alle ${MIN_N} ohitusta: ei lukua.</div>`
     : ls.length?`<table class="t"><thead><tr><th>Linja</th><th class="r">Ohituksia / 24 h</th><th class="r">Lisäviive</th></tr></thead><tbody>${ls.slice(0,10).map(r=>`<tr><td><span class="chip">${esc(ln(r.route))}</span> <span class="note">suunta ${r.dir}</span></td><td class="r">${nf(r.ohitukset_24h)}</td><td class="r ${r.lisaviive_s>10?"slow":r.lisaviive_s<-10?"fast":""}">${sgn(r.lisaviive_s)}</td></tr>`).join("")}</tbody></table>`:`<div class="chips">${lines(l.linjat).map(r=>`<span class="chip">${esc(r)}</span>`).join("")}</div>`}
     <div class="sec">Lisäaika per ohitus kahden tunnin jaksoissa ${(S.saa||[]).some(w=>w.luokka!=="pouta")?'<span class="wleg"><i style="background:#CFE6FB"></i>sade<i style="background:#93C5FD"></i>rankkasade<i style="background:#C7D2FE"></i>lumi<i style="background:#FDE68A"></i>liukas</span>':""}</div>
-    <div class="chart" id="chart"><div class="empty">Ladataan…</div></div>`:`<div class="note" style="margin-top:6px">Luvan alueen ohi ei kulje bussi- tai ratikkareittejä (alle 40 m), joten työ ei vaikuta suoraan joukkoliikenteeseen.</div>`}
+    <div class="chart" id="chart"><div class="empty">Ladataan…</div></div>${saaTyomaaHTML(l)}`:`<div class="note" style="margin-top:6px">Luvan alueen ohi ei kulje bussi- tai ratikkareittejä (alle 40 m), joten työ ei vaikuta suoraan joukkoliikenteeseen.</div>`}
     ${im && im.vehH > 0.05 ? `<div class="sec">Mitä tämä maksaa</div>
     <div class="calc">
       <div class="row"><span>Busseille ja ratikoille kertyvä lisäaika</span><b>${nf(im.vehH,1)} h · ${esc(period().dur)}</b></div>
@@ -2305,6 +2353,11 @@ function renderLinjaDet(e){
       const cls = pros==null ? "pk-amb" : pros >= 100 ? "pk-red" : pros >= 50 ? "pk-amb" : "pk-ok";
       const sub = pros==null ? "tiukka: viive siirtyy helposti seuraavaan lähtöön" : `työmaat vievät ${nf(pros)} % (huonoin 10 %)`;
       return `<div class="lc-k pk ${cls}" title="${esc(`Viivevara ${pk.md} min (HSL:n aikataulu, päiväajan vuorojen mediaani${pk.kaanto?`; ratikan kääntöaika päätepysäkillä ${pk.kaanto} min`:""}${e.tram?"":"; bussilla aikataulun arvo, ei vielä mitattu"}). Huonoin 10 % vuoroista saa työmailta ${sgn(kayt)}.`)}"><b>${nf(pk.md)} min</b><span>viivevara ${infoBtn("puskuri")}<br><i>${sub}</i></span></div>`; })()}
+    ${(()=>{ const sk = saaLinjaK(e); const kesto = term && term.ajat ? Object.values(term.ajat)[0]?.reduce((a,b)=>a+b,0) : null;
+      if(!sk) return `<div class="lc-k" title="Sääherkkyys mitataan, kun linjaa on ajettu riittävästi sateella tai lumella."><b>–</b><span>sääherkkyys ${infoBtn("saavaik")}<br><i style="font-style:normal;font-size:11px">kertyy</i></span></div>`;
+      const p = sk[0], lisaMin = kesto ? kesto*p.kerroin : null, pk = term && term.puskuri;
+      const yli = lisaMin!=null && pk && lisaMin*60 + Math.max(0,(k?k.p90:0)) > pk.md*60;
+      return `<div class="lc-k ${p.kerroin>0.05?"pk-red":p.kerroin>0.02?"pk-amb":"pk-ok"} pk" title="${esc(`Linja hidastuu ${p.luokka==="sade"?"sateella":p.luokka} ${pctS(p.kerroin)} poutaan verrattuna (mitattu).${lisaMin!=null?` Koko vuorolla noin ${nf(lisaMin,1)} min.`:""}${yli?" Yhdessä työmaiden huonoimman 10 %:n kanssa tämä ylittää viivevaran: viive siirtyy seuraavaan lähtöön.":""}`)}"><b>${pctS(p.kerroin)}</b><span>${esc(p.luokka)} ${infoBtn("saavaik")}<br><i>${lisaMin!=null?`≈ ${nf(lisaMin,1)} min / vuoro${yli?" · ylittää varan":""}`:"sääherkkyys"}</i></span></div>`; })()}
     <div class="lc-k"><b>${nf(e.works.size)}</b><span>lupaa reitillä</span></div>
     <div class="lc-k up"><b>${nf(e.up.length)}</b><span>alkaa 14 pv sis.</span></div>
     <div class="lc-k lclive"><b id="lLiveN">–</b><span>ajoneuvoa liikkeellä</span></div>
@@ -2799,6 +2852,11 @@ async function load(){
     S.sug = sug;
     get("v_hairiot").then(h=>{ S.hairiot = Array.isArray(h) && h.length ? h : null; }).catch(()=>{ S.hairiot = null; });
     Promise.all([get("v_saa_nyt").then(x=>{ S.saaNyt = x && x[0] || null; }).catch(()=>{}), loadEnnuste()]).then(()=>{ if(document.getElementById("v-home").classList.contains("on")) renderBrief(); });
+    Promise.all([get("v_saa_kerroin"), get("v_saa_linja"), get("v_saa_tyomaa")]).then(([k,li,ty])=>{
+      S.saaK = Array.isArray(k) ? k : []; S.saaL = Array.isArray(li) ? li : [];
+      S.saaT = {}; (Array.isArray(ty)?ty:[]).forEach(x=>{ (S.saaT[x.lupa_id] ||= []).push(x); });
+      if(document.getElementById("v-home").classList.contains("on")){ renderBrief(); if(S.sel) renderDetail(); }
+    }).catch(()=>{ S.saaK = []; });
     get("v_saa_varoitukset?order=alkaa.desc").then(w=>{ S.varoitukset = Array.isArray(w) ? w : []; }).catch(()=>{ S.varoitukset = []; });
     get(`v_saa_2h?bucket=gte.${new Date(Date.now()-8*DAY).toISOString()}&order=bucket.asc`).then(w=>{ S.saa = Array.isArray(w) ? w : []; if(document.getElementById("v-home").classList.contains("on")) renderBrief(); }).catch(()=>{ S.saa = []; });
     S.vaik = {}; (await getAll("v_lupa_vaikutus","lupa_id").catch(()=>[])).forEach(r=>S.vaik[r.lupa_id]=r);
