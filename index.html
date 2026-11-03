@@ -592,7 +592,7 @@ html.hsl #v-home .todo{padding:10px 14px}
 .wstrip div{display:flex;flex-direction:column;align-items:center;gap:0;font-size:11.5px;min-width:30px}.wstrip small{font-size:10.5px;color:var(--m)}.wstrip span{font-weight:600}.wstrip i{font-style:normal;font-size:10px;color:#2F80ED}
 .wfoot{display:flex;align-items:center;gap:4px;font-size:10.5px;line-height:1.2;color:var(--m);border-left:1px solid var(--l);padding-left:10px}
 .wleg{display:inline-flex;align-items:center;gap:4px;margin-left:8px;text-transform:none;letter-spacing:0;font-weight:400;font-size:11px;color:var(--m)}.wleg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-left:6px}
-#saaBox{flex:none}
+#saaBox{flex:none}#ikSel{flex:none;white-space:nowrap}#ikSel button{white-space:nowrap}
 html.hsl #v-home .nowrow{align-items:center}
 @media(max-width:1250px){.wstrip div:nth-child(n+4){display:none}}
 @media(max-width:1000px){.wfoot{display:none}}
@@ -971,9 +971,9 @@ function saaKortti(){
   const vNyt = (S.varoitukset||[]).filter(v=>{ const t = Date.now(); return (!v.alkaa || +new Date(v.alkaa) <= t + 12*3600e3) && (!v.paattyy || +new Date(v.paattyy) > t); });
   const hh = t => new Date(t).toLocaleTimeString("fi-FI",{hour:"2-digit",timeZone:"Europe/Helsinki"}).replace(/^0/,"");
   return `<div class="wcard" title="Havainto: Ilmatieteen laitos, Helsinki Kaisaniemi${n?" klo "+new Date(n.t).toLocaleTimeString("fi-FI",{hour:"2-digit",minute:"2-digit"}):""}. Ennuste: Ilmatieteen laitos.">
-    <div class="wnow">${wIcon(ik,34)}<div><b>${lampo!=null?Math.round(lampo)+"°":"–"}</b><small>${esc(txt)}</small></div></div>
+    <div class="wnow">${wIcon(ik,34)}<div><b>${lampo!=null?Math.round(lampo)+"°":"–"}</b><small>${esc(txt)} ${infoBtn("saa")}</small></div></div>
     <div class="wstrip">${tulevat.slice(0,5).map(x=>{ const [k] = WS3(x.sym); return `<div><small>${hh(x.t)}</small>${wIcon(k,20)}<span>${Math.round(x.lampo)}°</span>${x.sade>=0.2?`<i>${nf(x.sade,1)}</i>`:""}</div>`; }).join("")}</div>
-    <div class="wfoot">${vNyt.length?`<span class="saa-var">⚠ ${esc(vNyt[0].tapahtuma||"säävaroitus")}</span>`:`<span>Sää mukana<br>tutkassa</span>`}${infoBtn("saa")}</div>
+    ${vNyt.length?`<div class="wfoot"><span class="saa-var">⚠ ${esc(vNyt[0].tapahtuma||"säävaroitus")}</span></div>`:""}
   </div>`;
 }
 const saaNyt = () => { const w = (S.saa||[]).filter(x=>x.n>=3); return w.length ? w[w.length-1] : null; };
@@ -1262,7 +1262,7 @@ function renderBrief(){
   const upd = all.map(l=>l.paivitetty).filter(Boolean).sort().pop();
   const per = period();
   const sn = saaNyt(), ss = saaJakso(Math.max(Date.now() - (S.ik==="7d"?7:1)*DAY, +new Date(S.tila?.havainto_alkoi || 0)), Date.now()).filter(x=>x.luokka!=="pouta");
-  const saaTxt = sn ? ` · <span class="saa-k" title="Ilmatieteen laitos, Helsinki Kaisaniemi. Sää vaikuttaa kaikkiin linjoihin: tutka vertaa työmaan väliä saman linjan muihin väleihin samassa 2 tunnin jaksossa, joten yleinen sää kumoutuu.">${nf(sn.lampo,1)} °C, ${esc(sn.luokka)}${ss.length?` · jaksolla ${esc([...new Set(ss.map(x=>x.luokka))].join(", "))} ${nf(ss.length*2)} h`:""}</span>` : "";
+  const saaTxt = ss.length ? ` · <span class="saa-k" title="Ilmatieteen laitos, Helsinki Kaisaniemi">jaksolla ${esc([...new Set(ss.map(x=>x.luokka))].join(", "))} ${nf(ss.length*2)} h</span>` : "";
   const vNyt = (S.varoitukset||[]).filter(v=>{ const n = Date.now(); return (!v.alkaa || +new Date(v.alkaa) <= n + 12*3600e3) && (!v.paattyy || +new Date(v.paattyy) > n); });
   const varTxt = vNyt.length ? ` · <span class="saa-var" title="${esc(vNyt.map(v=>v.otsikko).join("\n"))}">⚠ ${esc(vNyt[0].tapahtuma||"säävaroitus")}${vNyt.length>1?` +${vNyt.length-1}`:""}</span>` : "";
   document.getElementById("briefWhen").innerHTML = `Luvut ajalta ${per.txt} · laskettu ${ago(upd)}${saaTxt}${varTxt}`;
