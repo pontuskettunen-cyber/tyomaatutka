@@ -678,6 +678,16 @@ html.hsl .subnav a.on{color:#0074BF;border-bottom-color:#0074BF}
 .ts-yht{max-width:1100px}.ts-yht th{width:170px;text-align:left;vertical-align:top;font-size:13.5px}.ts-yht td{font-size:13.5px;line-height:1.55}
 html.hsl .ts{border:0;border-radius:16px}html.hsl .ts-malli{background:#EBF6FD;color:#003456}
 @media(max-width:900px){.strip.s5{grid-template-columns:repeat(2,1fr)}}
+.sugarv{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--l)}
+.sugarv .sa-k{font-size:13px;font-weight:700;margin-right:4px}
+.sugarv button{font:inherit;font-size:12.5px;border:1px solid var(--l);background:var(--p);color:var(--i2);padding:4px 11px;border-radius:999px;cursor:pointer}
+.sugarv button:hover{border-color:var(--i2)}
+.sugarv .sa-ok{background:#0B7A3E;border-color:#0B7A3E;color:#fff;font-weight:600}
+.sugarv .sa-hyl{display:inline-flex;align-items:center;gap:4px;font-size:12.5px;color:var(--m)}
+.sugarv button.info{padding:0;width:20px;height:20px;border-radius:50%}
+.sa-tila{font-size:13px;font-weight:700}.sa-tila.hyvaksy{color:#0B7A3E}.sa-tila.hylkaa{color:#B91C1C}
+.sa-virhe{font-size:12.5px;color:#B91C1C}
+html.hsl .sugarv .sa-ok{background:#0074BF;border-color:#0074BF}
 </style>
 </head>
 <body>
@@ -892,7 +902,7 @@ html.hsl .ts{border:0;border-radius:16px}html.hsl .ts-malli{background:#EBF6FD;c
           <dt>Tarkoitus</dt><dd>Ehdottaa aikataulun väljennystä linjoille, joilla työmaa toistuvasti vie viivevaran.</dd>
           <dt>Syöte</dt><dd>Laskennan valitsemat tapaukset ja mitatut ajoajat. Malli kirjoittaa vain perustelut.</dd>
           <dt>Ihminen</dt><dd><b>Aikataulusuunnittelija päättää.</b> Agentti ei muuta mitään itse.</dd>
-          <dt>Tiedetään</dt><dd>Ehdotusten hyväksyntää ei vielä kirjata. Se on pilotin ensimmäinen laatumittari.</dd>
+          <dt>Tiedetään</dt><dd>Suunnittelija hyväksyy tai hylkää jokaisen ehdotuksen syineen. Hyväksymisosuus näkyy alla laatumittarina.</dd>
         </dl>
       </article>
       <article class="ts">
@@ -1301,6 +1311,7 @@ const INFO = {
   eurot: ["Miten eurot lasketaan", "Aikataulu: lisäaika × 50 €/h, eli bussin ajotunnin kuljettajakulu (Väylävirasto, hankearvioinnin yksikköarvot 2022: 49,70 €/h). Pieni viive ei maksa mitään, koska se mahtuu aikataulun väljyyteen. Rahaa se maksaa vasta, kun aikataulua pidennetään tai linjalle tarvitaan lisäauto. Matkustajat: lisäaika × 20 matkustajaa vuorossa (oletus) × 5 €/h, eli matkustajan ajan arvo, jota käytetään liikennehankkeiden arvioinnissa. Se ei ole kassasta lähtevää rahaa. Säästetyt eurot lasketaan samoilla hinnoilla mitatusta erosta, kun työ päättyy tai järjestelyä muutetaan ja samaa kohtaa voidaan verrata ennen ja jälkeen."],
   tyolista: ["Listan luvut", "Käynnissä olevilla töillä oikea sarake kertoo, paljonko pidempään ohi ajaminen kestää (lisäaika per ohitus) ja paljonko lisäaikaa on kertynyt yhteensä. Alkavilla töillä se kertoo, montako ohitusta samalta katuosuudelta on jo mitattu ennen työtä vertailuksi. Klikkaa työtä nähdäksesi sen kartalla, tuplaklikkaa avataksesi tiedot."],
   saa: ["Sää tutkassa", "Sää vaikuttaa kaikkiin linjoihin, joten tutka vertaa työmaan pysäkkiväliä saman linjan muihin väleihin samassa kahden tunnin jaksossa: yleinen sää kumoutuu. Sadejaksot näkyvät työmaan kaaviossa taustavärinä, Helsinkiä koskevat säävaroitukset tilannekuvassa, ja lupateksteistä tunnistetaan kiireelliset korjaukset kuten vesijohtovuodot. Mittauspiste: Ilmatieteen laitoksen havaintoasema Helsinki Kaisaniemi (Kaisaniemen puisto, rautatieaseman vieressä). Lämpötila ja sade mitataan 10 minuutin välein, sademäärä on aseman tunnittainen kertymä millimetreinä. Säätilan kuvaus (esim. pilvistä) ja tulevat tunnit ovat Ilmatieteen laitoksen ennustetta samalle pisteelle. Yksi asema kuvaa koko kaupunkia: paikallinen kuuro voi osua toisaalle."],
+  arvio: ["Onko agentti oikeassa?", "Aikataulusuunnittelija arvioi jokaisen ehdotuksen: hyväksyy, jos ehdotus on perusteltu, tai hylkää ja kertoo miksi (luvut eivät pidä, ei tarpeen tai muu syy). Arvio ei muuta aikataulua. Se kirjaa, oliko ihminen agentin kanssa samaa mieltä, ja siitä syntyy agentin laatumittari Tekoäly tuotannossa -sivulle. Hylkäyksen syy kertoo, mitä korjata: 'luvut eivät pidä' osoittaa laskentaan, 'ei tarpeen' kynnysarvoihin. Demossa kuka tahansa voi arvioida. Pilotissa arvion tekisi vain kirjautunut suunnittelija, ja arvioon tallentuisi tekijä."],
   saavaik: ["Sään vaikutus, näin se mitataan", "Jokaisen pysäkkivälin ajoaikaa verrataan saman välin omaan poutatasoon samassa vuorokaudenjaksossa (aamu, päivä, iltapäivän ruuhka, ilta, yö) ja päivätyypissä (arki, viikonloppu). Näin ruuhka ei sekoitu säähän. Kaupungin luku on kaikkien välien painotettu keskiarvo. Työmaalle verrataan, paljonko sen välit hidastuvat samassa säässä kuin muu kaupunki: ero kertoo, pahentaako sää työmaan haittaa (esim. kavennettu kaista ja lumivallit). Linjalle lasketaan hidastuminen prosentteina ja minuutteina koko vuorolla, ja sitä verrataan aikataulun viivevaraan. Sääluokka tulee Ilmatieteen laitoksen Kaisaniemen havainnoista. Luku näytetään vasta, kun säätä on mitattu vähintään 3 kahden tunnin jakson ajan. Ennen sitä näkyy 'kertyy'."],
   jakso: ["Luvut ajalta", "Aikaväli, jolta näytetyt luvut on laskettu. Tarkennettu mittaus alkoi aamulla 2.11.2026, joten aluksi jakso on lyhyempi kuin valittu 24 h tai 7 vrk."],
 };
@@ -1469,7 +1480,7 @@ function renderBrief(){
   document.getElementById("kpis").innerHTML =
     tile(nf(vehH,1)+" h" + (tr ? ` <span class="trend ${tr.cls}">${tr.txt}</span>` : ""), (per.full ? `kaikkien bussien ja ratikoiden lisäaika yhteensä vuorokaudessa${S.ik==="7d"?" (keskimäärin)":""}` : `kaikkien bussien ja ratikoiden lisäaika yhteensä ${per.dur} aikana`) + `<span class="tsub">${(()=>{ const n = bd.sites.reduce((a,x)=>a+(x.n||0),0); return n ? `${nf(Math.round(n/100)*100)} työmaan ohitusta × keskimäärin ${Math.round(vehH*3600/n)} s` : ""; })()} · ${bd.nTod ? `todennettu ${nf(bd.totTod,1)} h, loput arviota` : "alustava arvio"}</span>`, "menetetty", "bd") +
     tile(nf(runR.length), `katutyötä bussi- tai ratikkareitillä<span class="tsub">${nf(run.length)} käynnissä kaikkiaan · ${nf(lineSet.size)} linjaa</span>`, "reitilla", null, "#/tyot") +
-    ((S.sug||[]).length ? `<a class="tile" href="#/linjat"><b>${S.sug.length}</b><small>aikatauluagentin ${S.sug.length===1?"ehdotus":"ehdotusta"}<span class="tsub">odottaa suunnittelijan päätöstä</span></small></a>`
+    ((S.sug||[]).filter(x=>!x.paatos).length ? `<a class="tile" href="#/linjat"><b>${S.sug.filter(x=>!x.paatos).length}</b><small>aikatauluagentin ${S.sug.filter(x=>!x.paatos).length===1?"ehdotus":"ehdotusta"}<span class="tsub">odottaa suunnittelijan arviota</span></small></a>`
       : tile(nf(up7.length), `katutyötä alkaa viikon sisällä<span class="tsub">${nf(up7R.length)} bussi- tai ratikkareitillä · mitataan jo ennen alkua</span>`, "alkaa", null, "#/tyot"));
   // Taso 2: kolme asiaa, joihin kannattaa reagoida
   const td = [];
@@ -2419,8 +2430,29 @@ function sugCard(x){
     ${(p.ajantasausvalit||[]).length?`<table class="t" style="margin:6px 0"><thead><tr><th>Ajantasausväli</th><th class="r">Nyt</th><th class="r">Ehdotus</th></tr></thead><tbody>${p.ajantasausvalit.filter(v=>v.ehdotus_min>0).map(v=>`<tr><td>${esc(v.alku)} → ${esc(v.loppu)}</td><td class="r">${v.aikataulu_min!=null?nf(v.aikataulu_min,1)+" min":"–"}</td><td class="r slow">${v.aikataulu_min!=null?nf(v.aikataulu_min+v.ehdotus_min,1)+" min":"+"+nf(v.ehdotus_min,1)+" min"}</td></tr>`).join("")}</tbody></table>`:""}
     ${p.ajantasaus_huom?`<p class="note">${esc(p.ajantasaus_huom)}</p>`:""}
     ${c.purku?`<p class="note"><b>Purku:</b> ${esc(c.purku)}</p>`:""}
-    <div class="sugf">${nf(p.vuoroja)} vuoroa · ${nf(p.mittauspaivia)} pv · mediaani ${sgn(p.mediaani_s)} · huonoin 10 % ${sgn(p.huonoin_10pros_s)} · ehdotettu lisäaika ${nf(p.ehdotettu_lisaaika_min,1)} min<br>Odottaa suunnittelijan päätöstä. Agentti ei muuta aikatauluja itse. · ${esc(x.malli||"")} ${ago(x.luotu)}</div></div>`;
+    <div class="sugf">${nf(p.vuoroja)} vuoroa · ${nf(p.mittauspaivia)} pv · mediaani ${sgn(p.mediaani_s)} · huonoin 10 % ${sgn(p.huonoin_10pros_s)} · ehdotettu lisäaika ${nf(p.ehdotettu_lisaaika_min,1)} min<br>Agentti ei muuta aikatauluja itse. · ${esc(x.malli||"")} ${ago(x.luotu)}</div>${sugArvio(x)}</div>`;
 }
+const SYY = {luvut:"luvut eivät pidä", ei_tarpeen:"ei tarpeen", muu:"muu syy"};
+function sugArvio(x){
+  const id = x.id;
+  if(x.paatos) return `<div class="sugarv on" data-id="${id}"><span class="sa-tila ${x.paatos}">${x.paatos==="hyvaksy"?"✓ Suunnittelija hyväksyi":"✕ Suunnittelija hylkäsi: "+(SYY[x.syy]||"")}</span><button class="sa-muuta" onclick="sugArvioMuuta(${id})">Muuta</button></div>`;
+  return `<div class="sugarv" data-id="${id}"><span class="sa-k">Onko agentti oikeassa?</span>
+    <button class="sa-ok" onclick="sugArvioi(${id},'hyvaksy')">Hyväksy</button>
+    <span class="sa-hyl"><span>Hylkää:</span>${Object.entries(SYY).map(([k,t])=>`<button onclick="sugArvioi(${id},'hylkaa','${k}')">${t}</button>`).join("")}</span>
+    ${infoBtn("arvio")}</div>`;
+}
+function sugArvioMuuta(id){ const x = (S.sug||[]).find(r=>r.id===id); if(!x) return; x.paatos = null; renderSug(); if(typeof renderLinjat==="function" && document.getElementById("v-linjat").classList.contains("on")) renderLinjat(); }
+async function sugArvioi(id, paatos, syy){
+  const x = (S.sug||[]).find(r=>r.id===id);
+  try{
+    const r = await fetch(API+"rpc/arvioi_suositus", {method:"POST", headers:{apikey:KEY, Authorization:"Bearer "+KEY, "content-type":"application/json"}, body:JSON.stringify({p_id:id, p_paatos:paatos, p_syy:syy||null})});
+    const t = await r.json();
+    if(t !== "ok") throw new Error(t);
+    if(x){ x.paatos = paatos; x.syy = paatos==="hylkaa" ? syy : null; }
+  }catch(e){ alertBox(document.querySelector(`.sugarv[data-id="${id}"]`), "Arviota ei saatu tallennettua."); return; }
+  renderSug(); if(document.getElementById("v-linjat").classList.contains("on")) renderLinjat();
+}
+function alertBox(el, t){ if(el){ el.querySelector(".sa-virhe")?.remove(); el.insertAdjacentHTML("beforeend", `<span class="sa-virhe">${t}</span>`); } }
 function renderSug(){
   const el = document.getElementById("sugPanel"); if(!el) return;
   const sg = S.sug||[];
@@ -2979,7 +3011,24 @@ const usd = v => v == null ? "–" : "$" + (v < 0.01 && v > 0 ? nf(v, 4) : nf(v,
     <table class="t ai-t"><thead><tr><th>Toiminto</th><th>Malli</th><th class="r">Kutsut</th><th class="r">Tokenit sisään / ulos</th><th class="r">Kustannus</th><th class="r">Per kutsu</th><th class="r">Vasteaika</th><th class="r">Virheet</th></tr></thead><tbody>
     ${lista.map(b=>`<tr><td>${AI_TOIM[b.tila]||b.tila}</td><td>${mn(b.malli)}</td><td class="r">${nf(b.kutsut)}</td><td class="r">${nf(b.syote)} / ${nf(b.tuotos)}</td><td class="r">${usd(b.usd)}</td><td class="r">${b.kutsut?usd(b.usd/b.kutsut):"–"}</td><td class="r">${b.kutsut>b.virheet?nf(b.ms/(b.kutsut-b.virheet)/1000,1)+" s":"–"}</td><td class="r">${b.virheet?`<b style="color:#B91C1C">${nf(b.virheet)}</b>`:"0"}</td></tr>`).join("")}
     </tbody></table>
-    <p class="note">Kirjaus alkoi ${fmtShort(AI_ALKU)}${new Date(AI_ALKU).getFullYear()}${paivat<7?`, joten luvut perustuvat ${paivat} päivään`:""}. Hinnat ovat Anthropicin listahintoja dollareina, koska se laskuttaa dollareissa: Haiku 5.5 0,10 / 0,50 $ ja Sonnet 5.5 2 / 10 $ miljoonaa tokenia kohden (sisään / ulos). Kalliimpi malli on käytössä vain siellä, missä kirjoitetaan ihmiselle luettavaa tekstiä.</p>`;
+    <p class="note">Kirjaus alkoi ${fmtShort(AI_ALKU)}${new Date(AI_ALKU).getFullYear()}${paivat<7?`, joten luvut perustuvat ${paivat} päivään`:""}. Hinnat ovat Anthropicin listahintoja dollareina, koska se laskuttaa dollareissa: Haiku 5.5 0,10 / 0,50 $ ja Sonnet 5.5 2 / 10 $ miljoonaa tokenia kohden (sisään / ulos). Kalliimpi malli on käytössä vain siellä, missä kirjoitetaan ihmiselle luettavaa tekstiä.</p>
+    <div id="aiLaatu"></div>`;
+  renderLaatu();
+}
+async function renderLaatu(){
+  const el = document.getElementById("aiLaatu"); if(!el) return;
+  let q; try{ q = (await get("v_ai_laatu"))[0]; }catch(e){ return; }
+  if(!q) return;
+  const hyl = q.arvioitu - q.hyvaksytty;
+  const agentti = q.arvioitu >= 5
+    ? `<b>${nf(q.hyvaksytty/q.arvioitu*100)} %</b> hyväksytty (${nf(q.hyvaksytty)}/${nf(q.arvioitu)} arvioitua)${hyl?`. Hylkäysten syyt: luvut eivät pidä ${nf(q.hylatty_luvut)}, ei tarpeen ${nf(q.hylatty_ei_tarpeen)}, muu ${nf(q.hylatty_muu)}`:""}`
+    : `<span class="note">kertyy: ${nf(q.arvioitu)}/5 arviota</span>`;
+  el.innerHTML = `<h3>Laatu: onko tekoäly oikeassa?</h3>
+    <table class="t ai-t"><thead><tr><th>Toiminto</th><th>Miten mitataan</th><th>Tulos</th></tr></thead><tbody>
+      <tr><td>Aikatauluagentti</td><td>Suunnittelija hyväksyy tai hylkää ehdotuksen. ${nf(q.ehdotuksia)} ehdotusta 30 päivässä.</td><td>${agentti}</td></tr>
+      <tr><td>Lupatekstin luku</td><td>Tekoälyn haittaluokkaa verrataan mitattuun lisäaikaan.</td><td>Ei erottele: luokkien välillä ei eroa. Ei käytetä ennusteessa.</td></tr>
+      <tr><td>Katsaukset ja Kysy tutkalta</td><td>Ei vielä mitattu.</td><td><span class="note">Pilotissa: pistokoe viikoittain, löytyykö jokainen luku sivulta</span></td></tr>
+    </tbody></table>`;
 }
 
 /* ================= reititys ================= */
