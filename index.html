@@ -606,6 +606,61 @@ html.hsl #v-home .nowrow{align-items:center}
 .olo-c.huono{background:#DBEAFE;color:#1E3A8A}.olo-c.ok{background:#DCFCE7;color:#14532D}.olo-c.kertyy{color:var(--m)}.olo-c small{font-size:10.5px}
 .olo-h{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:12.5px;color:var(--m)}.olo-h a{display:inline-flex;align-items:center;gap:3px;text-decoration:none;color:var(--i2)}
 .saat td,.saat th{padding:5px 8px}
+
+/* ===== HSL-brändi 2 (vain html.hsl): hsl.fi:n muotokieli 3.11.2026 tarkistettuna =====
+   sininen #0074BF, tummansininen #003456, vaalea sininen #EBF6FD, sivun tausta #F2F5F7, teksti #333,
+   kortit valkoiset ilman reunaa r=16px, kentät ja tiilet r=5px ohut harmaa reuna, painikkeet pillereitä (r=48px, 8px 24px, keskilihava). */
+html.hsl{--a:#0074BF;--a-soft:#EBF6FD;--g:#F2F5F7;--i:#333333;--i2:#4A4A4A;--m:#6B6B6B;--l:#DDDDDD;--l2:#EEF1F3;--r:16px}
+html.hsl body{background:#F2F5F7;color:#333}
+/* yläpalkki: täysleveä sininen palkki, valkoinen valikko */
+html.hsl .top{background:#0074BF;border-bottom:0;box-shadow:none}
+html.hsl .top .in{height:68px}
+html.hsl .brand,html.hsl .brand .txt{color:#fff}
+html.hsl .brand b{color:#BFE3FA}
+html.hsl .brand .mark{background:#fff}html.hsl .brand .mark i{border-color:#0074BF}html.hsl .brand .mark i:after{border-color:#0074BF}
+html.hsl nav a{color:#fff;font-weight:600;font-size:16px;border-bottom:4px solid transparent;padding:0 18px}
+html.hsl nav a:hover{color:#fff;background:rgba(255,255,255,.08)}
+html.hsl nav a.on{color:#fff;border-bottom-color:#fff}
+html.hsl .top .omarow{background:#fff;border-color:#fff}
+html.hsl .top .omarow .btn{background:#003456}
+html.hsl .top .live{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.35);color:#fff}
+html.hsl .top .live::after{color:#fff}
+/* ilmoitusbanneri hsl.fi:n "Uutta!"-laatikon tapaan */
+html.hsl .intro{background:#EBF6FD;color:#333;border:1px solid #0074BF;border-radius:16px;padding:12px 18px;font-size:14.5px}
+html.hsl .intro b{color:#333}
+html.hsl .intro a{color:#0074BF;background:#fff;border:1px solid #888;border-radius:48px;padding:6px 18px;font-weight:600}
+html.hsl .intro button{color:#0074BF}
+/* kortit: valkoinen, ei reunaa, r=16 */
+html.hsl .panel,html.hsl .tile,html.hsl .card,html.hsl .todo,html.hsl .ai,html.hsl .olo,html.hsl .wcard,html.hsl .lcock,html.hsl .lcard,html.hsl .bd,html.hsl .warn,html.hsl .tstat,html.hsl .eurobox{border:0!important;border-radius:16px!important;box-shadow:none}
+html.hsl .card.sel{box-shadow:0 0 0 2px #0074BF!important}
+html.hsl .todo{border-left:5px solid var(--a)!important}html.hsl .todo.red{border-left-color:#B42318!important}html.hsl .todo.ind{border-left-color:#5C2D91!important}html.hsl .todo.warn2{border-left-color:#B45309!important}
+html.hsl .warn{background:#FFF4E5}
+html.hsl .eurobox{background:#EBF6FD}
+/* otsikot: keskilihava, ei versaalia */
+html.hsl .h2row h2{text-transform:none;letter-spacing:0;font-size:19px;font-weight:700;color:#333}
+html.hsl .h2row a{font-weight:600}
+html.hsl .ph h2{text-transform:none;letter-spacing:0;font-size:16px;font-weight:700;color:#333}
+html.hsl .headline{font-weight:700;color:#333}
+html.hsl .sec{text-transform:none!important;letter-spacing:0!important;font-size:15px!important;font-weight:700!important;color:#333!important}
+html.hsl .olo-k{text-transform:none;letter-spacing:0;font-size:13.5px;color:#333}
+/* painikkeet: pillerit; ensisijainen tummansininen, toissijainen valkoinen harmaalla reunalla */
+html.hsl .btn{background:#003456;border-radius:48px;font-weight:600;padding:8px 22px}
+html.hsl .btn.ghost{background:#fff;color:#0074BF;border:1px solid #888}
+html.hsl .seg{background:#fff;border:1px solid #888;border-radius:48px;padding:3px}
+html.hsl .seg button{border-radius:48px;font-weight:600;color:#0074BF}
+html.hsl .seg button.on{background:#003456;color:#fff}
+html.hsl .share,html.hsl .ai-more,html.hsl .info.txt{border-radius:48px}
+html.hsl .share{border:1px solid #888;color:#0074BF;background:#fff;padding:5px 14px;font-weight:600}
+/* kentät: r=5, harmaa reuna */
+html.hsl .search,html.hsl input[type=search],html.hsl input[type=text],html.hsl select{border-radius:5px!important;border:1px solid #888!important;background:#fff}
+html.hsl .top .omarow input{border:0!important}
+/* tilat ja sirut */
+html.hsl .chip{border-radius:5px;background:#EEF1F3}
+html.hsl .st{border-radius:48px}
+html.hsl .lbadge{border-radius:5px;font-weight:700}
+html.hsl .lbadge:not(.tram){background:#007AC9}
+html.hsl .num{background:#0074BF!important}
+html.hsl .subnav a.on{color:#0074BF;border-bottom-color:#0074BF}
 </style>
 </head>
 <body>
