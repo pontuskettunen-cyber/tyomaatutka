@@ -805,6 +805,7 @@ html.hsl .sugarv .sa-ok{background:#0074BF;border-color:#0074BF}
       <li><b>Pikavuorojen pitkät välit.</b> Työmaa liitettiin aluksi pysäkkiväliin suoran viivan perusteella, ja pikavuorojen yli kilometrin välit osuivat sivukatujen töihin (esim. Kivelänkatu liitettiin Mannerheimintien linjoihin). Nyt etäisyys lasketaan välin katuviivasta.</li>
       <li><b>Vähäinen data ja harvat linjat.</b> Alle 10 ohituksen luku näytetään vain merkinnällä "ei vielä riittävästi dataa", eikä sitä lasketa hidastajiin. Harvaan kulkevilla linjoilla (esim. 66K, 4 vuoroa päivässä) suuntakohtainen tulos syntyy vasta päivien kuluessa.</li>
       <li><b>Poikkeusreitit.</b> Jos linja kiertää työmaan, se ei aja mitattua väliä, eikä hidastusta näy. Tutka vertaa nyt aikataulun vuoroja havaittuihin ohituksiin ja merkitsee "kiertää?", kun vain murto-osa vuoroista ajoi välin. Tunnistus on uusi ja tarkistettava liikennöintitiedoista.</li>
+      <li><b>Kielimallin hiljainen vika löytyi käyttölokista.</b> Uudempi malli käytti koko vastausrajansa sisäiseen päättelyyn ja palautti tyhjän tekstin. Aikatauluagentti ja tilannekatsaus eivät siksi tuottaneet mitään 2.–3.11.2026, vaikka ajot näyttivät onnistuneen. Vika näkyi heti, kun jokaisesta kutsusta alettiin kirjata tokenit ja katkeaminen. Nyt päättely on pois näistä kutsuista, ja tyhjä vastaus kirjataan virheeksi.</li>
       <li><b>Lyhyt historia.</b> Keruu alkoi 2.11.2026. Luvut tarkentuvat päivä päivältä, ja vuorokausi- ja viikkovertailut tulevat käyttöön sitä mukaa.</li>
     </ul>
 
