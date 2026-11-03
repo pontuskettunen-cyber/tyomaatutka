@@ -43,7 +43,8 @@ async function claude(model: string, system: string, user: string, max = 1500): 
     r = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: { "x-api-key": AKEY!, "anthropic-version": "2023-06-01", "content-type": "application/json" },
-      body: JSON.stringify({ model, max_tokens: max, system, messages: [{ role: "user", content: user }] }),
+      // Päättely pois: malli kirjoittaa valmiiksi lasketuista luvuista. Päättely söi koko tokenirajan ja vastaus jäi tyhjäksi (loki 3.11.2026).
+      body: JSON.stringify({ model, max_tokens: max, system, messages: [{ role: "user", content: user }], thinking: { type: "disabled" } }),
     });
   } catch (e) {
     await kirjaa({ malli: model, ms: Date.now() - t0, ok: false, virhe: ("verkko: " + (e as Error).message).slice(0, 200) });
@@ -56,10 +57,13 @@ async function claude(model: string, system: string, user: string, max = 1500): 
   }
   const d = await r.json();
   const u = d.usage ?? {};
-  await kirjaa({ malli: model, ms: Date.now() - t0, ok: true, katkesi: d.stop_reason === "max_tokens",
+  const teksti = (d.content ?? []).map((c: any) => c.text ?? "").join("");
+  const lohkot = [...new Set((d.content ?? []).map((c: any) => c.type))].join(",");
+  await kirjaa({ malli: model, ms: Date.now() - t0, ok: teksti.length > 0, katkesi: d.stop_reason === "max_tokens",
+    virhe: teksti.length ? null : `tyhjä vastaus (stop=${d.stop_reason}, lohkot=${lohkot})`,
     syote: u.input_tokens ?? null, tuotos: u.output_tokens ?? null,
     cache_luku: u.cache_read_input_tokens ?? null, cache_kirj: u.cache_creation_input_tokens ?? null });
-  return (d.content ?? []).map((c: any) => c.text ?? "").join("");
+  return teksti;
 }
 function parseJSON(t: string): any {
   t = t.replace(/```(?:json)?/g, "");
