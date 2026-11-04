@@ -2612,11 +2612,11 @@ function nauhaSVG(nh){
 function sugCard(x){
   const c = x.sisalto||{}, p = x.perusteet||{};
   const valit = (p.ajantasausvalit||[]).filter(v=>v.ehdotus_min>0);
-  const lisa = valit.reduce((a,v)=>a+(v.aikataulu_min!=null ? v.ehdotus_min-v.aikataulu_min : 0),0);
+  const lisa = valit.reduce((a,v)=>a+(+v.ehdotus_min||0),0);   // ehdotus_min = lisäys nykyiseen ajantasausväliin
   return `<div class="sug">
     <div class="sugh"><span class="lbadge ${TRAM.has(ln(x.route))?"tram":""}" style="height:22px;min-width:32px;font-size:12px">${esc(ln(x.route))}</span><span class="note">suunta ${x.dir} · ${JNAME[x.jakso]||esc(x.jakso)}</span><span class="aitag ${x.varmuus==="vahva"?"suuri":"pieni"}">${x.varmuus==="vahva"?"vahva näyttö":"alustava näyttö"}</span></div>
     <b class="sug-o">${esc(c.otsikko||"")}</b>
-    ${valit.length?`<table class="t sug-t"><thead><tr><th>Ajantasausväli</th><th class="r">Nyt</th><th class="r">Ehdotus</th></tr></thead><tbody>${valit.map(v=>`<tr><td>${esc(v.alku)} → ${esc(v.loppu)}</td><td class="r">${v.aikataulu_min!=null?nf(v.aikataulu_min,1)+" min":"–"}</td><td class="r"><b>${v.aikataulu_min!=null?nf(v.ehdotus_min,1)+" min":"+"+nf(v.ehdotus_min,1)+" min"}</b></td></tr>`).join("")}</tbody>${lisa>0?`<tfoot><tr><td>Koko vuoro pitenee</td><td></td><td class="r"><b>+${nf(lisa,1)} min</b></td></tr></tfoot>`:""}</table>`:`<p>${esc(c.ehdotus||"")}</p>`}
+    ${valit.length?`<table class="t sug-t"><thead><tr><th>Ajantasausväli</th><th class="r">Nyt</th><th class="r">Ehdotus</th></tr></thead><tbody>${valit.map(v=>`<tr><td>${esc(v.alku)} → ${esc(v.loppu)}</td><td class="r">${v.aikataulu_min!=null?nf(v.aikataulu_min,1)+" min":"–"}</td><td class="r"><b>${v.aikataulu_min!=null?nf(v.aikataulu_min+v.ehdotus_min,1)+" min":"+"+nf(v.ehdotus_min,1)+" min"}</b></td></tr>`).join("")}</tbody>${lisa>0?`<tfoot><tr><td>Koko vuoro pitenee</td><td></td><td class="r"><b>+${nf(lisa,1)} min</b></td></tr></tfoot>`:""}</table>`:`<p>${esc(c.ehdotus||"")}</p>`}
     <details class="sug-d"><summary>Miksi agentti ehdottaa tätä</summary>
       ${valit.length&&c.ehdotus?`<p>${esc(c.ehdotus)}</p>`:""}<p class="note">${esc(c.perustelu||"")}</p>
       <p class="note">Mitattu ${nf(p.vuoroja)} vuorosta ${nf(p.mittauspaivia)} päivänä: tavallinen vuoro ${sgn(p.mediaani_s)} työmailla, huonoin kymmenesosa ${sgn(p.huonoin_10pros_s)}.${x.varmuus!=="vahva"?" Vahva näyttö vaatii vähintään 3 mittauspäivää ja 40 vuoroa.":""}</p>
