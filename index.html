@@ -13,6 +13,7 @@
 /* Teema: HSL-henkinen ilme on oletus. ?teema=oma palauttaa vanhan ilmeen (muistetaan), ?teema=hsl takaisin. */
 (function(){ var t = "hsl"; try{ var q = new URLSearchParams(location.search).get("teema"); if(q) localStorage.setItem("tt_teema", q); t = q || localStorage.getItem("tt_teema") || "hsl"; }catch(e){}
   if(t !== "oma") document.documentElement.classList.add("hsl"); })();
+(function(){ try{ if(new URLSearchParams(location.search).has("tiivis")) document.documentElement.classList.add("kompakti"); }catch(e){} })();
 </script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
@@ -872,6 +873,33 @@ html.hsl .top .hbell b{border-color:#0074BF}
   .hr-dl dt{font-size:11.5px}
   .h-ctl .seg{width:100%;display:flex}.h-ctl .seg button{flex:1}
 }
+
+/* ===== Tiivis tilannekuva (testissä ?tiivis): työmaakortit, kartta ja työmaan tiedot samaan näkymään ===== */
+html.kompakti #v-home .subnav{margin-bottom:4px}
+html.kompakti #v-home .now{margin-bottom:6px}
+html.kompakti #v-home .nowrow{margin-bottom:6px !important;gap:12px}
+html.kompakti #v-home .nowrow .headline{font-size:18px !important}
+html.kompakti #v-home .now-k{margin-bottom:2px !important;font-size:11.5px}
+html.kompakti #v-home .strip.s3 .tile{padding:4px 12px !important;min-height:0}
+html.kompakti #v-home .strip.s3 .tile b{font-size:20px !important}
+html.kompakti #v-home .strip.s3 .tile small{font-size:11.5px !important;line-height:1.25 !important}
+html.kompakti #v-home .h2row{margin:0 0 6px !important}
+html.kompakti #v-home .h2row h2{font-size:16px !important}
+html.kompakti #v-home .cards{margin-bottom:8px !important;gap:8px}
+html.kompakti #v-home .card{padding:6px 10px !important;gap:1px !important}
+html.kompakti #v-home .split.fit{height:calc(100vh - var(--toph,76px) - 98px);min-height:440px}
+html.kompakti #v-home .mapp .ph{padding:6px 14px}
+html.kompakti #detail .det{padding:10px 14px 6px}
+html.kompakti #detail .det .sup{margin-bottom:2px}
+html.kompakti #detail .det h3{font-size:18px;margin-bottom:0}
+html.kompakti #detail .det .aibox{padding:5px 10px;margin:6px 0;font-size:12.5px}
+html.kompakti #detail .det .aibox > div{display:inline;margin:0 0 0 6px !important}
+html.kompakti #detail .det p.tiivis{font-size:14px;line-height:1.45;margin:6px 0}
+html.kompakti #detail .det .facts{margin:8px 0}
+html.kompakti #detail .det .facts div{padding:6px 10px}
+html.kompakti #detail .det .facts b{font-size:16px}
+html.kompakti #detail .det .varm{font-size:12.5px;padding:6px 10px;margin:0 0 8px}
+html.kompakti #detail .det .sec{margin:10px 0 4px}
 </style>
 </head>
 <body>
@@ -1802,7 +1830,10 @@ function renderCards(){
       <div class="crow"><span class="cbig">${big}</span><div class="chips">${lines(l.linjat).filter(r=>!/N$/.test(r)).slice(0,3).map(r=>`<span class="chip">${esc(r)}</span>`).join("")}${lines(l.linjat).filter(r=>!/N$/.test(r)).length>3?`<span class="chip" title="ja ${lines(l.linjat).filter(r=>!/N$/.test(r)).length-3} muuta linjaa">+${lines(l.linjat).filter(r=>!/N$/.test(r)).length-3}</span>`:""}</div></div>
     </button>`;
   }).join("") || `<div class="empty">Ei mitattavia töitä vielä.</div>`;
-  el.querySelectorAll(".card").forEach(c=>c.onclick=()=>select(c.dataset.id,true));
+  el.querySelectorAll(".card").forEach(c=>c.onclick=()=>{ select(c.dataset.id,true);
+    // tiivis näkymä: kortit, kartta ja työmaan tiedot samaan ruutuun
+    if(document.documentElement.classList.contains("kompakti")){ const r = document.querySelector("#v-home .h2row"), th = document.querySelector(".top").offsetHeight;
+      if(r) window.scrollTo({top: Math.max(0, r.getBoundingClientRect().top + scrollY - th - 8), behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"}); } });
   const wl = document.getElementById("worstLine"), bl = breakdown().byLine?.[0];
   if(wl && S.uusi) wl.style.display = "none";
   else if(wl && bl){ wl.style.display = ""; wl.innerHTML = `Pahiten kärsivä linja: <b>${esc(bl[0])}</b> · avaa ohjaamo →`; wl.onclick = ()=>{ S.lSel = bl[0]; S.lSite = null; S.lVali = null; }; }
