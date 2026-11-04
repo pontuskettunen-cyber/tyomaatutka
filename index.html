@@ -875,7 +875,8 @@ html.hsl .top .hbell b{border-color:#0074BF}
 }
 
 /* ===== Tiivis tilannekuva (testissä ?tiivis): työmaakortit, kartta ja työmaan tiedot samaan näkymään ===== */
-html.kompakti #v-home .subnav{margin-bottom:4px}
+html.kompakti #v-home > .subnav{display:none}
+html.kompakti #v-home .now{padding-top:6px}
 html.kompakti #v-home .now{margin-bottom:6px}
 html.kompakti #v-home .nowrow{margin-bottom:6px !important;gap:12px}
 html.kompakti #v-home .nowrow .headline{font-size:18px !important}
@@ -888,7 +889,8 @@ html.kompakti #v-home .h2row h2{font-size:16px !important}
 html.kompakti #v-home .cards{margin-bottom:8px !important;gap:8px}
 html.kompakti #v-home .card{padding:6px 10px !important;gap:1px !important}
 html.kompakti #v-home .split.fit{height:calc(100vh - var(--toph,76px) - 98px);min-height:440px}
-html.kompakti #v-home .mapp .ph{padding:6px 14px}
+html.kompakti #v-home .mapp > .ph{display:none}
+html.kompakti #v-home .split.fit{height:calc(100vh - var(--toph,76px) - 92px)}
 html.kompakti #detail .det{padding:10px 14px 6px}
 html.kompakti #detail .det .sup{margin-bottom:2px}
 html.kompakti #detail .det h3{font-size:18px;margin-bottom:0}
