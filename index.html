@@ -779,7 +779,7 @@ html.hsl .top .hbell b{border-color:#0074BF}
 #v-halytykset .prose{max-width:1040px}
 #v-halytykset h2{margin-bottom:2px}
 #v-halytykset .h-lead{margin:0 0 12px;color:var(--m);font-size:14px}
-#v-halytykset.kortti .h-lead{display:none}
+#v-halytykset.kortti .h-lead,#v-halytykset.kortti .h-tausta{display:none}
 .h-ctl{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin:0 0 10px}
 .h-sum{display:flex;flex-wrap:wrap;gap:6px;margin-right:auto}
 .h-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:var(--p);font-size:13px;font-weight:700;color:var(--i2)}
@@ -936,6 +936,15 @@ a.lnk-linja:hover{color:var(--a)}
 .alue{background:#F3F6FA;border:1px solid var(--l);border-radius:10px;padding:7px 10px;margin:0 0 10px;font-size:13px;line-height:1.45}
 .alue .k{font-size:12.5px}.alue .al{margin:3px 0 4px;padding-left:16px}.alue .al li{margin:1px 0}.alue .al a{font-weight:700}
 .alue .note{font-size:12px}
+
+#v-halytykset h2 .h-alaots{font-size:14px;font-weight:600;color:var(--m);margin-left:6px}
+.h-tausta{background:var(--p);border-radius:14px;padding:10px 14px;margin:6px 0 12px;font-size:13.5px;line-height:1.5}
+.h-tausta p{margin:0}
+.h-tausta summary{cursor:pointer;font-weight:800;color:var(--a);margin-top:6px;font-size:13px}
+.h-tausta table{width:100%;border-collapse:collapse;font-size:13px;margin:6px 0}
+.h-tausta td,.h-tausta th{text-align:left;padding:5px 10px 5px 0;border-bottom:1px solid var(--l);vertical-align:top}
+.h-tausta th{font-size:12px;color:var(--m)}
+.h-tausta td:first-child{width:38%;font-weight:700}
 </style>
 </head>
 <body>
@@ -1019,15 +1028,15 @@ a.lnk-linja:hover{color:var(--a)}
   const st = document.getElementById("status"); new MutationObserver(()=>{ live.title = st.textContent; }).observe(st,{childList:true,characterData:true,subtree:true});
   const split = h.querySelector(".split.fit"); split.after(h.querySelector(".todo-sec")); h.querySelector(".todo-sec").after(document.getElementById("aiBox"));
   /* Valikko: Tilannekuva · Linjat · Ennakkoarvio · Pilotti ja menetelmä. Työmaat ja Tietoa ovat alasivuja. */
-  window.NAV_ALIAS = { tyot: "home", menetelma: "hsl", raportti: "home", kehitys: "hsl" };
+  window.NAV_ALIAS = { tyot: "home", menetelma: "hsl", raportti: "home", kehitys: "hsl", halytykset: "hsl" };
   const nav = document.querySelector(".top nav");
   nav.querySelectorAll('a[data-r="tyot"], a[data-r="menetelma"], .navk, .navsep').forEach(x=>x.style.display="none");
   const ph = nav.querySelector('a[data-r="hsl"]'); ph.textContent = "Pilotti ja menetelmä";
   const sub = (pairs, cur) => { const d = document.createElement("div"); d.className = "subnav"; d.innerHTML = pairs.map(([href,t,k])=>`<a href="${href}" class="${k===cur?"on":""}">${t}</a>`).join(""); return d; };
-  const A = [["#/","Yleiskuva","home"],["#/tyot","Kaikki työmaat","tyot"]], B = [["#/hsl","Pilotti HSL:ssä","hsl"],["#/kehitys","Tekoäly tuotannossa","kehitys"],["#/menetelma","Menetelmä ja lähteet","menetelma"]];
+  const A = [["#/","Yleiskuva","home"],["#/tyot","Kaikki työmaat","tyot"]], B = [["#/hsl","Pilotti HSL:ssä","hsl"],["#/kehitys","Tekoäly tuotannossa","kehitys"],["#/halytykset","Valvomo","halytykset"],["#/menetelma","Menetelmä ja lähteet","menetelma"]];
   h.prepend(sub(A,"home"));
   document.addEventListener("DOMContentLoaded", ()=>{ document.getElementById("v-tyot").prepend(sub(A,"tyot"));
-    document.getElementById("v-hsl").prepend(sub(B,"hsl")); document.getElementById("v-menetelma").prepend(sub(B,"menetelma")); document.getElementById("v-kehitys").prepend(sub(B,"kehitys")); });
+    document.getElementById("v-hsl").prepend(sub(B,"hsl")); document.getElementById("v-menetelma").prepend(sub(B,"menetelma")); document.getElementById("v-kehitys").prepend(sub(B,"kehitys")); document.getElementById("v-halytykset").prepend(sub(B,"halytykset")); });
 })();
 </script>
 
@@ -1234,8 +1243,23 @@ a.lnk-linja:hover{color:var(--a)}
 <!-- ================= HÄLYTYKSET (piilossa: ?testi tai ilmoituksen linkki) ================= -->
 <section class="view" id="v-halytykset">
   <div class="prose">
-    <h2>Hälytykset</h2>
-    <p class="h-lead">Järjestelmän viat ja liikenteen poikkeamat yhdessä listassa. Malli rakennusautomaatiosta (Fidelix, Ouman, Desigo) ja standardeista ISA-18.2 ja EEMUA 191.</p>
+    <h2>Valvomo <span class="h-alaots">hälytykset kiinteistöautomaation mallilla</span></h2>
+    <div class="h-tausta">
+      <p><b>Ajatus on otettu talotekniikan kiinteistöautomaatiosta.</b> Rakennuksen automaatiojärjestelmä (esimerkiksi Fidelix, Ouman tai Siemens Desigo) valvoo ilmanvaihtoa ja lämmitystä samalla periaatteella: jokainen vika on rivi hälytyslistassa, sillä on luokka, joku kuittaa sen hoitoon ja päivystäjän puhelimeen lähtee jatkohälytys. Sama malli sopii tekoälypalvelun ja joukkoliikenteen valvontaan: järjestelmän viat ja liikenteen poikkeamat näkyvät tässä yhdessä listassa. Tekijällä on talotekniikan tausta.</p>
+      <details><summary>Mitä kiinteistöautomaatiosta on otettu</summary>
+        <table>
+          <tr><th>Kiinteistöautomaatiossa</th><th>Valvomossa</th></tr>
+          <tr><td>Hälytysluokat A, B ja C</td><td>Kriittinen, Vakava ja Huomio. Kriittinen ohittaa puhelimen äänettömän tilan.</td></tr>
+          <tr><td>Jatkohälytys tekstiviestinä päivystäjälle</td><td>Puhelinilmoitus, jonka napeista vian voi kuitata, ajaa uudelleen tai hiljentää avaamatta tutkaa.</td></tr>
+          <tr><td>Aktiiviset ja kuittaamattomat hälytykset</td><td>Välilehdet Aktiiviset ja Kuittaamatta. Poistunut mutta kuittaamaton vika jää listalle.</td></tr>
+          <tr><td>Hälytysloki</td><td>Jokaisen hälytyksen aikajana ja seitsemän vuorokauden historia.</td></tr>
+          <tr><td>Huoltokytkin, hälytysten esto huollon ajaksi</td><td>Hiljennä 4 h.</td></tr>
+          <tr><td>Hälytyksen alkamis- ja poistumisviive</td><td>Liikennehälytys avautuu vasta selvästä poikkeamasta ja poistuu vasta, kun poikkeama on kunnolla ohi, joten raja-arvon tuntumassa ei synny ilmoitusten sarjaa.</td></tr>
+          <tr><td>Ensimmäisenä tullut vika (first-out)</td><td>Juurisyy: tietokannan kaatumisen seurauksena tulevat hälytykset niputetaan sen alle.</td></tr>
+        </table>
+        <p class="note">Hälytysten määrää ja laatua mitataan prosessiteollisuuden standardien ISA-18.2 ja EEMUA 191 mukaan (mittarit listan alla).</p>
+      </details>
+    </div>
     <div id="hKortti"></div>
     <div class="h-ctl">
       <div class="h-sum" id="hSum"></div>
@@ -3543,7 +3567,7 @@ async function renderVahti(){
     ${k ? `<div class="vahti-k"><span class="ai-badge"><i></i>VAHDIN AAMUKATSAUS</span> <span class="note">${fmtShort(r.t)} klo ${new Date(r.t).toLocaleTimeString("fi-FI",{hour:"2-digit",minute:"2-digit"})} · ${esc(r.malli||"")}</span>
       <b>${esc(k.otsikko||"")}</b>${(k.huomiot||[]).length ? `<ul>${k.huomiot.map(h=>`<li><b>${esc(h.k||"")}:</b> ${esc(h.teksti||"")} <span class="note">→ ${esc(h.ehdotus||"")}</span></li>`).join("")}</ul>` : ""}</div>`
       : `<div class="note" style="margin-bottom:8px">Ensimmäinen aamukatsaus kirjoitetaan seuraavana aamuna klo 7.20. Alla tarkistukset reaaliajassa.</div>`}
-    ${LIIK_TESTI ? `<p style="margin:0 0 8px"><a href="#/halytykset">Hälytyslista: aktiiviset, kuittaamattomat ja historia →</a></p>` : ""}<div class="vahti-t"><div class="vahti-h">Tarkistukset nyt · ${huom ? `<b>${huom} vaatii huomiota</b>` : "kaikki kunnossa"}${korj ? ` · ${korj} korjautunut 24 h aikana` : ""}</div>
+    <p style="margin:0 0 8px"><a href="#/halytykset">Valvomo: hälytykset, kuittaukset ja historia →</a></p><div class="vahti-t"><div class="vahti-h">Tarkistukset nyt · ${huom ? `<b>${huom} vaatii huomiota</b>` : "kaikki kunnossa"}${korj ? ` · ${korj} korjautunut 24 h aikana` : ""}</div>
     ${nyt.map(x=>`<div class="vr ${x.tila}"><span class="vi">${ik[x.tila]||"?"}</span><span class="vk">${esc(x.k)}</span><span class="va">${esc(x.arvo||"")}</span><span class="vd">${esc(x.kuvaus||"")}</span></div>`).join("")}</div>`;
 }
 
