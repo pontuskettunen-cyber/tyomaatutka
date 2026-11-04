@@ -186,6 +186,9 @@ a.tile:hover{border-color:#C9CDC4}
 .chips{display:flex;flex-wrap:wrap;gap:5px}
 .chip{font:500 12px "IBM Plex Mono";padding:2px 7px;border-radius:5px;background:var(--l2);color:var(--i2)}
 .calc{background:var(--g);border-radius:10px;padding:12px 14px;margin:6px 0 10px}
+.nous{display:flex;gap:12px;align-items:baseline;background:var(--g);border-radius:10px;padding:10px 14px;margin:4px 0 10px;font-size:13.5px}
+.nous>b{font:600 22px "IBM Plex Mono";white-space:nowrap}
+.nous .pk{margin-top:4px;font-size:12.5px}
 .calc .row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:13.5px;padding:3px 0}
 .calc .row b{font:500 15px "IBM Plex Mono"}
 .calc input[type=range]{width:100%;accent-color:var(--a);margin:8px 0 2px}
@@ -2126,6 +2129,39 @@ function wireChart(el, c){
 }
 
 /* ---------- yksityiskohdat ---------- */
+/* HSL:n nousijamäärät pysäkeittäin (arkipäivien keskiarvo, marraskuu 2016, HRI, CC BY 4.0).
+   Pysäkit yhdistetään sijainnin perusteella (alle 60 m), koska lyhyttunnukset ja nimet ovat vaihtuneet vuoden 2016 jälkeen.
+   Nousijamäärä ei ole kyydissä olevien määrä, joten matkustajien euroarvio pysyy oletuksessa. Näytetään testinä (?testi). */
+const NOUS_TESTI = (()=>{ try{ return new URLSearchParams(location.search).has("testi"); }catch(e){ return false; } })();
+const NOUS_URL = "https://services1.arcgis.com/sswNXkUiRoWtrx0t/arcgis/rest/services/HSL_nousijamaarat_marraskuu2016/FeatureServer/0/query";
+const _nous = {};
+function mEtaisyys(a1, o1, a2, o2){ const r = Math.PI/180, x = (o2-o1)*r*Math.cos((a1+a2)/2*r), y = (a2-a1)*r; return Math.sqrt(x*x+y*y)*6371000; }
+async function nousijat(l){
+  if(_nous[l.lupa_id]) return _nous[l.lupa_id];
+  const st = new Map();
+  (S.segs[l.lupa_id]||[]).forEach(g=>["from","to"].forEach(w=>{ const id = String(g[w+"_stop"]); if(g[w+"_lat"]!=null && !st.has(id)) st.set(id, {id, nimi: g[w+"_nimi"]||id, lat:+g[w+"_lat"], lon:+g[w+"_lon"]}); }));
+  const P = [...st.values()]; if(!P.length) return null;
+  const pad = 0.002, lo = P.map(p=>p.lon), la = P.map(p=>p.lat);
+  const env = [Math.min(...lo)-pad, Math.min(...la)-pad, Math.max(...lo)+pad, Math.max(...la)+pad].join(",");
+  const q = `${NOUS_URL}?where=1%3D1&geometry=${env}&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=Nousijamaa&outSR=4326&f=json`;
+  const j = await (await fetch(q)).json();
+  const F = (j.features||[]).map(f=>({n:+f.attributes.Nousijamaa||0, lat:f.geometry.y, lon:f.geometry.x}));
+  P.forEach(p=>{ let best=null, bd=60; F.forEach(f=>{ const d = mEtaisyys(p.lat,p.lon,f.lat,f.lon); if(d<bd){ bd=d; best=f; } }); p.n = best ? best.n : null; });
+  const ok = P.filter(p=>p.n!=null).sort((a,b)=>b.n-a.n);
+  return (_nous[l.lupa_id] = {P, ok, tot: ok.reduce((s,p)=>s+p.n,0)});
+}
+async function taytaNousijat(l){
+  const box = document.getElementById("nousBox"); if(!box) return;
+  let r; try{ r = await nousijat(l); }catch(e){ r = null; }
+  if(S.sel!==l.lupa_id || !document.getElementById("nousBox")) return;
+  if(!r || !r.ok.length){ box.innerHTML = `<div class="note">Työmaan pysäkeille ei löytynyt nousijamäärää HSL:n avoimesta aineistosta.</div>`; return; }
+  const pys = (l.ai_sulkee||[]).includes("pysakki");
+  box.innerHTML = `<div class="nous"><b>${nf(Math.round(r.tot/10)*10)}</b><div>nousua arkipäivänä työmaan pysäkkiväleillä (${r.ok.length} pysäkkiä, kaikki linjat).
+    <div class="pk note">${r.ok.slice(0,3).map(p=>`${esc(p.nimi)} ${nf(p.n)}`).join(" · ")}${r.ok.length>3?" …":""}</div></div></div>
+    ${pys?`<div class="note" style="margin:-4px 0 8px"><b>Lupa koskee pysäkkiä.</b> Siirto tai poisto koskee näitä matkustajia suoraan.</div>`:""}
+    <div class="note" style="margin:-4px 0 8px">HSL:n nousijamäärät pysäkeittäin, arkipäivien keskiarvo 11/2016 (HRI, CC BY 4.0). Kertoo, kuinka moni käyttää pysäkkejä, ei kuinka moni on bussissa työmaan kohdalla.</div>`;
+}
+
 async function renderDetail(){
   const l = S.byId[S.sel], box = document.getElementById("detail");
   if(!l){ box.innerHTML = `<div class="det"><div class="empty">Valitse työmaa kortista tai kartalta.</div></div>`; return; }
@@ -2157,6 +2193,7 @@ async function renderDetail(){
     : ls.length?`<table class="t"><thead><tr><th>Linja</th><th class="r">Ohituksia / 24 h</th><th class="r">Lisäviive</th></tr></thead><tbody>${ls.slice(0,10).map(r=>`<tr><td><span class="chip">${esc(ln(r.route))}</span> <span class="note">suunta ${r.dir}</span></td><td class="r">${nf(r.ohitukset_24h)}</td><td class="r ${r.lisaviive_s>10?"slow":r.lisaviive_s<-10?"fast":""}">${sgn(r.lisaviive_s)}</td></tr>`).join("")}</tbody></table>`:`<div class="chips">${lines(l.linjat).map(r=>`<span class="chip">${esc(r)}</span>`).join("")}</div>`}
     <div class="sec">Lisäaika per ohitus kahden tunnin jaksoissa ${(S.saa||[]).some(w=>w.luokka!=="pouta")?'<span class="wleg"><i style="background:#CFE6FB"></i>sade<i style="background:#93C5FD"></i>rankkasade<i style="background:#C7D2FE"></i>lumi<i style="background:#FDE68A"></i>liukas</span>':""}</div>
     <div class="chart" id="chart"><div class="empty">Ladataan…</div></div>${saaTyomaaHTML(l)}`:`<div class="note" style="margin-top:6px">Luvan alueen ohi ei kulje bussi- tai ratikkareittejä (alle 40 m), joten työ ei vaikuta suoraan joukkoliikenteeseen.</div>`}
+    ${onRoute(l) && segs.length && NOUS_TESTI ? `<div class="sec">Matkustajat työmaan pysäkeillä</div><div id="nousBox"><div class="note">Haetaan HSL:n nousijamääriä…</div></div>` : ""}
     ${im && im.vehH > 0.05 ? `<div class="sec">Mitä tämä maksaa</div>
     <div class="calc">
       <div class="row"><span>Busseille ja ratikoille kertyvä lisäaika</span><b>${nf(im.vehH,1)} h · ${esc(period().dur)}</b></div>
@@ -2177,6 +2214,7 @@ async function renderDetail(){
   wireInfo(box);
   const sh = document.getElementById("shareBtn");
   if(sh) sh.onclick = ()=>{ const u = location.origin+location.pathname+"#/?l="+encodeURIComponent(l.lupa_id); (navigator.share ? navigator.share({title:"Työmaatutka: "+title(l), url:u}).catch(()=>{}) : navigator.clipboard?.writeText(u)); sh.textContent = navigator.share ? "Jaa" : "Kopioitu"; };
+  if(NOUS_TESTI && document.getElementById("nousBox")) taytaNousijat(l);
   const r = document.getElementById("load");
   if(r) r.oninput = () => { S.load = +r.value; document.getElementById("loadV").textContent = S.load; document.getElementById("paxH").textContent = nf(im.vehH*S.load,0)+" h"; document.getElementById("paxE").textContent = eur(im.vehH*S.load*EUR_MATK); };
   if(onRoute(l)){
