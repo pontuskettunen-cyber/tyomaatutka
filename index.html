@@ -3558,7 +3558,7 @@ function alueLaatikko(l){
   const porras = eka && toka && +new Date(eka.paattyy) < +new Date(toka.paattyy) - DAY
     ? ` Osuudet selviävät, kun <b>${esc(shortStreet(eka))}</b> päättyy ${fmtDate(eka.paattyy)}: jos yhteisten välien hidastus silloin pienenee, pudotus on sen osuus.` : "";
   return `<div class="alue"><div class="k"><b>Sama mittaus · ${kaikki.length} lupaa</b> mittaavat valtaosin samoja pysäkkivälejä</div>
-    <ul class="al">${[l, ...m].slice(0,6).map(x=>`<li>${x===l ? `<b>${esc(shortStreet(x))}</b>` : `<a href="#/?l=${encodeURIComponent(x.lupa_id)}">${esc(shortStreet(x))}</a>`} · ${esc(purpose(x))}${x.paattyy ? ` · ${fmtShort(x.paattyy)} asti` : ""}</li>`).join("")}</ul>
+    <ul class="al">${[l, ...m].slice(0,6).map(x=>`<li>${x===l ? `<b>${esc(shortStreet(x))}</b>` : `<a href="#/?l=${encodeURIComponent(x.lupa_id)}">${esc(shortStreet(x))}</a>`} · ${esc(purpose(x).replace(/\.$/,""))}${x.paattyy ? ` · ${fmtShort(x.paattyy)} asti` : ""}</li>`).join("")}</ul>
     <div class="note">Hidastus mitataan pysäkkiväleittäin, joten samanaikaisten töiden osuuksia ei voi vielä erottaa. Lisäaika on yksi mittaus: se näkyy kärkilistassa kerran ja lasketaan kokonaislukuun kerran.${porras}</div></div>`;
 }
 /* ================= Työmaa ↔ linja: linjasirut, linja Tilannekuvan kartalla (testissä ?tiivis) ja paluupolku ================= */
