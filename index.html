@@ -702,6 +702,10 @@ html.hsl .sugarv .sa-ok{background:#0074BF;border-color:#0074BF}
 .bb.b-r{background:#003456;color:#fff}.bb.b-h{background:#EBF6FD;color:#003456}.bb.b-a{background:#DCF2E4;color:#0B5E30}.bb.b-k{background:#FFF3D6;color:#7A5200}
 html.hsl .km-flow div{border:0;border-radius:16px}
 @media(max-width:900px){.km-flow{grid-template-columns:1fr 1fr}}
+.tark .h2row{display:flex;align-items:center;gap:8px}.tark .h2row h4{margin:0}
+.tk-h a{color:inherit;text-decoration:none}.tk-h a:hover b{text-decoration:underline}
+.tk-syy{display:inline-block;font-size:12px;font-weight:600;background:#FDE2E2;color:#9B1C1C;padding:2px 9px;border-radius:999px;margin:0 4px 4px 0}
+.tark .sugarv{border-top:0;padding-top:0;margin-top:6px}.tark li.kuitattu{opacity:.65}
 </style>
 </head>
 <body>
@@ -1007,6 +1011,7 @@ html.hsl .km-flow div{border:0;border-radius:16px}
 <!-- ================= TYÖMAAT ================= -->
 <section class="view" id="v-tyot">
   <div id="tyotBrief" style="margin-bottom:14px"><div class="note">Ladataan…</div></div>
+  <div id="tark"></div>
   <div id="clash"></div>
   <div class="toolbar">
     <div class="seg" id="fWhen">
@@ -1351,6 +1356,7 @@ const INFO = {
   eurot: ["Miten eurot lasketaan", "Aikataulu: lisäaika × 50 €/h, eli bussin ajotunnin kuljettajakulu (Väylävirasto, hankearvioinnin yksikköarvot 2022: 49,70 €/h). Pieni viive ei maksa mitään, koska se mahtuu aikataulun väljyyteen. Rahaa se maksaa vasta, kun aikataulua pidennetään tai linjalle tarvitaan lisäauto. Matkustajat: lisäaika × 20 matkustajaa vuorossa (oletus) × 5 €/h, eli matkustajan ajan arvo, jota käytetään liikennehankkeiden arvioinnissa. Se ei ole kassasta lähtevää rahaa. Säästetyt eurot lasketaan samoilla hinnoilla mitatusta erosta, kun työ päättyy tai järjestelyä muutetaan ja samaa kohtaa voidaan verrata ennen ja jälkeen."],
   tyolista: ["Listan luvut", "Käynnissä olevilla töillä oikea sarake kertoo, paljonko pidempään ohi ajaminen kestää (lisäaika per ohitus) ja paljonko lisäaikaa on kertynyt yhteensä. Alkavilla töillä se kertoo, montako ohitusta samalta katuosuudelta on jo mitattu ennen työtä vertailuksi. Klikkaa työtä nähdäksesi sen kartalla, tuplaklikkaa avataksesi tiedot."],
   saa: ["Sää tutkassa", "Sää vaikuttaa kaikkiin linjoihin, joten tutka vertaa työmaan pysäkkiväliä saman linjan muihin väleihin samassa kahden tunnin jaksossa: yleinen sää kumoutuu. Sadejaksot näkyvät työmaan kaaviossa taustavärinä, Helsinkiä koskevat säävaroitukset tilannekuvassa, ja lupateksteistä tunnistetaan kiireelliset korjaukset kuten vesijohtovuodot. Mittauspiste: Ilmatieteen laitoksen havaintoasema Helsinki Kaisaniemi (Kaisaniemen puisto, rautatieaseman vieressä). Lämpötila ja sade mitataan 10 minuutin välein, sademäärä on aseman tunnittainen kertymä millimetreinä. Säätilan kuvaus (esim. pilvistä) ja tulevat tunnit ovat Ilmatieteen laitoksen ennustetta samalle pisteelle. Yksi asema kuvaa koko kaupunkia: paikallinen kuuro voi osua toisaalle."],
+  tark: ["Tarkistettavat työmaat", "HSL saa tiedon työmaista nyt pääosin urakoitsijan ilmoituksena. Lista auttaa huomaamaan työt, joista ilmoitus on voinut jäädä tulematta. Työ päätyy listalle, kun kolme ehtoa täyttyy: 1) se on bussi- tai ratikkareitillä ja käynnissä tai alkaa 14 päivän sisällä, 2) se haittaa ajoneuvoliikennettä: tekoäly on lukenut luvasta, että työ sulkee kaistan, raitiotien, pysäkin tai kadun, tai mitattu lisäaika on vähintään 30 s ohitusta kohden, 3) HSL:n voimassa olevissa häiriötiedotteissa (Digitransit) ei ole mitään samasta paikasta: tiedotteen pysäkki on työmaan pysäkkiväleillä tai tiedote mainitsee työmaan kadun. Listalle pääsy ei tarkoita, että jotain olisi laiminlyöty: moni työ ei vaadi poikkeusta tai tiedotetta. Siksi suunnittelija kuittaa jokaisen: poikkeus tiedossa tai ei vaadi poikkeusta. Kuittaus jää voimaan, kunnes se perutaan. Demossa kuka tahansa voi kuitata, pilotissa vain kirjautunut suunnittelija."],
   arvio: ["Onko agentti oikeassa?", "Aikataulusuunnittelija arvioi jokaisen ehdotuksen: hyväksyy, jos ehdotus on perusteltu, tai hylkää ja kertoo miksi (luvut eivät pidä, ei tarpeen tai muu syy). Arvio ei muuta aikataulua. Se kirjaa, oliko ihminen agentin kanssa samaa mieltä, ja siitä syntyy agentin laatumittari Tekoäly tuotannossa -sivulle. Hylkäyksen syy kertoo, mitä korjata: 'luvut eivät pidä' osoittaa laskentaan, 'ei tarpeen' kynnysarvoihin. Demossa kuka tahansa voi arvioida. Pilotissa arvion tekisi vain kirjautunut suunnittelija, ja arvioon tallentuisi tekijä."],
   saavaik: ["Sään vaikutus, näin se mitataan", "Jokaisen pysäkkivälin ajoaikaa verrataan saman välin omaan poutatasoon samassa vuorokaudenjaksossa (aamu, päivä, iltapäivän ruuhka, ilta, yö) ja päivätyypissä (arki, viikonloppu). Näin ruuhka ei sekoitu säähän. Kaupungin luku on kaikkien välien painotettu keskiarvo. Työmaalle verrataan, paljonko sen välit hidastuvat samassa säässä kuin muu kaupunki: ero kertoo, pahentaako sää työmaan haittaa (esim. kavennettu kaista ja lumivallit). Linjalle lasketaan hidastuminen prosentteina ja minuutteina koko vuorolla, ja sitä verrataan aikataulun viivevaraan. Sääluokka tulee Ilmatieteen laitoksen Kaisaniemen havainnoista. Luku näytetään vasta, kun säätä on mitattu vähintään 3 kahden tunnin jakson ajan. Ennen sitä näkyy 'kertyy'."],
   jakso: ["Luvut ajalta", "Aikaväli, jolta näytetyt luvut on laskettu. Tarkennettu mittaus alkoi aamulla 2.11.2026, joten aluksi jakso on lyhyempi kuin valittu 24 h tai 7 vrk."],
@@ -2173,6 +2179,61 @@ function filtered(){
   });
 }
 let L2, L2fit=false;
+/* Tarkistettavat työmaat: reitillä ja haittaa ajoneuvoliikennettä, mutta HSL:llä ei tiedotetta samasta paikasta */
+const SULKEE_T = {kaista:"kaistan", raitiotie:"raitiotien", pysakki:"pysäkin", koko_katu:"kadun", kaantyminen:null};
+function tTiedote(l){
+  const raws = new Set(l.linjat||[]), a0 = l.alkaa ? +new Date(l.alkaa) : 0, p0 = l.paattyy ? +new Date(l.paattyy) : 8e15;
+  const pys = new Set((S.segs[l.lupa_id]||[]).flatMap(g=>[String(g.from_stop), String(g.to_stop)]));
+  const katu = (shortStreet(l).match(/^[A-Za-zÅÄÖåäö-]{4,}/)||[""])[0].toLowerCase(), kk = katu.slice(0, Math.max(4, katu.length-2));
+  return (S.hairiot||[]).find(h=>{
+    const ha = h.alkaa ? +new Date(h.alkaa) : 0, hp = h.paattyy ? +new Date(h.paattyy) : 8e15;
+    if(ha > p0 || hp < Math.max(a0, Date.now()-DAY)) return false;
+    const teksti = ((h.otsikko||"")+" "+(h.kuvaus||"")).toLowerCase();
+    const paikka = (h.pysakit||[]).some(x=>pys.has(String(x))) || (katu.length >= 4 && teksti.includes(kk));
+    return paikka && (!(h.reitit||[]).length || h.reitit.some(x=>raws.has(x)));
+  }) || null;
+}
+function tarkistettavat(){
+  if(!S.hairiot) return null;                       // tiedotteita ei saatu: listaa ei voi muodostaa
+  const out = [];
+  (S.luvat||[]).forEach(l=>{
+    const ph = phase(l).k;
+    if(!onRoute(l) || ph==="paattynyt" || (ph==="tulossa" && +new Date(l.alkaa) > Date.now()+14*DAY)) return;
+    const syyt = [];
+    const sul = (l.ai_sulkee||[]).map(x=>SULKEE_T[x]).filter(Boolean);
+    if(sul.length) syyt.push("lupa: sulkee "+sul.join(", "));
+    const im = ph==="kaynnissa" ? impact(l) : null;
+    if(im && im.kind==="v2" && im.s >= 30) syyt.push("mitattu "+sgn(im.s)+" / ohitus");
+    if(!syyt.length || tTiedote(l)) return;
+    out.push({l, syyt, ph, s: im && im.kind==="v2" ? im.s : null, k: (S.kuittaus||{})[l.lupa_id] || null});
+  });
+  return out.sort((a,b)=>(!!a.k - !!b.k) || ((b.s??-1)-(a.s??-1)) || (new Date(a.l.alkaa)-new Date(b.l.alkaa)));
+}
+async function kuittaa(id, tila){
+  try{
+    const r = await fetch(API+"rpc/kuittaa_tarkistus", {method:"POST", headers:{apikey:KEY, Authorization:"Bearer "+KEY, "content-type":"application/json"}, body:JSON.stringify({p_lupa:id, p_tila:tila})});
+    if((await r.json()) !== "ok") throw 0;
+    S.kuittaus ||= {}; if(tila) S.kuittaus[id] = {tila}; else delete S.kuittaus[id];
+  }catch(e){ const li = document.querySelector(`#tark li[data-id="${CSS.escape(id)}"]`); if(li && !li.querySelector(".sa-virhe")) li.insertAdjacentHTML("beforeend", `<span class="sa-virhe">Kuittausta ei saatu tallennettua.</span>`); return; }
+  renderTyot();
+}
+function renderTark(){
+  const el = document.getElementById("tark"); if(!el) return;
+  const T = tarkistettavat(); S.tarkN = T ? T.filter(x=>!x.k).length : null;
+  if(!T || !T.length){ el.innerHTML = ""; return; }
+  const auki = T.filter(x=>!x.k), kuit = T.length - auki.length;
+  const nayta = S.tarkAll ? T : auki.slice(0, 4);
+  const rivi = x => `<li data-id="${esc(x.l.lupa_id)}" class="${x.k?"kuitattu":""}"><div class="tk-h"><a href="#/?l=${encodeURIComponent(x.l.lupa_id)}"><b>${esc(title(x.l))}</b></a> <span class="note">${x.ph==="tulossa"?"alkaa "+fmtDate(x.l.alkaa):"käynnissä"}</span></div>
+      <div class="cl-ch">${x.syyt.map(t=>`<span class="tk-syy">${esc(t)}</span>`).join("")}${lines(x.l.linjat).slice(0,8).map(t=>`<span class="chip">${esc(t)}</span>`).join("")}${lines(x.l.linjat).length>8?`<span class="chip">+${lines(x.l.linjat).length-8}</span>`:""}</div>
+      <div class="sugarv">${x.k ? `<span class="sa-tila ${x.k.tila==="tiedossa"?"hyvaksy":""}">✓ Kuitattu: ${x.k.tila==="tiedossa"?"poikkeus tiedossa":"ei vaadi poikkeusta"}</span><button onclick="kuittaa('${esc(x.l.lupa_id)}',null)">Peru</button>`
+        : `<span class="sa-k">Tarkistettu?</span><button onclick="kuittaa('${esc(x.l.lupa_id)}','tiedossa')">Poikkeus tiedossa</button><button onclick="kuittaa('${esc(x.l.lupa_id)}','ei_tarvetta')">Ei vaadi poikkeusta</button>`}</div></li>`;
+  el.innerHTML = `<div class="warn tark"><div class="h2row"><h4>Tarkistettavat työmaat (${nf(auki.length)})</h4>${infoBtn("tark")}</div>
+    <div class="note" style="margin-bottom:6px">Työ on bussi- tai ratikkareitillä ja haittaa ajoneuvoliikennettä luvan tai mittauksen mukaan, mutta HSL:n häiriötiedotteissa ei ole mitään samasta paikasta.${kuit?` ${nf(kuit)} kuitattu tarkistetuksi.`:""}</div>
+    ${auki.length ? "" : `<div class="note"><b>Kaikki tarkistettu.</b></div>`}
+    <ul class="cl-list">${nayta.map(rivi).join("")}</ul>
+    ${T.length>nayta.length || S.tarkAll ?`<button type="button" class="ai-more" id="tarkMore">${S.tarkAll?"Näytä vähemmän ↑":`Näytä kaikki ${T.length} (myös kuitatut) ↓`}</button>`:""}</div>`;
+  const m = document.getElementById("tarkMore"); if(m) m.onclick = ()=>{ S.tarkAll = !S.tarkAll; renderTyot(); };
+}
 function renderTyot(){
   const all = S.luvat, up = all.filter(l=>phase(l).k==="tulossa" && +new Date(l.alkaa) < Date.now()+14*DAY), upR = up.filter(onRoute);
   const lineSet = new Set(upR.flatMap(l=>lines(l.linjat)));
@@ -2199,6 +2260,7 @@ function renderTyot(){
     <ul class="cl-list">${ryhmat.slice(0, S.clashAll ? 99 : 3).map(rivi).join("")}</ul>
     ${ryhmat.length>3?`<button type="button" class="ai-more" id="clashMore">${S.clashAll?"Näytä vähemmän ↑":`Näytä kaikki ${ryhmat.length} ↓`}</button>`:""}</div>` : "";
   const cm = document.getElementById("clashMore"); if(cm) cm.onclick = ()=>{ S.clashAll = !S.clashAll; renderTyot(); };
+  renderTark(); if(S.tarkN){ const tb = document.querySelector("#tyotBrief .tstats"); tb.insertAdjacentHTML("beforeend", tile(S.tarkN, S.tarkN===1?"työmaa reitillä ilman HSL:n tiedotetta":"työmaata reitillä ilman HSL:n tiedotetta", "tarkista, tarvitaanko poikkeus", "tark")); tb.lastElementChild.onclick = ()=>document.getElementById("tark").scrollIntoView({behavior:"smooth", block:"center"}); }
   wireInfo(document.getElementById("v-tyot"));
   const items = filtered();
   document.getElementById("listTitle").textContent = `${nf(items.length)} työtä`;
@@ -3123,7 +3185,9 @@ async function load(){
     S.ltila = {}; lt.forEach(r=>{ r.dir = String(r.dir); (S.ltila[ln(r.route)] ||= []).push(r); });
     S.nauha = {}; lnh.forEach(r=>{ (S.nauha[ln(r.route)+"|"+r.dir] ||= []).push(r); });
     S.sug = sug;
-    get("v_hairiot").then(h=>{ S.hairiot = Array.isArray(h) && h.length ? h : null; }).catch(()=>{ S.hairiot = null; });
+    Promise.all([get("v_hairiot"), get("v_tarkistus_kuittaus").catch(()=>[])]).then(([h,k])=>{ S.hairiot = Array.isArray(h) && h.length ? h : null;
+      S.kuittaus = Object.fromEntries((Array.isArray(k)?k:[]).map(r=>[r.lupa_id, r]));
+      if(document.getElementById("v-tyot").classList.contains("on")) renderTyot(); }).catch(()=>{ S.hairiot = null; });
     Promise.all([get("v_saa_nyt").then(x=>{ S.saaNyt = x && x[0] || null; }).catch(()=>{}), loadEnnuste()]).then(()=>{ if(document.getElementById("v-home").classList.contains("on")) renderBrief(); });
     Promise.all([get("v_saa_kerroin"), get("v_saa_linja"), get("v_saa_tyomaa")]).then(([k,li,ty])=>{
       S.saaK = Array.isArray(k) ? k : []; S.saaL = Array.isArray(li) ? li : [];
