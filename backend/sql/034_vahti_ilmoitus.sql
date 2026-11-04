@@ -100,7 +100,7 @@ begin
   if v_topic is null then return; end if;
   perform net.http_post(url := 'https://ntfy.sh',
     body := jsonb_build_object('topic', v_topic, 'title', p_otsikko, 'message', p_viesti, 'priority', p_prioriteetti,
-      'tags', jsonb_build_array(p_tagi), 'click', 'https://pontuskettunen-cyber.github.io/tyomaatutka/#/kehitys'));
+      'tags', jsonb_build_array(p_tagi), 'click', 'https://pontuskettunen-cyber.github.io/tyomaatutka/#/kehitys?l=vahti'));
 end $$;
 
 -- Ajetaan 5 min välein: ilmoitus kun tarkistus muuttuu vakavaksi ja kun se korjautuu, sekä kun tietokanta on käynnistynyt uudelleen.

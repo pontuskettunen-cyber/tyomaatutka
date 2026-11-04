@@ -88,10 +88,10 @@ begin
   v_napit := v_napit || jsonb_build_object('action', 'http', 'label', '✓ Kuittaa', 'url', v_url, 'method', 'POST',
       'headers', jsonb_build_object('apikey', v_key, 'Authorization', 'Bearer ' || v_key, 'Content-Type', 'application/json'),
       'body', jsonb_build_object('p_token', v_t2)::text, 'clear', true)
-    || jsonb_build_object('action', 'view', 'label', 'Avaa Vahti', 'url', 'https://pontuskettunen-cyber.github.io/tyomaatutka/#/kehitys');
+    || jsonb_build_object('action', 'view', 'label', 'Avaa Vahti', 'url', 'https://pontuskettunen-cyber.github.io/tyomaatutka/#/kehitys?l=vahti');
   perform net.http_post(url := 'https://ntfy.sh',
     body := jsonb_build_object('topic', v_topic, 'title', p_otsikko, 'message', p_viesti, 'priority', p_prioriteetti,
-      'tags', jsonb_build_array(p_tagi), 'click', 'https://pontuskettunen-cyber.github.io/tyomaatutka/#/kehitys', 'actions', v_napit));
+      'tags', jsonb_build_array(p_tagi), 'click', 'https://pontuskettunen-cyber.github.io/tyomaatutka/#/kehitys?l=vahti', 'actions', v_napit));
 end $$;
 revoke all on function vahti_laheta_napit(text, text, int, text, text, text[]) from public, anon, authenticated;
 

@@ -951,8 +951,8 @@ html.tt-lukko{overflow:hidden}
     <h2>Tekoäly tuotannossa: käyttö, kustannukset ja vastuu</h2>
     <p class="lead">Miten tutkan tekoälyä valvotaan, mitä se maksaa ja kuka siitä vastaa. Sama malli toimisi mille tahansa HSL:n tekoälypalvelulle.</p>
 
-    <h3>Järjestelmän tila <span class="vahti-nimi">Vahti</span></h3>
-    <p style="margin-top:0">Joka aamu: tuleeko data perille, onnistuvatko ajot ja tekoälykutsut, riittääkö tila. Tarkistukset ovat SQL:ää, kielimalli kirjoittaa vain katsauksen. Viasta ja sen korjautumisesta tulee ilmoitus puhelimeen 5 minuutin sisällä. Vahti ei korjaa itse.</p>
+    <h3 id="vahtiOtsikko">Järjestelmän tila <span class="vahti-nimi">Vahti</span></h3>
+    <p style="margin-top:0">Joka aamu: tuleeko data perille, onnistuvatko ajot ja tekoälykutsut, riittääkö tila. Tarkistukset ovat SQL:ää, kielimalli kirjoittaa vain katsauksen. Viasta ja sen korjautumisesta tulee ilmoitus puhelimeen 5 minuutin sisällä. Vahti ei korjaa itse: ilmoituksen napista ihminen voi kuitata vian hoitoon tai käynnistää ennalta hyväksytyn uudelleenajon. Napin tunniste kelpaa kerran ja tunnin, ja jokainen toimenpide kirjataan. Jos uudelleenajo ei auta, ilmoitus kertoo vian vaativan korjauksen koodiin.</p>
     <p class="note" style="margin-top:-4px"><b>Ilmoitusten vakavuus:</b> <b>Kriittinen</b> – palvelu ei toimi (ajoneuvodata pysähtynyt yli 2 h, tietokanta täynnä tai kaatunut). <b>Vakava</b> – osa rikki nyt (ajo, funktio tai kielimalli epäonnistuu). <b>Huomio</b> – tarkista pian (tila yli 70 %, lähdedata vanhentunut). <b>Korjautunut</b> – kun vika on poissa. Ilmoitus lähtee vain, kun taso nousee, ja jokaisessa on ohje ensimmäisestä tarkistuksesta.</p>
     <div id="vahti"><div class="empty">Ladataan…</div></div>
     <p class="note"><b>Suunnitteilla:</b> itsekorjaus ennalta hyväksytyltä listalta (epäonnistunut ajo ajetaan kerran uudelleen, pysähtynyt datankeruu käynnistetään, tekoälyajot pysäytetään krediittien loppuessa, siivous ajetaan heti tilan täyttyessä); kaikki kirjataan lokiin. Kun vika ei poistu, kielimalli lukee lokit ja kirjoittaa todennäköisen syyn ja korjausehdotuksen, ja ihminen tekee muutoksen. Lisäksi agentti esitäyttämään tarkistuslistan kuittaukset ihmisen hyväksyttäviksi ja viikkokatsaus toistuvista havainnoista.</p>
@@ -3402,7 +3402,8 @@ function route(nav){
   if(v==="linjat") renderLinjat(); else if(typeof lLiveStop==="function" && LL.on){ lLiveStop(); }
   if(v==="raportti") renderRaportti(l);
   if(v==="ennakko") initEnnakko(l);
-  if(v==="kehitys"){ renderKehitys(); renderVahti(); }
+  if(v==="kehitys"){ renderKehitys(); renderVahti();
+    if(l==="vahti") setTimeout(()=>{ const h = document.getElementById("vahtiOtsikko"); if(h) window.scrollTo(0, Math.max(0, h.getBoundingClientRect().top + scrollY - 80)); }, 400); }
   if(toiseltaSivulta){ const d = document.getElementById("detail"); window.scrollTo(0, 0); if(d) setTimeout(()=>window.scrollTo(0, Math.max(0, d.getBoundingClientRect().top + scrollY - 90)), 350); }
   else if(nav==="hash") window.scrollTo(0,0);
 }
