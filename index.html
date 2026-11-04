@@ -3465,7 +3465,7 @@ async function load(){
 }
 route(); load(); loadAI();
 // esitysajo videota varten (?demo): ladataan vain pyydettäessä
-try{ if(new URLSearchParams(location.search).has("demo")){ const es = document.createElement("script"); es.src = "esitys.js?v=1"; document.body.appendChild(es); } }catch(e){}
+try{ if(new URLSearchParams(location.search).has("demo")){ const es = document.createElement("script"); es.src = "esitys.js?v=2"; document.body.appendChild(es); } }catch(e){}
 setInterval(()=>{ if(!document.hidden) loadAI(); }, 600000);
 setInterval(()=>{ if(!document.hidden) load(); }, 120000);
 </script>

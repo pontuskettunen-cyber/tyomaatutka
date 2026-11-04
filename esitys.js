@@ -81,7 +81,8 @@
     if (opts.kartta) {   // Leafletin canvas: klikkaus kartan pintaan oikeissa koordinaateissa
       const t = document.elementFromPoint(kx, ky) || el;
       ["mousedown", "mouseup", "click"].forEach(tp => t.dispatchEvent(new MouseEvent(tp, { bubbles: true, cancelable: true, clientX: kx, clientY: ky, button: 0 })));
-    } else el.click();
+    } else if (typeof el.click === "function") el.click();
+    else el.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, clientX: kx, clientY: ky }));   // SVG-elementit
     await odota(opts.jalkeen ?? 700);
   }
   async function vieri(y, kesto = 1400, el = null) {
@@ -92,6 +93,7 @@
       const askel = t => { const q = Math.min(1, (t - t0) / kesto); kohde.scrollTop = y0 + dy * ease(q); q < 1 ? requestAnimationFrame(askel) : res(); };
       requestAnimationFrame(askel); });
   }
+  const sisaY = (kont, el, vara = 20) => kont.scrollTop + el.getBoundingClientRect().top - kont.getBoundingClientRect().top - vara;
   const sivunY = (el, vara = 96) => Math.max(0, el.getBoundingClientRect().top + scrollY - vara);
   async function odotaEl(fn, ms = 9000) { const t0 = Date.now(); for (;;) { tarkista(); const v = fn(); if (v) return v; if (Date.now() - t0 > ms) return null; await odota(120); } }
   const tekstinMukaan = (sel, re) => $$(sel).find(e => re.test(e.textContent.trim()) && e.getBoundingClientRect().height > 0);
@@ -125,14 +127,10 @@
     const otsikko = $("#v-home .nowrow") || $("#v-home h2");
     await liiku(otsikko); await odota(1300);
     const kpi = $("#kpis [data-bd]"); await liiku(kpi.querySelector("b") || kpi); await odota(1500);
-    const saa = $("#saaPill");
-    if (saa) { await kerro("SÄÄ", "Sään vaikutus mitataan erikseen: hidastaako sade työmaita enemmän kuin muuta liikennettä?");
-      await liiku(saa); saa.parentElement.dispatchEvent(new MouseEvent("mouseenter", { bubbles: false })); saa.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
-      if (!$("#saaPop") || getComputedStyle($("#saaPop")).display === "none") saa.click();
-      await odota(2600); await liiku({ x: kx + 260, y: ky - 40 }, 700);
-      if ($("#saaPop") && getComputedStyle($("#saaPop")).display !== "none") saa.click();
-      saa.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true })); saa.parentElement.dispatchEvent(new MouseEvent("mouseleave", { bubbles: false }));
-      await odota(500); }
+    const saa = $("#saaPill"), saaBox = $("#saaBox") || (saa && saa.parentElement);
+    if (saa && saaBox) { await kerro("SÄÄ", "Sään vaikutus mitataan erikseen: hidastaako sade työmaita enemmän kuin muuta liikennettä?");
+      await liiku(saa); saaBox.dispatchEvent(new MouseEvent("mouseenter")); await odota(2800);
+      await liiku({ x: kx + 300, y: ky + 60 }, 700); saaBox.dispatchEvent(new MouseEvent("mouseleave")); await odota(600); }
 
     // 2. TYÖMAA: valitaan kärkikortti, jonka lupa koskee pysäkkiä (muuten kolmas)
     const kortit = $$("#v-home button.card").filter(b => b.getBoundingClientRect().width > 0);
@@ -151,11 +149,11 @@
       const sulje = $("#map .leaflet-popup-close-button"); if (sulje) await klikkaa(sulje, { jalkeen: 500 }); }
     const nous = await odotaEl(() => { const b = $("#nousBox .nous b"); return b && b.getBoundingClientRect().height ? b : null; }, 6000);
     if (nous) {
-      const sec = $("#nousSec"); await vieri(sec.offsetTop - 60, 1300, det); await odota(300);
+      const sec = $("#nousSec"); await vieri(sisaY(det, sec, 16), 1300, det); await odota(300);
       await kerro("KETÄ SE KOSKEE", `${nous.textContent} nousua arkipäivässä työmaan pysäkeillä, HSL:n nousijamäärien mukaan.`);
       await liiku(nous); await odota(2600);
       const maksaa = tekstinMukaan("#detail .sec", /^Mitä tämä maksaa/);
-      if (maksaa) { await vieri(maksaa.offsetTop - 40, 1100, det); await liiku(tekstinMukaan("#detail .calc .row", /aikatauluun/)?.querySelector("b") || maksaa); await odota(1800); }
+      if (maksaa) { await vieri(sisaY(det, maksaa, 16), 1100, det); await liiku(tekstinMukaan("#detail .calc .row", /aikatauluun/)?.querySelector("b") || maksaa); await odota(1800); }
     }
 
     // 3. MITÄ SE MAKSAA
@@ -200,7 +198,7 @@
       if (ehd) { await liiku(ehd); await odota(1600); }
       const miksi = $$("#lTabs summary").find(s => /Miksi agentti/.test(s.textContent));
       if (miksi) { await klikkaa(miksi, { jalkeen: 700 }); const lb = $("#lTabs .ltab-b");
-        await vieri(miksi.offsetTop - 20, 1500, lb); await liiku(miksi.parentElement.querySelector("p, div:not(summary)") || miksi); await odota(2800); }
+        await vieri(sisaY(lb, miksi, 12), 1500, lb); await liiku(miksi.parentElement.querySelector("p, div:not(summary)") || miksi); await odota(2800); }
       const hyv = tekstinMukaan("#lTabs button", /^Hyväksy$/);
       if (hyv) { const lb = $("#lTabs .ltab-b"); await vieri(lb.scrollHeight, 1100, lb);
         await kerro("IHMINEN PÄÄTTÄÄ", "Agentti ei muuta aikatauluja itse. Suunnittelija hyväksyy tai hylkää, ja syy kirjataan.");
@@ -241,8 +239,13 @@
       const ctx = cv.getContext("2d"), w = cv.width, h = cv.height, d = ctx.getImageData(0, 0, w, h).data;
       const b = cv.getBoundingClientRect(), sx = b.width / w, sy = b.height / h, cx = w / 2, cy = h / 2;
       let best = null, bd = Infinity;
-      for (let y = 0; y < h; y += 3) for (let x = 0; x < w; x += 3) { const i = (y * w + x) * 4;
-        if (d[i] > 150 && d[i + 1] < 70 && d[i + 2] < 70 && d[i + 3] > 200) { const dd = (x - cx) ** 2 + (y - cy) ** 2; if (dd < bd) { bd = dd; best = { x, y }; } } }
+      const pun = (x, y) => { if (x < 0 || y < 0 || x >= w || y >= h) return false; const i = (y * w + x) * 4; return d[i] > 150 && d[i + 1] < 70 && d[i + 2] < 70 && d[i + 3] > 200; };
+      const r0 = 40 * (w / b.width);   // valitun työmaan rengas ja pysäkit keskellä: vältetään
+      for (let y = 0; y < h; y += 3) for (let x = 0; x < w; x += 3) {
+        if (!pun(x, y)) continue;
+        const dd = (x - cx) ** 2 + (y - cy) ** 2; if (dd < r0 * r0 || dd >= bd) continue;
+        let n = 0; for (let a = -4; a <= 4; a += 2) for (let c = -4; c <= 4; c += 2) n += pun(x + a, y + c);   // paksu viiva, ei reunapikseli
+        if (n >= 12) { bd = dd; best = { x, y }; } }
       return best && { x: b.left + best.x * sx, y: b.top + best.y * sy };
     } catch (e) { return null; }
   }
