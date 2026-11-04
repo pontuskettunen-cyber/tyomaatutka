@@ -904,6 +904,18 @@ html.hsl .km-flow div{border:0;border-radius:16px}
     <h3>Järjestelmän tila <span class="vahti-nimi">Vahti</span></h3>
     <p style="margin-top:0">Vahti tarkistaa joka aamu, toimiiko tutka: tuleeko data perille, onnistuvatko ajot ja tekoälykutsut, ja riittääkö tietokannan tila. Tarkistukset ovat toistettavaa SQL:ää. Kielimalli kirjoittaa niistä vain katsauksen. Vahti ei korjaa mitään itse, vaan ihminen korjaa.</p>
     <div id="vahti"><div class="empty">Ladataan…</div></div>
+    <p class="note"><b>Suunnitteilla, ei vielä rakennettu:</b> 1) Sähköpostihälytys ylläpitäjälle heti, kun jokin tarkistus menee punaiselle. Paneeli ei auta, jos sitä ei avata: tietokanta ehti kaatua seitsemän kertaa samana aamuna ennen kuin kukaan katsoi. 2) Agentti, joka esitäyttää tarkistettavien työmaiden kuittaukset, esimerkiksi "raitiotietä rakennetaan, liikennettä ei vielä ole". Ehdotuksen hyväksyy aina ihminen. 3) Viikkokatsaus Vahdin havainnoista: mikä toistuu, ja mitä pitäisi korjata pysyvästi.</p>
+
+    <h3>Tietoturva</h3>
+    <table class="t ts-yht"><tbody>
+      <tr><th>Mitä sivulta voi tehdä</th><td>Sivu on staattinen, eikä siinä ole kirjautumista eikä ylläpitonäkymää, johon voisi murtautua. Selain lukee vain valmiita koostenäkymiä. Kaikissa tietokannan tauluissa on rivitason suojaus (RLS) ilman julkisia käyttöoikeuksia, joten raakadataa ei voi lukea eikä muuttaa suoraan. Tarkistettu 4.11.2026.</td></tr>
+      <tr><th>Kirjoitukset</th><td>Sivulta voi tallentaa vain suunnittelijan arvion ja kuittauksen, ja vain tietokantafunktion kautta. Funktio hyväksyy vain sallitut arvot ja olemassa olevat kohteet, ja tallennuksille on päiväraja (200–300). Demossa kuka tahansa voi kuitata, joten pahimmillaan joku voi sotkea kuittaukset, mutta ei mittausdataa.</td></tr>
+      <tr><th>Salaisuudet</th><td>Kielimallin ja Digitransitin avaimet ovat palvelimen salaisuuksia. Ne eivät ole koodissa, versiohistoriassa eivätkä sivulla, ja versiohistoria on tarkistettu. Sivulla näkyvä julkinen avain on tarkoitettu julkiseksi, ja se antaa vain lukuoikeuden koostenäkymiin.</td></tr>
+      <tr><th>Kustannusten väärinkäyttö</th><td>Kielimallia kutsuvat toiminnot on rajattu: kysymyksiä enintään 300 päivässä, ja katsaus, agentti ja Vahti voi ajaa enintään 90 minuutin, 3 tunnin tai tunnin välein. Pahimman väärinkäytön hinta on noin dollari päivässä.</td></tr>
+      <tr><th>Löydettävyys</th><td>Sivu pyytää hakukoneita olemaan indeksoimatta sitä (noindex), eikä siihen linkitetä mistään. Kaikki tekoälybotit eivät noudata pyyntöä, joten piilotus ei ole suojaus. Suojaus perustuu siihen, ettei sivulla ole mitään salaista: data on avointa, eikä henkilötietoja käsitellä.</td></tr>
+      <tr><th>Supabasen tarkastus</th><td>Supabasen tietoturvatarkastus merkitsee virheiksi 37 julkista koostenäkymää. Valinta on tietoinen: näkymä näyttää koosteen ja pitää raakataulun suljettuna. Kolmen laskentafunktion hakupolku (search_path) kiinnitettiin tarkastuksen perusteella.</td></tr>
+      <tr><th>Suurin riski</th><td>Ylläpitäjän tilit (GitHub, Supabase, Anthropic). Niihin pitää ottaa kaksivaiheinen tunnistautuminen. Tuotannossa HSL:n kirjautuminen (SSO) ja käyttäjäkohtaiset oikeudet korvaisivat avoimet kuittaukset.</td></tr>
+    </tbody></table>
 
     <h3>Käyttö ja kustannukset</h3>
     <div id="aiMitt"><div class="empty">Ladataan…</div></div>
