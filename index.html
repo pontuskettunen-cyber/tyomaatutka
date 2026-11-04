@@ -954,6 +954,8 @@ html.hsl .navn{border:2px solid #fff}
 html.hsl .navn.lC{background:#003456}
 @media(min-width:861px){.hbell{display:none !important}}
 @media(max-width:860px){nav a.nav-valvomo{display:none}}
+
+.hlpalkki .hlauto{font-size:13px;line-height:1.4;margin-top:6px;padding:5px 8px;background:#fff;border-radius:8px}
 </style>
 </head>
 <body>
@@ -2527,6 +2529,7 @@ async function renderDetail(){
   }
 }
 function select(id, pan){
+  if(S.hLinja){ const e = linjaE(S.hLinja); if(!e || !(e.works.has(id) || e.up.some(x=>x.lupa_id===id))) hLinjaPois(true); }
   S.sel = id; renderCards(); renderHomeMap(); renderDetail(); if(LV.on) syncSubs(); if(S.hLinja) hRengas();
   const l = S.byId[id];
   if(pan && l && l.geom){
@@ -2815,7 +2818,9 @@ function vehLabel(v, site, pinned){
   if(!pinned) return `${v.mode==="tram"?"Ratikka":"Bussi"} <b>${esc(v.line)}</b>${v.head?" → "+esc(v.head):""}<br>${late} · ${nf((v.spd||0)*3.6)} km/h${site?`<br><span style="color:#A16207">Työmaalla nyt: ${esc(title(site))}</span>`:""}<br><span style="color:#6B737B">Napauta seurataksesi</span>`;
   return `<b>${esc(v.line)}</b> ${late} · ${nf((v.spd||0)*3.6)} km/h${site?`<br><span style="color:#C2410C">⚠ ${esc(title(site))}</span>`:""}`;
 }
-function togglePin(id){ LV.pinned.has(id) ? LV.pinned.delete(id) : LV.pinned.add(id); drawLive(); }
+function togglePin(id){ const lisatty = !LV.pinned.has(id); lisatty ? LV.pinned.add(id) : LV.pinned.delete(id); drawLive();
+  // testissä: auton klikkaus avaa sen linjan kartalle, jolloin myöhästymisen mahdollinen syy (reitin työmaat) näkyy heti
+  const v = LV.veh.get(id); if(lisatty && v && kompakti() && typeof hLinja==="function") hLinja(String(v.line), {id, dl:v.dl, head:v.head}); }
 function renderPinBar(){
   const el = document.getElementById("pinbar"); if(!el) return;
   el.style.display = LV.on && LV.pinned.size ? "" : "none";
@@ -2858,7 +2863,7 @@ document.querySelectorAll("#ikSel button").forEach(b=>b.onclick=()=>{ S.ik=b.dat
 
 /* ================= LINJAT ================= */
 S.lMode = "kaikki"; S.lQ = ""; S.lSel = null;
-function lineIndex(){
+function lineIndex(yo){
   const idx = new Map();
   const add = (name) => { if(!idx.has(name)) idx.set(name, {name, tram:TRAM.has(name), works:new Map(), up:[], raw:new Set()}); return idx.get(name); };
   S.luvat.forEach(l=>{
@@ -2867,7 +2872,7 @@ function lineIndex(){
     if(ph==="paattynyt") return;
     const v2 = (S.mlinja[l.lupa_id]||[]).filter(r=>r.ikkuna===S.ik && r.jakso==="kaikki");
     const old = (S.linjat[l.lupa_id]||[]);
-    lines(l.linjat).filter(n=>!/N$/.test(n)).forEach(n=>{
+    lines(l.linjat).filter(n=>yo || !/N$/.test(n)).forEach(n=>{
       const e = add(n);
       v2.concat(old).forEach(r=>{ if(ln(r.route)===n) e.raw.add(r.route); });
       if(ph==="tulossa"){ if(+new Date(l.alkaa) < Date.now()+14*DAY) e.up.push(l); return; }
@@ -3618,19 +3623,28 @@ function avaaLinja(n, id){
 }
 function hLinjaPalkki(){
   const n = S.hLinja; if(!n || !kompakti()) return "";
-  const e = lineIndex().find(x=>x.name===n); if(!e) return "";
+  const e = linjaE(n); if(!e) return "";
   const k = (S.ltila?.[n]||[]).filter(r=>r.ikkuna===S.ik && r.jakso==="kaikki" && r.vuoroja>=5).sort((a,b)=>b.med-a.med)[0];
   const ws = [...e.works.values()].map(w=>({l:w.l, s:lMaxS(w)})).filter(x=>x.s>10).sort((a,b)=>b.s-a.s);
   const osat = [k ? `tavallinen vuoro <b class="${k.med>30?"slow":""}">${sgn(k.med)}</b>, huonoin 10 % ${sgn(k.p90)}` : "",
     `${nf(e.sites)} ${e.sites===1?"työmaa-alue":"työmaa-aluetta"} reitillä`,
     ws[0] ? `suurin hidastaja <b>${esc(shortStreet(ws[0].l))}</b> (${sgn(ws[0].s)})` : ""].filter(Boolean);
   return `<div class="hlpalkki"><div class="r1"><span class="lbadge ${e.tram?"tram":""}">${esc(n)}</span><b>${e.tram?"Ratikka":"Bussi"} ${esc(n)} kartalla</b><span class="sp"></span>
-    <button type="button" class="hl-koko" data-hl-koko title="Näytä linjan koko reitti">⤢ Koko reitti</button><button type="button" class="hl-avaa" data-hl-avaa>Avaa linja →</button><button type="button" class="hl-x" data-hl-x aria-label="Sulje linja" title="Sulje linja (Esc)">✕</button></div>
-    <div class="t">${osat.join(" · ")}.</div><div class="note">Numerot kartalla ovat linjan työmaat: klikkaa numeroa siirtyäksesi linjaa pitkin.</div></div>`;
+    <button type="button" class="hl-koko" data-hl-koko title="Näytä linjan koko reitti">⤢ Koko reitti</button>${/N$/.test(n) ? "" : `<button type="button" class="hl-avaa" data-hl-avaa>Avaa linja →</button>`}<button type="button" class="hl-x" data-hl-x aria-label="Sulje linja" title="Sulje linja (Esc)">✕</button></div>
+    ${hAutoRivi(ws)}<div class="t">${osat.join(" · ")}.</div><div class="note">Numerot kartalla ovat linjan työmaat: klikkaa numeroa siirtyäksesi linjaa pitkin.</div></div>`;
+}
+
+/* Seurattu auto linjarivissä: myöhästyminen ja reitin pahimmat hidastajat (mahdollinen syy) */
+function hAutoRivi(ws){
+  const a = S.hAuto; if(!a) return "";
+  const v = LV.veh.get(a.id) || a, dl = v.dl ?? a.dl;
+  const tila = dl < -30 ? `<b class="${dl<-180?"slow":""}">+${nf(-dl/60,1)} min myöhässä</b>` : dl > 30 ? "etuajassa" : "ajallaan";
+  const syy = ws.slice(0,3).map(x=>`${esc(shortStreet(x.l))} ${sgn(x.s)}`).join(", ");
+  return `<div class="hlauto">Seurattu auto${v.head?` → ${esc(v.head)}`:""}: ${tila}.${dl < -30 && syy ? ` Reitin suurimmat hidastajat nyt: ${syy}.` : dl < -30 ? " Reitillä ei ole mitattuja hidastavia työmaita: myöhästyminen johtuu todennäköisesti muusta (ruuhka, häiriö)." : ""}</div>`;
 }
 function hLinjaPois(hiljaa){
   if(HLay.g){ HLay.g.remove(); HLay.g = null; } HLay.vilk = []; HLay.rengas = null;
-  const oli = S.hLinja; S.hLinja = null;
+  const oli = S.hLinja; S.hLinja = null; S.hAuto = null;
   if(oli && !hiljaa) renderDetail();
 }
 function hRengas(){
@@ -3641,17 +3655,18 @@ function hRengas(){
     L.circleMarker(c,{renderer:HLay.r, radius:21, weight:4, color:"#F97316", fill:false, interactive:false}),
     L.circleMarker(c,{renderer:HLay.r, radius:17, weight:2.5, color:"#14181C", fill:false, interactive:false})]).addTo(HLay.g);
 }
-async function hLinja(n){
+const linjaE = n => lineIndex(/N$/.test(n)).find(x=>x.name===n);
+async function hLinja(n, auto){
   if(!M.home) return;
-  if(S.hLinja===n){ hLinjaPois(); return; }
-  const e = lineIndex().find(x=>x.name===n); if(!e) return;
+  if(S.hLinja===n && !auto){ hLinjaPois(); return; }
+  const e = linjaE(n); if(!e) return;
   if(!M.home.getPane("hlVeil")){
     const p1 = M.home.createPane("hlVeil"); p1.style.zIndex = 420; p1.style.pointerEvents = "none";
     const p2 = M.home.createPane("hlLinja"); p2.style.zIndex = 430; p2.style.pointerEvents = "none";
-    HLay.r = L.canvas({pane:"hlLinja"});
+    HLay.r = L.canvas({pane:"hlLinja"}); HLay.svg = L.svg({pane:"hlLinja", padding:.5});
   }
   hLinjaPois(true);
-  S.hLinja = n; renderDetail();
+  S.hLinja = n; S.hAuto = auto || null; renderDetail();
   const g = L.layerGroup().addTo(M.home); HLay.g = g; HLay.vilk = [];
   // muu kartta himmenee: linja ja sen työmaat erottuvat, mutta kokonaiskuva säilyy
   L.rectangle([[59.6,23.6],[60.8,25.9]], {pane:"hlVeil", stroke:false, fillColor:"#fff", fillOpacity:.55, interactive:false}).addTo(g);
@@ -3673,6 +3688,9 @@ async function hLinja(n){
       .bindTooltip(`<b>${nro.get(id)}. ${esc(title(x))}</b><br>${w ? (ds.length ? ds.map(([dd,d])=>`suunta ${dd}: ${sgn(d.s)}`).join(" · ") : "mittaus kesken") : "alkaa "+fmtShort(x.alkaa)}<br><span style="color:#6B737B">Klikkaa: työmaan tiedot oikealle</span>`,{sticky:true})
       .on("click", ()=>{ select(id, false); }).addTo(g);
     if(!geom.length) b.extend(c); });
+  // juuri nyt hidastavat työmaat: sykkivä rengas (kuten Linjat-näkymässä)
+  ids.forEach(id=>{ if(lKind(e, id)!=="hidastaa") return; const x = S.byId[id], c = x && x.geom && centroid(x.geom); if(!c) return;
+    L.circleMarker(c,{renderer:HLay.svg, className:"lpulse", radius:18, weight:3, color:"#F97316", fill:false, interactive:false}).addTo(g); });
   hRengas(); HLay.koko = b;
   // kohdistus linjan työmaihin (pitkä reitti loitontaisi liikaa); koko reitti painikkeesta
   const kohde = bt.isValid() ? bt.pad(0.15) : b;
