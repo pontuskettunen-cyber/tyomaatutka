@@ -10,9 +10,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script>
-/* Teema: ?teema=hsl ottaa käyttöön HSL-henkisen värityksen (piilotettu esikatselu), ?teema=oma palauttaa. Valinta muistetaan. */
-(function(){ try{ var q = new URLSearchParams(location.search).get("teema"); if(q) localStorage.setItem("tt_teema", q);
-  if((q || localStorage.getItem("tt_teema")) === "hsl") document.documentElement.classList.add("hsl"); }catch(e){} })();
+/* Teema: HSL-henkinen ilme on oletus. ?teema=oma palauttaa vanhan ilmeen (muistetaan), ?teema=hsl takaisin. */
+(function(){ var t = "hsl"; try{ var q = new URLSearchParams(location.search).get("teema"); if(q) localStorage.setItem("tt_teema", q); t = q || localStorage.getItem("tt_teema") || "hsl"; }catch(e){}
+  if(t !== "oma") document.documentElement.classList.add("hsl"); })();
 </script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
@@ -827,9 +827,8 @@ html.uusi #v-home #kpis.strip{grid-template-columns:1.3fr 1fr!important}
   nav.querySelectorAll('a[data-r="tyot"], a[data-r="menetelma"], .navk, .navsep').forEach(x=>x.style.display="none");
   const ph = nav.querySelector('a[data-r="hsl"]'); ph.textContent = "Pilotti ja menetelmä";
   const sub = (pairs, cur) => { const d = document.createElement("div"); d.className = "subnav"; d.innerHTML = pairs.map(([href,t,k])=>`<a href="${href}" class="${k===cur?"on":""}">${t}</a>`).join(""); return d; };
-  const A = [["#/","Yleiskuva","home"],["#/uusi","Uusi yleiskuva (vertailu)","uusi"],["#/tyot","Kaikki työmaat","tyot"]], B = [["#/hsl","Pilotti HSL:ssä","hsl"],["#/kehitys","Tekoäly tuotannossa","kehitys"],["#/menetelma","Menetelmä ja lähteet","menetelma"]];
+  const A = [["#/","Yleiskuva","home"],["#/tyot","Kaikki työmaat","tyot"]], B = [["#/hsl","Pilotti HSL:ssä","hsl"],["#/kehitys","Tekoäly tuotannossa","kehitys"],["#/menetelma","Menetelmä ja lähteet","menetelma"]];
   h.prepend(sub(A,"home"));
-  h.querySelectorAll(".subnav a").forEach(a=>a.addEventListener("click",()=>{ S.uusi = a.getAttribute("href")==="#/uusi"; if(a.getAttribute("href")==="#/" && location.hash.replace(/\?.*/,"")==="#/") route("hash"); }));
   document.addEventListener("DOMContentLoaded", ()=>{ document.getElementById("v-tyot").prepend(sub(A,"tyot"));
     document.getElementById("v-hsl").prepend(sub(B,"hsl")); document.getElementById("v-menetelma").prepend(sub(B,"menetelma")); document.getElementById("v-kehitys").prepend(sub(B,"kehitys")); });
 })();
@@ -1269,7 +1268,7 @@ function saaLinjaK(e){
 const saaNyt = () => { const w = (S.saa||[]).filter(x=>x.n>=3); return w.length ? w[w.length-1] : null; };
 const saaJakso = (alku, loppu) => (S.saa||[]).filter(x=>{ const t = +new Date(x.bucket); return t >= alku && t < loppu; });
 const eur = v => { const a = Math.abs(v); const r = a >= 10000 ? Math.round(v/1000)*1000 : a >= 1000 ? Math.round(v/100)*100 : Math.round(v/10)*10; return nf(r)+" €"; };
-const S = { ik:"24h", mitta:{}, mlinja:{}, luvat:[], byId:{}, linjat:{}, segs:{}, pilot:[], tila:{}, sel:null, load:20, fWhen:"kaynnissa", fTransit:true, q:"", sel2:null, loaded:false };
+const S = { ik:"24h", mitta:{}, mlinja:{}, luvat:[], byId:{}, linjat:{}, segs:{}, pilot:[], tila:{}, sel:null, load:20, fWhen:"kaynnissa", fTransit:true, q:"", sel2:null, loaded:false, uusi:true };   // uusi = tiivis yleiskuva (oletus 4.11.2026)
 
 /* ---------- apurit ---------- */
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -2182,7 +2181,7 @@ function select(id, pan){
     (S.segs[l.lupa_id]||[]).filter(g=>(g.n_24h||0)>=MIN_N).forEach(g=>{ (Array.isArray(g.viiva)&&g.viiva.length>1 ? g.viiva : [[g.from_lat,g.from_lon],[g.to_lat,g.to_lon]]).forEach(p=>{ if(c0.distanceTo(p) < 700) b.extend(p); }); });
     if(b.isValid()) M.home.flyToBounds(b, {padding:[30,30], maxZoom:17, duration:.6});
   }
-  setHash(S.uusi ? "uusi" : "", id);
+  setHash("", id);
 }
 
 /* ================= TYÖMAAT ================= */
@@ -3240,10 +3239,10 @@ function setHash(path, l){ const h = "#/"+path+(l?"?l="+encodeURIComponent(l):""
 function route(nav){
   const {path, l} = parseHash();
   if(path==="live"){ history.replaceState(null,"","#/"); S.forceLive = true; }
-  if(path==="uusi") S.uusi = true;
+  if(path==="uusi"){ history.replaceState(null,"","#/"); }   // vanha vertailulinkki
   const v = ["tyot","menetelma","linjat","raportti","ennakko","hsl","kehitys"].includes(path) ? path : "home";
   document.documentElement.classList.toggle("uusi", !!S.uusi && v==="home");
-  document.querySelectorAll("#v-home .subnav a").forEach(a=>{ const k = a.getAttribute("href"); a.classList.toggle("on", S.uusi ? k==="#/uusi" : k==="#/"); });
+  document.querySelectorAll("#v-home .subnav a").forEach(a=>a.classList.toggle("on", a.getAttribute("href")==="#/"));
   document.querySelectorAll(".view").forEach(x=>x.classList.toggle("on", x.id==="v-"+v));
   const va = (window.NAV_ALIAS||{})[v] || v;
   document.querySelectorAll("nav a").forEach(a=>a.classList.toggle("on", (a.dataset.r||"home")===(va==="home"?"home":va) || (a.dataset.r===""&&va==="home")));
