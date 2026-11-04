@@ -147,12 +147,17 @@
     if (piste) { await kerro("KARTTA", "Punainen väli on hidas pysäkkiväli. Klikkaus kertoo linjat ja lisäviiveen.");
       await klikkaa(kartta, { piste, kartta: true, jalkeen: 2600 });
       const sulje = $("#map .leaflet-popup-close-button"); if (sulje) await liiku(sulje); await odota(250);
-      if (typeof M !== "undefined" && M.home) M.home.closePopup(); await odota(400); }
+      if (typeof M !== "undefined" && M.home) M.home.closePopup();
+      // hiiren "poistuminen" viivalta sulkee myös leijuvan vihjeen (canvas-kartta)
+      const kb = kartta.getBoundingClientRect(), cvs = kartta.querySelector("canvas");
+      if (cvs) cvs.dispatchEvent(new MouseEvent("mousemove", { bubbles: true, clientX: kb.left + 8, clientY: kb.bottom - 8 }));
+      await odota(400); }
     const nous = await odotaEl(() => { const b = $("#nousBox .nous b"); return b && b.getBoundingClientRect().height ? b : null; }, 6000);
     if (nous) {
-      const sec = $("#nousSec"); await vieri(sisaY(det, sec, 16), 1300, det); await odota(300);
       await kerro("KETÄ SE KOSKEE", `${nous.textContent} nousua arkipäivässä työmaan pysäkeillä, HSL:n nousijamäärien mukaan.`);
-      await liiku(nous); await odota(2600);
+      const sec = () => $("#nousSec"); await vieri(sisaY(det, sec(), 16), 1300, det); await odota(500);
+      if (sec() && Math.abs(sec().getBoundingClientRect().top - det.getBoundingClientRect().top - 16) > 40) await vieri(sisaY(det, sec(), 16), 600, det);   // sivu piirsi tiedot uudelleen
+      await liiku($("#nousBox .nous b") || nous); await odota(2600);
       const maksaa = tekstinMukaan("#detail .sec", /^Mitä tämä maksaa/);
       if (maksaa) { await vieri(sisaY(det, maksaa, 16), 1100, det); await liiku(tekstinMukaan("#detail .calc .row", /aikatauluun/)?.querySelector("b") || maksaa); await odota(1800); }
     }
