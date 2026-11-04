@@ -914,13 +914,17 @@ html.kompakti #detail .det .sec{margin:10px 0 4px}
 a.lnk-linja{font-weight:800;color:inherit;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:3px}
 a.lnk-linja:hover{color:var(--a)}
 .chip.lnk{cursor:pointer}.chip.lnk:hover{background:var(--a);color:#fff}
-.hlpalkki{position:sticky;top:-10px;z-index:6;display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#EAF4FB;border:1px solid #CFE3F2;border-radius:12px;padding:8px 10px;margin:0 0 10px;box-shadow:0 4px 10px rgba(0,52,86,.06)}
-.hlpalkki .lbadge{height:28px;min-width:40px;font-size:15px;flex:none}
-.hlpalkki .t{flex:1;min-width:200px;font-size:13px;line-height:1.4}
-.hlpalkki .t .note{display:block;font-size:11.5px;margin-top:1px}
-.hlpalkki .hl-avaa{border:0;border-radius:999px;background:var(--a);color:#fff;font-weight:800;font-size:13px;padding:6px 12px}
-.hlpalkki .hl-koko{border:1px solid #9CC9EA;border-radius:999px;background:#fff;color:var(--a);font-weight:700;font-size:12.5px;padding:5px 10px}
-.hlpalkki .hl-x{border:0;background:none;font-size:16px;color:var(--m);width:30px;height:30px;border-radius:50%}
+.hlpalkki{position:sticky;top:-10px;z-index:6;background:#EAF4FB;border:1px solid #CFE3F2;border-radius:12px;padding:7px 10px 8px;margin:0 0 10px;box-shadow:0 4px 10px rgba(0,52,86,.06)}
+.hlpalkki .r1{display:flex;align-items:center;gap:8px}
+.hlpalkki .r1 b{font-size:14.5px}
+.hlpalkki .sp{flex:1}
+.hlpalkki .lbadge{height:26px;min-width:38px;font-size:14px;flex:none}
+.hlpalkki .t{font-size:13px;line-height:1.4;margin-top:5px}
+.hlpalkki .note{font-size:11.5px;margin-top:1px}
+.hlpalkki .hl-avaa{border:0;border-radius:999px;background:var(--a);color:#fff;font-weight:800;font-size:12.5px;padding:5px 11px;white-space:nowrap}
+.hlpalkki .hl-koko{border:1px solid #9CC9EA;border-radius:999px;background:#fff;color:var(--a);font-weight:700;font-size:12.5px;padding:4px 10px;white-space:nowrap}
+.hlpalkki .hl-x{border:0;background:none;font-size:16px;color:var(--m);width:28px;height:28px;border-radius:50%;flex:none}
+@media(max-width:560px){.hlpalkki .r1 b,.hlpalkki .hl-koko{display:none}}
 .hlpalkki .hl-x:hover{background:#fff;color:var(--i)}
 #map.vilkkuu .lnromk>*{animation:lpomppu .55s ease-in-out 3;transform-origin:center}
 @media (prefers-reduced-motion:reduce){#map.vilkkuu .lnromk>*{animation:none}}
@@ -3541,9 +3545,9 @@ function hLinjaPalkki(){
   const osat = [k ? `tavallinen vuoro <b class="${k.med>30?"slow":""}">${sgn(k.med)}</b>, huonoin 10 % ${sgn(k.p90)}` : "",
     `${nf(e.sites)} ${e.sites===1?"työmaa-alue":"työmaa-aluetta"} reitillä`,
     ws[0] ? `suurin hidastaja <b>${esc(shortStreet(ws[0].l))}</b> (${sgn(ws[0].s)})` : ""].filter(Boolean);
-  return `<div class="hlpalkki"><span class="lbadge ${e.tram?"tram":""}">${esc(n)}</span>
-    <div class="t">${osat.join(" · ")}<span class="note">Numerot kartalla ovat linjan työmaat. Klikkaa numeroa siirtyäksesi linjaa pitkin.</span></div>
-    <button type="button" class="hl-koko" data-hl-koko title="Näytä linjan koko reitti">⤢ Koko reitti</button><button type="button" class="hl-avaa" data-hl-avaa>Avaa linja →</button><button type="button" class="hl-x" data-hl-x aria-label="Sulje linja" title="Sulje linja (Esc)">✕</button></div>`;
+  return `<div class="hlpalkki"><div class="r1"><span class="lbadge ${e.tram?"tram":""}">${esc(n)}</span><b>${e.tram?"Ratikka":"Bussi"} ${esc(n)} kartalla</b><span class="sp"></span>
+    <button type="button" class="hl-koko" data-hl-koko title="Näytä linjan koko reitti">⤢ Koko reitti</button><button type="button" class="hl-avaa" data-hl-avaa>Avaa linja →</button><button type="button" class="hl-x" data-hl-x aria-label="Sulje linja" title="Sulje linja (Esc)">✕</button></div>
+    <div class="t">${osat.join(" · ")}.</div><div class="note">Numerot kartalla ovat linjan työmaat: klikkaa numeroa siirtyäksesi linjaa pitkin.</div></div>`;
 }
 function hLinjaPois(hiljaa){
   if(HLay.g){ HLay.g.remove(); HLay.g = null; } HLay.vilk = []; HLay.rengas = null;
