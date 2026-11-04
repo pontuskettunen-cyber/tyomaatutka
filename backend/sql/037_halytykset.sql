@@ -429,5 +429,6 @@ grant execute on function vahti_nyt() to anon, authenticated;
 
 select liik_pohja_paivita();
 
--- Käyttöönotto (ajetaan erikseen, kun sivu on valmis): Vahdin 5 min ajo siirtyy hälytyslistaan
--- create or replace function vahti_ilmoita() returns int language sql security definer set search_path = public as $$ select halytys_ajo() $$;
+-- Käyttöönotto: Vahdin 5 min ajo (cron vahti-ilmoita) siirtyy hälytyslistaan
+create or replace function vahti_ilmoita() returns int language sql security definer set search_path = public as $f$ select halytys_ajo() $f$;
+revoke all on function vahti_ilmoita() from public, anon, authenticated;
