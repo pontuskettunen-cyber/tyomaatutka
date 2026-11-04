@@ -51,7 +51,8 @@ begin
 
   -- 4 funktioiden virheet
   select count(*), string_agg(distinct funktio, ', ') into v_n, v_txt
-    from tallennin_loki where alkoi > now() - interval '24 hours' and virhe is not null and virhe <> '';
+    from tallennin_loki where alkoi > now() - interval '24 hours' and virhe is not null and virhe <> ''
+      and virhe !~ '^(viestejä|ilman viivaa)';   -- keruufunktiot kirjaavat tähän myös ajon tilastot
   return query select 4, 'Funktioiden virheet', case when v_n = 0 then 'ok' when v_n < 5 then 'huom' else 'virhe' end,
     v_n || ' virhettä 24 h', coalesce('funktiot: ' || v_txt, 'ei virheitä ajolokissa');
 
