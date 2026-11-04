@@ -569,7 +569,7 @@ html.hsl #v-home .todo{padding:10px 14px}
 .bdr.bdhead{font-size:11px;color:var(--m);text-transform:uppercase;letter-spacing:.04em;cursor:default;padding-bottom:0;background:none!important}
 .bdr .r{text-align:right}
 @media(max-width:720px){.bdr.bdsite{grid-template-columns:1fr 60px 70px}.bdr .beur:last-child,.bdr.bdhead{display:none}}
-.lc-k.pk b{font-variant-numeric:tabular-nums}.lc-k.pk-ok b,.lc-k.pk-ok i{color:#1F7A4D}.lc-k.pk-amb b,.lc-k.pk-amb i{color:#B45309}.lc-k.pk-red b,.lc-k.pk-red i{color:#B42318}.lc-k.pk i{font-style:normal;font-size:11px;font-weight:600}
+.lc-k.pk b{font-variant-numeric:tabular-nums}.lc-k.pk-ok b,.lc-k.pk-ok i{color:#1F7A4D}.lc-k.pk-amb b,.lc-k.pk-amb i{color:#B45309}.lc-k.pk-red b,.lc-k.pk-red i{color:#B42318}.lc-k.pk i{font-style:normal;font-size:11px;font-weight:600;white-space:normal;display:inline-block;max-width:140px;line-height:1.25}
 .subnav{display:flex;gap:4px;margin:-4px 0 12px;border-bottom:1px solid var(--l)}
 .subnav a{padding:7px 12px;font-size:13.5px;font-weight:600;color:var(--m);text-decoration:none;border-bottom:3px solid transparent;margin-bottom:-1px}
 .subnav a.on{color:var(--a);border-bottom-color:var(--a)}
@@ -2696,13 +2696,13 @@ function renderLinjaDet(e){
       if(kayt==null) return `<div class="lc-k"><b>${nf(pk.md)} min</b><span>viivevara vuorossa ${infoBtn("puskuri")}</span></div>`;
       const pros = vara > 0 ? Math.round(Math.max(0,kayt)/vara*100) : null;
       const cls = pros==null ? "pk-amb" : pros >= 100 ? "pk-red" : pros >= 50 ? "pk-amb" : "pk-ok";
-      const sub = pros==null ? "tiukka: viive siirtyy helposti seuraavaan lähtöön" : `työmaat vievät ${nf(pros)} % (huonoin 10 %)`;
+      const sub = pros==null ? "tiukka aikataulu" : `työmaat vievät ${nf(pros)} %`;
       return `<div class="lc-k pk ${cls}" title="${esc(`Viivevara ${pk.md} min (HSL:n aikataulu, päiväajan vuorojen mediaani${pk.kaanto?`; ratikan kääntöaika päätepysäkillä ${pk.kaanto} min`:""}${e.tram?"":"; bussilla aikataulun arvo, ei vielä mitattu"}). Huonoin 10 % vuoroista saa työmailta ${sgn(kayt)}.`)}"><b>${nf(pk.md)} min</b><span>viivevara ${infoBtn("puskuri")}<br><i>${sub}</i></span></div>`; })()}
     ${(()=>{ const sk = saaLinjaK(e); const kesto = term && term.ajat ? Object.values(term.ajat)[0]?.reduce((a,b)=>a+b,0) : null;
       if(!sk) return `<div class="lc-k" title="Sääherkkyys mitataan, kun linjaa on ajettu riittävästi sateella tai lumella."><b>–</b><span>sääherkkyys ${infoBtn("saavaik")}<br><i style="font-style:normal;font-size:11px">kertyy</i></span></div>`;
       const p = sk[0], lisaMin = kesto ? kesto*p.kerroin : null, pk = term && term.puskuri;
       const yli = lisaMin!=null && pk && pk.md > 0 && lisaMin >= 0.5 && lisaMin*60 + Math.max(0,(k?k.p90:0)) > pk.md*60;
-      return `<div class="lc-k ${p.kerroin>0.05?"pk-red":p.kerroin>0.02?"pk-amb":"pk-ok"} pk" title="${esc(`Linja hidastuu ${p.luokka==="sade"?"sateella":p.luokka} ${pctS(p.kerroin)} poutaan verrattuna (mitattu).${lisaMin!=null?` Koko vuorolla noin ${nf(lisaMin,1)} min.`:""}${yli?" Yhdessä työmaiden huonoimman 10 %:n kanssa tämä ylittää viivevaran: viive siirtyy seuraavaan lähtöön.":""}`)}"><b>${pctS(p.kerroin)}</b><span>${esc(p.luokka)} ${infoBtn("saavaik")}<br><i>${lisaMin!=null?`≈ ${nf(lisaMin,1)} min / vuoro${yli?" · ylittää varan":""}`:"sääherkkyys"}</i></span></div>`; })()}
+      return `<div class="lc-k ${p.kerroin>0.05?"pk-red":p.kerroin>0.02?"pk-amb":"pk-ok"} pk" title="${esc(`Linja hidastuu ${p.luokka==="sade"?"sateella":p.luokka} ${pctS(p.kerroin)} poutaan verrattuna (mitattu).${lisaMin!=null?` Koko vuorolla noin ${nf(lisaMin,1)} min.`:""}${yli?" Yhdessä työmaiden huonoimman 10 %:n kanssa tämä ylittää viivevaran: viive siirtyy seuraavaan lähtöön.":""}`)}"><b>${pctS(p.kerroin)}</b><span>${esc(p.luokka)} ${infoBtn("saavaik")}<br><i>${lisaMin!=null?`${nf(lisaMin,1)} min / vuoro${yli?" · yli varan":""}`:"sääherkkyys"}</i></span></div>`; })()}
     <div class="lc-k"><b>${nf(e.works.size)}</b><span>lupaa reitillä</span></div>
     <div class="lc-k up"><b>${nf(e.up.length)}</b><span>alkaa 14 pv sis.</span></div>
     <div class="lc-k lclive"><b id="lLiveN">–</b><span>ajoneuvoa liikkeellä</span></div>
