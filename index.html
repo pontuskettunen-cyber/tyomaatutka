@@ -1570,7 +1570,8 @@ function renderBrief(){
   // Otsikko: yksi lause, joka muuttuu datan mukana
   let head;
   const rH = r.filter(x=>x.i.kind!=="v2" || x.i.n>=20);
-  if(rH.length){ const t = rH[0]; head = `<em>${esc(shortStreet(t.l))}</em> aiheuttaa eniten lisäaikaa${t.i.vehH?`: ${nf(t.i.vehH,1)} h yhteensä, ${t.i.s>0?minuutteina(t.i.s).replace(/^noin /,"noin ").replace("minuutin","minuutti"):""} jokaista ohitusta kohden`:t.i.s!=null?`: ${sgn(t.i.s)} per ohitus`:""}.${t.i.kind==="v2"&&!t.i.tod?' <span class="hnote">arvio</span>':""}`; }
+  if(rH.length){ const t = rH[0]; head = `<em>${esc(shortStreet(t.l))}</em> aiheuttaa eniten lisäaikaa${t.i.vehH?`: ${nf(t.i.vehH,1)} h yhteensä, ${t.i.s>0?minuutteina(t.i.s).replace(/^noin /,"noin ").replace("minuutin","minuutti"):""} jokaista ohitusta kohden`:t.i.s!=null?`: ${sgn(t.i.s)} per ohitus`:""}.${t.i.kind==="v2"&&!t.i.tod?' <span class="hnote">arvio</span>':""}`;
+    if(S.uusi && t.i.vehH) head = `<em>${esc(shortStreet(t.l))}</em> aiheuttaa eniten lisäaikaa: ${nf(t.i.vehH,1)} h vuorokaudessa.${t.i.kind==="v2"&&!t.i.tod?' <span class="hnote">arvio</span>':""}`; }
   else head = `${nf(runR.length)} katutyötä bussi- ja ratikkareittien varrella. Vaikutusmittaus käynnistyy.`;
   document.getElementById("brief").innerHTML = head;
   // Kolme signaalia: suurin vaikutus, seuraavaksi alkava, kasautumat
