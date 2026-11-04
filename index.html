@@ -1132,6 +1132,22 @@ html.hsl .navn.lC{background:#003456}
     </ul>
     <p class="note">Ei vielä rakennettu. Kaupungin Haitaton-järjestelmän hanketiedot olisivat paras lähde, mutta niille ei ole avointa rajapintaa.</p>
 
+    <h3>Mitä samasta datasta voi saada irti</h3>
+    <p>Tutka käyttää HSL:n avointa ajoneuvodataa: jokainen bussi ja ratikka kertoo sijaintinsa, nopeutensa, myöhästymisensä, ovien avaamisen ja valoetuuspyynnöt sekunnin välein. Katutöiden lisäksi samasta datasta voisi saada nämä:</p>
+    <table class="t">
+      <thead><tr><th>Mitä</th><th>Miten</th><th>Kenelle</th><th>Data</th></tr></thead>
+      <tbody>
+        <tr><td><b>Myöhästymisen syy osiin</b></td><td>Vuoron myöhästyminen jaetaan työmaihin, säähän, ruuhkaan ja muuhun vertaamalla ohitettuja pysäkkivälejä niiden tavalliseen tasoon.</td><td>Liikennetilannekeskus</td><td>Kerätään jo</td></tr>
+        <tr><td><b>Poikkeava ajoneuvo</b></td><td>Sama auto on usealla vuorolla hitaampi kuin saman välin muut autot, eikä reitillä ole työmaata. Hidas ajo viittaa vikaan, esimerkiksi sähköbussin tehonrajoitukseen; pitkä pysäkkiaika oviin, ramppiin tai maksulaitteeseen.</td><td>Liikennöitsijä</td><td>Vaatii ajoneuvotunnisteen keruuseen</td></tr>
+        <tr><td><b>Ongelmapysäkit</b></td><td>Pysäkit, joilla seisotaan selvästi tavallista pidempään: ahdas pysäkki, rinnakkaiset linjat, lastaus tai pysäköinti pysäkillä.</td><td>Linjasuunnittelu, kaupunki</td><td>Kerätään jo</td></tr>
+        <tr><td><b>Valoetuuksien toimivuus</b></td><td>Risteykset, joissa bussi pyytää etuutta mutta joutuu silti pysähtymään. Kertoo, missä liikennevalojen ohjelmointi kannattaa tarkistaa.</td><td>Kaupungin liikennevaloyksikkö</td><td>Kerätään jo (alkoi 2.11.)</td></tr>
+        <tr><td><b>Aikataulun realismi</b></td><td>Vuorot, jotka myöhästyvät säännöllisesti samassa kohdassa ilman työmaata. Aikatauluagentti ehdottaa jo muutoksia työmaiden takia; sama toimisi pysyville pullonkauloille.</td><td>Aikataulusuunnittelu</td><td>Kerätään jo</td></tr>
+        <tr><td><b>Kääntöaika päätepysäkillä</b></td><td>Kuinka usein myöhästyminen siirtyy seuraavaan lähtöön, koska viivevara loppuu. Kertoo, missä lisäauto tai pidempi kääntöaika maksaa itsensä takaisin.</td><td>Aikataulu- ja kalustosuunnittelu</td><td>Kerätään jo</td></tr>
+        <tr><td><b>Talven vaikutus</b></td><td>Liukkauden ja lumen vaikutus linjoittain ja katuosuuksittain: missä auraus tai hiekoitus kannattaa tilata ensin.</td><td>Kaupunki, kunnossapito</td><td>Kerätään jo (sää)</td></tr>
+      </tbody>
+    </table>
+    <p class="note"><b>Rajaus: ei kuljettajaseurantaa.</b> HSL ei työllistä kuljettajia, eikä tilaajan työkalun pidä arvioida yksittäisen kuljettajan ajotapaa. Poikkeamat käsitellään ajoneuvon ja vuoron tasolla, ja ne menevät liikennöitsijälle, joka selvittää syyn itse. Tämä pitää käytön työelämän tietosuojan ja yhteistoimintamenettelyn rajoissa.</p>
+
     <h3>Kustannukset nyt</h3>
     <p>Sivusto ja aikatauludatan käsittely ovat maksuttomia (GitHub). Tietokanta siirretään marraskuussa 2026 maksulliselle tasolle (Supabase Pro, 25 $/kk), koska data kasvaa noin 38 Mt vuorokaudessa. Kielimalli maksaa käytön mukaan, tyypillisesti senttejä päivässä. Kustannukset näkyvät Tekoäly tuotannossa -sivulla. Kaikki data on avointa, eikä henkilötietoja käsitellä.</p>
   </div>
