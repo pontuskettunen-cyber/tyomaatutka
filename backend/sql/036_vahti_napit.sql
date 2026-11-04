@@ -74,7 +74,7 @@ returns void language plpgsql security definer set search_path = public as $$
 declare v_topic text := (select topic from vahti_kanava where id = 1);
   v_url text := 'https://pdbmxnmeyhifksgivnky.supabase.co/rest/v1/rpc/vahti_toimi';
   v_key text := 'sb_publishable_ZM_StZYcp6QJs5HdlqHbDA_gzQHPqVf';   -- julkinen avain, sama kuin sivulla
-  v_t1 text := encode(gen_random_bytes(18), 'hex'); v_t2 text := encode(gen_random_bytes(18), 'hex');
+  v_t1 text := replace(gen_random_uuid()::text, '-', ''); v_t2 text := replace(gen_random_uuid()::text, '-', '');
   v_napit jsonb := '[]';
 begin
   if v_topic is null then return; end if;
@@ -131,7 +131,7 @@ begin
       perform vahti_laheta_napit('[' || v_nimi[v_taso] || '] ' || r.k, v_rikki || ' ' || vahti_ohje(r.jarj), v_taso, v_tagi[v_taso], r.k, vahti_korjausajot(r.jarj, r.kuvaus));
       n := n + 1;
     elsif v_taso = 0 and v_ed >= 3 then
-      perform vahti_laheta('[KORJAUTUNUT] ' || r.k, r.arvo || '. ' || r.kuvaus || '.', 2, 'white_check_mark'); n := n + 1;
+      perform vahti_laheta('[KORJAUTUNUT] ' || r.k, r.arvo || '. ' || upper(left(r.kuvaus, 1)) || substr(r.kuvaus, 2) || '.', 2, 'white_check_mark'); n := n + 1;
     end if;
     insert into vahti_ilmoitus (k, tila, vakava, taso, muuttui) values (r.k, r.tila, v_taso >= 4, v_taso, now())
       on conflict (k) do update set tila = excluded.tila, vakava = excluded.vakava, taso = excluded.taso,
