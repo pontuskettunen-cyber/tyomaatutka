@@ -706,6 +706,7 @@ html.hsl .km-flow div{border:0;border-radius:16px}
 .tk-h a{color:inherit;text-decoration:none}.tk-h a:hover b{text-decoration:underline}
 .tk-syy{display:inline-block;font-size:12px;font-weight:600;background:#FDE2E2;color:#9B1C1C;padding:2px 9px;border-radius:999px;margin:0 4px 4px 0}
 .tark .sugarv{border-top:0;padding-top:0;margin-top:6px}.tark li.kuitattu{opacity:.65}
+.db-amb{color:#B45309;font-weight:700}.db-red{color:#B91C1C;font-weight:700}
 </style>
 </head>
 <body>
@@ -823,6 +824,7 @@ html.hsl .km-flow div{border:0;border-radius:16px}
       <li><b>Pikavuorojen pitkät välit.</b> Työmaa liitettiin aluksi pysäkkiväliin suoran viivan perusteella, ja pikavuorojen yli kilometrin välit osuivat sivukatujen töihin (esim. Kivelänkatu liitettiin Mannerheimintien linjoihin). Nyt etäisyys lasketaan välin katuviivasta.</li>
       <li><b>Vähäinen data ja harvat linjat.</b> Alle 10 ohituksen luku näytetään vain merkinnällä "ei vielä riittävästi dataa", eikä sitä lasketa hidastajiin. Harvaan kulkevilla linjoilla (esim. 66K, 4 vuoroa päivässä) suuntakohtainen tulos syntyy vasta päivien kuluessa.</li>
       <li><b>Poikkeusreitit.</b> Jos linja kiertää työmaan, se ei aja mitattua väliä, eikä hidastusta näy. Tutka vertaa nyt aikataulun vuoroja havaittuihin ohituksiin ja merkitsee "kiertää?", kun vain murto-osa vuoroista ajoi välin. Tunnistus on uusi ja tarkistettava liikennöintitiedoista.</li>
+      <li><b>Tietokannan kasvua ei mitattu alusta asti.</b> Koko HSL-alueen pysäkkivälikooste kasvaa noin 38 Mt vuorokaudessa, eikä sitä siivottu lainkaan. Maksuttoman tason 500 Mt olisi täyttynyt noin 9.–10.11.2026, jolloin kanta lukittuu vain luettavaksi ja keruu pysähtyy. Asia huomattiin 4.11., kun kannan koko tarkistettiin taulukohtaisesti. Nyt kooste säilytetään 60 vrk, kapasiteetti on mitoitettu (noin 2,6 Gt), ja täyttöaste näkyy sivulla varoitusrajoineen. Tuotannossa kapasiteetin seuranta ja säilytyspolitiikka kuuluvat ensimmäiseen versioon.</li>
       <li><b>Kielimallin hiljainen vika löytyi käyttölokista.</b> Uudempi malli käytti koko vastausrajansa sisäiseen päättelyyn ja palautti tyhjän tekstin. Aikatauluagentti ja tilannekatsaus eivät siksi tuottaneet mitään 2.–3.11.2026, vaikka ajot näyttivät onnistuneen. Vika näkyi heti, kun jokaisesta kutsusta alettiin kirjata tokenit ja katkeaminen. Nyt päättely on pois näistä kutsuista, ja tyhjä vastaus kirjataan virheeksi.</li>
       <li><b>Lyhyt historia.</b> Keruu alkoi 2.11.2026. Luvut tarkentuvat päivä päivältä, ja vuorokausi- ja viikkovertailut tulevat käyttöön sitä mukaa.</li>
     </ul>
@@ -879,7 +881,7 @@ html.hsl .km-flow div{border:0;border-radius:16px}
     </ul>
 
     <h3>Kustannukset nyt</h3>
-    <p>Demo pyörii maksuttomilla palvelutasoilla: tietokanta (Supabase, noin 10 % kapasiteetista käytössä), sivusto (GitHub Pages) ja viikoittainen aikatauludatan käsittely (GitHub Actions). Ainoa käytön mukaan maksava osa on kielimalli: kutsut on rajattu ajastettuihin katsauksiin ja enintään 300 kysymykseen päivässä. Kaikki data on avointa, eikä järjestelmä käsittele henkilötietoja.</p>
+    <p>Sivusto (GitHub Pages) ja viikoittainen aikatauludatan käsittely (GitHub Actions) pyörivät maksuttomilla palvelutasoilla. Tietokannan maksuton taso (500 Mt) ei riitä, koska koko HSL-alueen pysäkkivälidata kasvaa noin 38 Mt vuorokaudessa. Siksi tietokanta siirretään marraskuussa 2026 maksulliselle tasolle (Supabase Pro, 25 $/kk, 8 Gt), ja vanha data siivotaan automaattisesti: koosteet 60 vrk, raakahavainnot 21 vrk. Tietokannan täyttöaste näkyy sivun alareunassa, ja se muuttuu oranssiksi 70 %:n ja punaiseksi 90 %:n kohdalla ja viikoittainen aikatauludatan käsittely (GitHub Actions). Ainoa käytön mukaan maksava osa on kielimalli: kutsut on rajattu ajastettuihin katsauksiin ja enintään 300 kysymykseen päivässä. Kaikki data on avointa, eikä järjestelmä käsittele henkilötietoja.</p>
   </div>
 </section>
 
@@ -963,7 +965,7 @@ html.hsl .km-flow div{border:0;border-radius:16px}
       <div><b>Idea</b><span class="kq">Onko ongelma todellinen?</span>Kuka kärsii, kuinka usein ja mitä se maksaa nyt. Onko data olemassa ja saako sitä käyttää.<span class="kg">Portti: omistaja nimetty, hyöty arvioitu euroina tai tunteina, tietosuoja-arvio tehty.</span></div>
       <div><b>Konseptitodistus</b><span class="kq">Toimiiko se oikealla datalla?</span>2–6 viikkoa, oikea data, ei vielä käyttäjiä. Käyttöloki ja tuoteseloste alusta asti.<span class="kg">Portti: tulos toistettavissa, laatu mitattu, kustannus per käyttökerta tiedossa.</span></div>
       <div><b>Pilotti</b><span class="kq">Hyötyykö käyttäjä omassa työssään?</span>Yksi tiimi, 6 viikkoa, mittarit sovittu etukäteen. Ihminen päättää kaikesta.<span class="kg">Portti: mittarit täyttyvät, käyttäjät haluavat jatkaa, ylläpidon omistaja ja budjetti sovittu.</span></div>
-      <div><b>Tuotanto</b><span class="kq">Kestääkö se arjen?</span>Valvonta, hälytykset, versionhallinta ja dokumentaatio. Laatu ja kustannus seurannassa koko elinkaaren ajan.<span class="kg">Jatkuva: neljännesvuosittain päätös jatkaa, muuttaa tai lopettaa.</span></div>
+      <div><b>Tuotanto</b><span class="kq">Kestääkö se arjen?</span>Valvonta, hälytykset, versionhallinta ja dokumentaatio. Laatu, kustannus ja kapasiteetti seurannassa koko elinkaaren ajan. Tutkan oma esimerkki: kannan kasvu huomattiin vasta lähellä rajaa.<span class="kg">Jatkuva: neljännesvuosittain päätös jatkaa, muuttaa tai lopettaa.</span></div>
     </div>
 
     <h3>Rakennetaanko, hankitaanko vai kumppanin kanssa?</h3>
@@ -1277,6 +1279,7 @@ function phase(l){
 }
 // vaikutuksen pääluku: ensisijaisesti ennen/jälkeen (jos perustaso), muuten aikataulusta jääminen
 const MIN_N = 10;
+const DB_KAP_MB = 500;   // Supabase-taso: Free 500 Mt, Pro 8000 Mt (päivitä, kun taso vaihtuu)
 const mitta = (id, ik, j="kaikki") => (S.mitta[id]||{})[ik+"|"+j];
 function impact(l){
   if(phase(l).k==="tulossa") return null;   // ennen alkua mitattu on pohjatasoa, ei työn vaikutusta
@@ -3180,7 +3183,8 @@ function renderSys(){
     ["Pysäkkivälihavaintoja", nf(t.pysakkivali_havainnot)],
     ["Katulupia (voimassa ja alkavat)", nf(S.luvat.length)],
     ["Tietöitä (Digitraffic)", nf(t.tietoita_tanaan)],
-    ["Tietokanta", t.db_mb!=null ? nf(t.db_mb)+" / 500 Mt" : "–"],
+    ["Tietokanta", t.db_mb!=null ? (()=>{ const p = t.db_mb/DB_KAP_MB*100;
+      return `<span class="${p>=90?"db-red":p>=70?"db-amb":""}">${nf(t.db_mb)} / ${nf(DB_KAP_MB)} Mt (${nf(p)} %)${p>=90?" · täyttyy pian, keruu pysähtyy rajalla":p>=70?" · yli 70 %, tarkista säilytysajat":""}</span>`; })() : "–"],
   ].map(([k,v])=>`<span>${k} <b>${v}</b></span>`).join("");
 }
 async function load(){
