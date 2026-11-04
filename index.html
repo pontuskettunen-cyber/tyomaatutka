@@ -727,6 +727,10 @@ html.hsl .km-flow div{border:0;border-radius:16px}
 .sug-o{display:block;font-size:15px;margin:4px 0 6px}
 .sug-t{margin:4px 0 6px}.sug-t td,.sug-t th{font-size:13.5px}.sug-t tfoot td{border-top:2px solid var(--l);font-size:13.5px}
 .sug-d{margin:4px 0;font-size:13.5px}.sug-d summary{cursor:pointer;color:var(--a);font-weight:600;font-size:13px;padding:3px 0}.sug-d p{margin:4px 0}
+html.uusi #saaBox{display:none}
+html.uusi #kpis{grid-template-columns:1.4fr 1fr}
+.tile.odottaa .tsub a{color:var(--a);text-decoration:none;font-weight:600}.tile.odottaa .tsub a:hover{text-decoration:underline}
+.saa-chip{color:inherit;text-decoration:none;border-bottom:1px dotted currentColor}
 </style>
 </head>
 <body>
@@ -814,8 +818,9 @@ html.hsl .km-flow div{border:0;border-radius:16px}
   nav.querySelectorAll('a[data-r="tyot"], a[data-r="menetelma"], .navk, .navsep').forEach(x=>x.style.display="none");
   const ph = nav.querySelector('a[data-r="hsl"]'); ph.textContent = "Pilotti ja menetelmä";
   const sub = (pairs, cur) => { const d = document.createElement("div"); d.className = "subnav"; d.innerHTML = pairs.map(([href,t,k])=>`<a href="${href}" class="${k===cur?"on":""}">${t}</a>`).join(""); return d; };
-  const A = [["#/","Yleiskuva","home"],["#/tyot","Kaikki työmaat","tyot"]], B = [["#/hsl","Pilotti HSL:ssä","hsl"],["#/kehitys","Tekoäly tuotannossa","kehitys"],["#/menetelma","Menetelmä ja lähteet","menetelma"]];
+  const A = [["#/","Yleiskuva","home"],["#/uusi","Uusi yleiskuva (vertailu)","uusi"],["#/tyot","Kaikki työmaat","tyot"]], B = [["#/hsl","Pilotti HSL:ssä","hsl"],["#/kehitys","Tekoäly tuotannossa","kehitys"],["#/menetelma","Menetelmä ja lähteet","menetelma"]];
   h.prepend(sub(A,"home"));
+  h.querySelectorAll(".subnav a").forEach(a=>a.addEventListener("click",()=>{ S.uusi = a.getAttribute("href")==="#/uusi"; if(a.getAttribute("href")==="#/" && location.hash.replace(/\?.*/,"")==="#/") route("hash"); }));
   document.addEventListener("DOMContentLoaded", ()=>{ document.getElementById("v-tyot").prepend(sub(A,"tyot"));
     document.getElementById("v-hsl").prepend(sub(B,"hsl")); document.getElementById("v-menetelma").prepend(sub(B,"menetelma")); document.getElementById("v-kehitys").prepend(sub(B,"kehitys")); });
 })();
@@ -1557,16 +1562,21 @@ function renderBrief(){
   const saaTxt = ss.length ? ` · <span class="saa-k" title="Ilmatieteen laitos, Helsinki Kaisaniemi">jaksolla ${esc([...new Set(ss.map(x=>x.luokka))].join(", "))} ${nf(ss.length*2)} h, ${nf(mm,1)} mm</span>` : "";
   const vNyt = (S.varoitukset||[]).filter(v=>{ const n = Date.now(); return (!v.alkaa || +new Date(v.alkaa) <= n + 12*3600e3) && (!v.paattyy || +new Date(v.paattyy) > n); });
   const varTxt = vNyt.length ? ` · <span class="saa-var" title="${esc(vNyt.map(v=>v.otsikko).join("\n"))}">⚠ ${esc(vNyt[0].tapahtuma||"säävaroitus")}${vNyt.length>1?` +${vNyt.length-1}`:""}</span>` : "";
-  document.getElementById("briefWhen").innerHTML = `Luvut ajalta ${per.txt} · laskettu ${ago(upd)}${saaTxt}${varTxt}`;
+  const saaLyh = (()=>{ const n = S.saaNyt; if(!n) return ""; const h = WAWA(n.wawa); const t = h ? h[1] : (n.ri>0.2 ? "sadetta" : ""); return ` · <a class="saa-k saa-chip" href="#/linjat" title="Sää Helsinki Kaisaniemi. Sään vaikutus linjoihin näkyy linjan ohjaamossa.">${Math.round(n.t2m)}°${t?" "+esc(t):""}</a>`; })();
+  document.getElementById("briefWhen").innerHTML = S.uusi ? `Viimeiset ${per.dur||"24 h"} · päivitetty ${ago(upd)}${saaLyh}${varTxt}` : `Luvut ajalta ${per.txt} · laskettu ${ago(upd)}${saaTxt}${varTxt}`;
   const bd = breakdown();
   const vehH = bd.total;
   const tr = trend();
-  const sb = document.getElementById("saaBox"); if(sb){ sb.innerHTML = saaKortti(); wireInfo(sb); }
-  const ol = document.getElementById("olot"); if(ol){ ol.innerHTML = olosuhteetHTML(); wireInfo(ol); }
+  const sb = document.getElementById("saaBox"); if(sb){ sb.innerHTML = S.uusi ? "" : saaKortti(); wireInfo(sb); }
+  // uusi: sään vaikutus näkyy vain, kun sillä on merkitystä (reilu sade, lumi, räntä tai säävaroitus)
+  const merkittava = (()=>{ const w = (S.saa||[]).filter(x=>+new Date(x.bucket) >= Date.now()-4*3600e3); return vNyt.length || w.some(x=>(+x.sade_mm||0) >= 1 || /lumi|räntä|jäätävä|rankka/.test(x.luokka||"")); })();
+  const ol = document.getElementById("olot"); if(ol){ ol.innerHTML = (!S.uusi || merkittava) ? olosuhteetHTML() : ""; wireInfo(ol); }
   document.getElementById("kpis").innerHTML =
     tile(nf(vehH,1)+" h" + (tr ? ` <span class="trend ${tr.cls}">${tr.txt}</span>` : ""), (per.full ? `kaikkien bussien ja ratikoiden lisäaika yhteensä vuorokaudessa${S.ik==="7d"?" (keskimäärin)":""}` : `kaikkien bussien ja ratikoiden lisäaika yhteensä ${per.dur} aikana`) + `<span class="tsub">${(()=>{ const n = bd.sites.reduce((a,x)=>a+(x.n||0),0); return n ? `${nf(Math.round(n/100)*100)} työmaan ohitusta × keskimäärin ${Math.round(vehH*3600/n)} s` : ""; })()} · ${bd.nTod ? `todennettu ${nf(bd.totTod,1)} h, loput arviota` : "alustava arvio"}</span>`, "menetetty", "bd") +
-    tile(nf(runR.length), `katutyötä bussi- tai ratikkareitillä<span class="tsub">${nf(run.length)} käynnissä kaikkiaan · ${nf(lineSet.size)} linjaa</span>`, "reitilla", null, "#/tyot") +
-    ((S.sug||[]).filter(x=>!x.paatos).length ? `<a class="tile" href="#/linjat"><b>${S.sug.filter(x=>!x.paatos).length}</b><small>aikatauluagentin ${S.sug.filter(x=>!x.paatos).length===1?"ehdotus":"ehdotusta"}<span class="tsub">odottaa suunnittelijan arviota</span></small></a>`
+    (S.uusi ? (()=>{ const sa = (S.sug||[]).filter(x=>!x.paatos).length, T = typeof tarkistettavat==="function" ? tarkistettavat() : null, ta = T ? T.filter(x=>!x.k).length : 0;
+        return `<div class="tile odottaa"><b>${nf(sa+ta)}</b><small>odottaa suunnittelijan päätöstä<span class="tsub"><a href="#/linjat" onclick="S.sugAuki=true">${nf(sa)} aikatauluehdotusta</a> · <a href="#/tyot" onclick="setTimeout(()=>document.getElementById('tark')?.scrollIntoView({block:'center'}),400)">${nf(ta)} tarkistettavaa työmaata</a></span><span class="tsub">${nf(runR.length)} työmaata bussi- tai ratikkareitillä · ${nf(lineSet.size)} linjaa</span></small></div>`; })() : "") +
+    (S.uusi ? "" : tile(nf(runR.length), `katutyötä bussi- tai ratikkareitillä<span class="tsub">${nf(run.length)} käynnissä kaikkiaan · ${nf(lineSet.size)} linjaa</span>`, "reitilla", null, "#/tyot")) +
+    (S.uusi ? "" : (S.sug||[]).filter(x=>!x.paatos).length ? `<a class="tile" href="#/linjat"><b>${S.sug.filter(x=>!x.paatos).length}</b><small>aikatauluagentin ${S.sug.filter(x=>!x.paatos).length===1?"ehdotus":"ehdotusta"}<span class="tsub">odottaa suunnittelijan arviota</span></small></a>`
       : tile(nf(up7.length), `katutyötä alkaa viikon sisällä<span class="tsub">${nf(up7R.length)} bussi- tai ratikkareitillä · mitataan jo ennen alkua</span>`, "alkaa", null, "#/tyot"));
   // Taso 2: kolme asiaa, joihin kannattaa reagoida
   const td = [];
@@ -1586,13 +1596,14 @@ function renderCards(){
   const titleEl = document.getElementById("cardsTitle");
   const anyImpact = items.some(l=>impact(l)?.vehH > 0.05);
   const anyTod = items.some(l=>impact(l)?.tod);
-  titleEl.textContent = anyImpact ? `Eniten vaikuttavat työt nyt · paljonko jokainen ohi ajava bussi tai ratikka hidastuu${anyTod?"":" (arvio)"}` : "Vilkkaimpien reittien työt nyt";
+  titleEl.textContent = S.uusi ? (anyImpact ? `Eniten lisäaikaa aiheuttavat työt${anyTod?"":" (arvio)"}` : "Vilkkaimpien reittien työt nyt") : anyImpact ? `Eniten vaikuttavat työt nyt · paljonko jokainen ohi ajava bussi tai ratikka hidastuu${anyTod?"":" (arvio)"}` : "Vilkkaimpien reittien työt nyt";
   const el = document.getElementById("cards");
   el.innerHTML = items.map((l,i)=>{
     const ph = phase(l), im = impact(l);
     let big;
     if(im && im.s != null) big = `<b class="${im.s>10?"slow":im.s<-10?"fast":""}" title="Jokainen ohi ajava bussi tai ratikka on tällä kohdalla keskimäärin ${Math.abs(Math.round(im.s))} sekuntia ${im.s>=0?"hitaampi":"nopeampi"} kuin muualla samalla linjalla${im.n?" ("+nf(im.n)+" ohitusta)":""}">${sgn(im.s)}<small class="cunit">/ ohitus</small></b>${im.tod?'<span class="vchip tod">todennettu</span>':""}`;
-    else big = `<b title="ajoa / vrk ohi työmaan">${nf(l.ajoja_vrk)}<small style="font-size:11px;color:var(--m)"> ajoa</small></b>`;
+    if(S.uusi && im && im.vehH > 0.05) big = `<b class="slow" title="Lisäaika yhteensä kaikille ohi ajaneille busseille ja ratikoille">${nf(im.vehH,1)} h<small class="cunit"> yht. · ${sgn(im.s)} / ohitus</small></b>`;
+    else if(!(im && im.s != null)) big = `<b title="ajoa / vrk ohi työmaan">${nf(l.ajoja_vrk)}<small style="font-size:11px;color:var(--m)"> ajoa</small></b>`;
     return `<button class="card ${S.sel===l.lupa_id?"sel":""}" data-id="${esc(l.lupa_id)}">
       <div class="hd"><span class="num">${i+1}</span><span class="t">${esc(shortStreet(l))}</span></div>
       <div class="w">${esc(purpose(l))}</div>
@@ -1601,7 +1612,8 @@ function renderCards(){
   }).join("") || `<div class="empty">Ei mitattavia töitä vielä.</div>`;
   el.querySelectorAll(".card").forEach(c=>c.onclick=()=>select(c.dataset.id,true));
   const wl = document.getElementById("worstLine"), bl = breakdown().byLine?.[0];
-  if(wl && bl){ wl.style.display = ""; wl.innerHTML = `Pahiten kärsivä linja: <b>${esc(bl[0])}</b> · avaa ohjaamo →`; wl.onclick = ()=>{ S.lSel = bl[0]; S.lSite = null; S.lVali = null; }; }
+  if(wl && S.uusi) wl.style.display = "none";
+  else if(wl && bl){ wl.style.display = ""; wl.innerHTML = `Pahiten kärsivä linja: <b>${esc(bl[0])}</b> · avaa ohjaamo →`; wl.onclick = ()=>{ S.lSel = bl[0]; S.lSite = null; S.lVali = null; }; }
 }
 let Lhome, LhomeSeg, homeFitted=false;
 /* Kartan valitsin: oletuksena vain hidastavat pysäkkivälit, "Kaikki" näyttää loput */
@@ -2163,7 +2175,7 @@ function select(id, pan){
     (S.segs[l.lupa_id]||[]).filter(g=>(g.n_24h||0)>=MIN_N).forEach(g=>{ (Array.isArray(g.viiva)&&g.viiva.length>1 ? g.viiva : [[g.from_lat,g.from_lon],[g.to_lat,g.to_lon]]).forEach(p=>{ if(c0.distanceTo(p) < 700) b.extend(p); }); });
     if(b.isValid()) M.home.flyToBounds(b, {padding:[30,30], maxZoom:17, duration:.6});
   }
-  setHash("", id);
+  setHash(S.uusi ? "uusi" : "", id);
 }
 
 /* ================= TYÖMAAT ================= */
@@ -3221,7 +3233,10 @@ function setHash(path, l){ const h = "#/"+path+(l?"?l="+encodeURIComponent(l):""
 function route(nav){
   const {path, l} = parseHash();
   if(path==="live"){ history.replaceState(null,"","#/"); S.forceLive = true; }
+  if(path==="uusi") S.uusi = true;
   const v = ["tyot","menetelma","linjat","raportti","ennakko","hsl","kehitys"].includes(path) ? path : "home";
+  document.documentElement.classList.toggle("uusi", !!S.uusi && v==="home");
+  document.querySelectorAll("#v-home .subnav a").forEach(a=>{ const k = a.getAttribute("href"); a.classList.toggle("on", S.uusi ? k==="#/uusi" : k==="#/"); });
   document.querySelectorAll(".view").forEach(x=>x.classList.toggle("on", x.id==="v-"+v));
   const va = (window.NAV_ALIAS||{})[v] || v;
   document.querySelectorAll("nav a").forEach(a=>a.classList.toggle("on", (a.dataset.r||"home")===(va==="home"?"home":va) || (a.dataset.r===""&&va==="home")));
@@ -3270,7 +3285,7 @@ async function load(){
     S.sug = sug;
     Promise.all([get("v_hairiot"), get("v_tarkistus_kuittaus").catch(()=>[])]).then(([h,k])=>{ S.hairiot = Array.isArray(h) && h.length ? h : null;
       S.kuittaus = Object.fromEntries((Array.isArray(k)?k:[]).map(r=>[r.lupa_id, r]));
-      if(document.getElementById("v-tyot").classList.contains("on")) renderTyot(); }).catch(()=>{ S.hairiot = null; });
+      if(document.getElementById("v-tyot").classList.contains("on")) renderTyot(); if(S.uusi && document.getElementById("v-home").classList.contains("on")) renderBrief(); }).catch(()=>{ S.hairiot = null; });
     Promise.all([get("v_saa_nyt").then(x=>{ S.saaNyt = x && x[0] || null; }).catch(()=>{}), loadEnnuste()]).then(()=>{ if(document.getElementById("v-home").classList.contains("on")) renderBrief(); });
     Promise.all([get("v_saa_kerroin"), get("v_saa_linja"), get("v_saa_tyomaa")]).then(([k,li,ty])=>{
       S.saaK = Array.isArray(k) ? k : []; S.saaL = Array.isArray(li) ? li : [];
