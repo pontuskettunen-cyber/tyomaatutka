@@ -5,7 +5,8 @@
   "use strict";
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
-  const odota = ms => new Promise(r => setTimeout(r, ms));
+  const TAHTI = 0.85;   // pitkät tauot hieman lyhyemmiksi; liikkeet ja klikkaukset ennallaan
+  const odota = ms => new Promise(r => setTimeout(r, ms >= 900 ? ms * TAHTI : ms));
   let seis = false;
   const tarkista = () => { if (seis) throw new Error("keskeytetty"); };
   const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
@@ -26,6 +27,7 @@
     border-radius:14px;box-shadow:0 10px 34px rgba(0,30,55,.22),0 0 0 1px rgba(0,0,0,.04);font:600 19px/1.35 Nunito,system-ui,sans-serif;color:#003456;
     transition:opacity .45s, transform .45s}
   .es-teksti.on{opacity:1;transform:translate(-50%,0)}
+  .es-teksti.ylos{bottom:auto;top:84px}
   .es-teksti i{font-style:normal;flex:none;background:#0074BF;color:#fff;font:800 13px Nunito,system-ui;letter-spacing:.06em;padding:6px 11px;border-radius:999px}
   .es-kortti{position:fixed;inset:0;z-index:100001;display:flex;flex-direction:column;justify-content:center;padding:0 9vw;
     font-family:Nunito,system-ui,sans-serif;opacity:0;transition:opacity .7s;pointer-events:none}
@@ -99,8 +101,9 @@
   const tekstinMukaan = (sel, re) => $$(sel).find(e => re.test(e.textContent.trim()) && e.getBoundingClientRect().height > 0);
 
   /* ---------- kuvatekstit ja kortit ---------- */
-  async function kerro(tag, t) {
+  async function kerro(tag, t, ylos = false) {
     if (teksti.classList.contains("on")) { teksti.classList.remove("on"); await odota(380); }
+    teksti.classList.toggle("ylos", ylos);
     teksti.innerHTML = `<i>${tag}</i><span>${t}</span>`; teksti.classList.add("on");
   }
   const piilotaTeksti = () => teksti.classList.remove("on");
@@ -119,7 +122,7 @@
     S.bdOpen = false; if (location.hash !== "#/") location.hash = "#/"; await odota(600); renderBrief(); scrollTo(0, 0);
 
     // 0. aloituskortti peittää lähtötilan
-    const alkuK = kortti("sin", `${logo}<h1>Mitä katutyöt maksavat<br>joukkoliikenteelle?</h1><p>Konsepti HSL:lle · avoin data · mitattu joka päivä</p>`, 3800);
+    const alkuK = kortti("sin", `${logo}<h1>Mitä katutyöt maksavat<br>joukkoliikenteelle?</h1><p>Konsepti HSL:lle · avoin data · mitattu joka päivä</p>`, 3300);
     await alkuK;
 
     // 1. MITTAA
@@ -127,11 +130,6 @@
     const otsikko = $("#v-home .nowrow") || $("#v-home h2");
     await liiku(otsikko); await odota(1300);
     const kpi = $("#kpis [data-bd]"); await liiku(kpi.querySelector("b") || kpi); await odota(1500);
-    const saa = $("#saaPill"), saaBox = $("#saaBox") || (saa && saa.parentElement);
-    if (saa && saaBox) { await kerro("SÄÄ", "Sään vaikutus mitataan erikseen: hidastaako sade työmaita enemmän kuin muuta liikennettä?");
-      await liiku(saa); saaBox.dispatchEvent(new MouseEvent("mouseenter")); await odota(2800);
-      await liiku({ x: kx + 300, y: ky + 60 }, 700); saaBox.dispatchEvent(new MouseEvent("mouseleave")); await odota(600); }
-
     // 2. TYÖMAA: valitaan kärkikortti, jonka lupa koskee pysäkkiä (muuten kolmas)
     const kortit = $$("#v-home button.card").filter(b => b.getBoundingClientRect().width > 0);
     const r = (typeof ranked === "function" ? ranked() : []).slice(0, kortit.length);
@@ -147,7 +145,7 @@
     if (piste) { await kerro("KARTTA", "Punainen väli on hidas pysäkkiväli. Klikkaus kertoo linjat ja lisäviiveen.");
       await klikkaa(kartta, { piste, kartta: true, jalkeen: 2600 });
       const sulje = $("#map .leaflet-popup-close-button"); if (sulje) await liiku(sulje); await odota(250);
-      if (typeof M !== "undefined" && M.home) M.home.closePopup();
+      if (typeof M !== "undefined" && M.home) { M.home.closePopup(); M.home.eachLayer(l => l.closeTooltip && l.closeTooltip()); }
       // hiiren "poistuminen" viivalta sulkee myös leijuvan vihjeen (canvas-kartta)
       const kb = kartta.getBoundingClientRect(), cvs = kartta.querySelector("canvas");
       if (cvs) cvs.dispatchEvent(new MouseEvent("mousemove", { bubbles: true, clientX: kb.left + 8, clientY: kb.bottom - 8 }));
@@ -158,8 +156,6 @@
       const sec = () => $("#nousSec"); await vieri(sisaY(det, sec(), 16), 1300, det); await odota(500);
       if (sec() && Math.abs(sec().getBoundingClientRect().top - det.getBoundingClientRect().top - 16) > 40) await vieri(sisaY(det, sec(), 16), 600, det);   // sivu piirsi tiedot uudelleen
       await liiku($("#nousBox .nous b") || nous); await odota(2600);
-      const maksaa = tekstinMukaan("#detail .sec", /^Mitä tämä maksaa/);
-      if (maksaa) { await vieri(sisaY(det, maksaa, 16), 1100, det); await liiku(tekstinMukaan("#detail .calc .row", /aikatauluun/)?.querySelector("b") || maksaa); await odota(1800); }
     }
 
     // 3. MITÄ SE MAKSAA
@@ -182,19 +178,11 @@
     await kerro("LINJAT", "Kaikki linjat lisäajan mukaan: montako työmaata kullakin reitillä.");
     await klikkaa(dd, { jalkeen: 900 });
     const rivit = $$("#lList .lrow").filter(x => x.getBoundingClientRect().height > 0).slice(0, 5);
-    for (const rv of rivit.slice(0, 4)) { await liiku(rv, 650); await odota(450); }
+    for (const rv of rivit.slice(0, 3)) { await liiku(rv, 650); await odota(450); }
     const nyky = S.lSel;
     const valinta = rivit.find(x => x.dataset.n !== nyky && /ehdotus/.test(x.textContent)) || rivit.find(x => x.dataset.n !== nyky);
     await kerro("LINJA", "Linjan valinta: reitti ja sen työmaat vilkkuvat kartalla.");
     await klikkaa(valinta, { jalkeen: 3400 });
-    // reittinauhan suurin punainen pallo
-    const pallot = $$("#lNauha g[data-site] circle").filter(c => c.getAttribute("fill") === "#B42318");
-    const iso = pallot.sort((a, b) => +b.getAttribute("r") - +a.getAttribute("r"))[0];
-    if (iso) { await kerro("TYÖMAA LINJALLA", "Lupateksti ja mittaus rinnakkain: mitä luvassa sanotaan, mitä bussit kokevat.");
-      await klikkaa(iso.closest("g"), { jalkeen: 2200 });
-      const lupa = $("#lSite .aibox") || $("#lSite"); await liiku(lupa); await odota(2400);
-      const x = $("#lSiteX"); if (x) await klikkaa(x, { jalkeen: 900 }); }
-
     // 5. TEKOÄLYAGENTTI
     const tab = await odotaEl(() => $$("#lTabs .ltab-h button").find(b => b.dataset.t === "sug"), 3000);
     if (tab) {
@@ -207,7 +195,7 @@
         await vieri(sisaY(lb, miksi, 12), 1500, lb); await liiku(miksi.parentElement.querySelector("p, div:not(summary)") || miksi); await odota(2800); }
       const hyv = tekstinMukaan("#lTabs button", /^Hyväksy$/);
       if (hyv) { const lb = $("#lTabs .ltab-b"); await vieri(lb.scrollHeight, 1100, lb);
-        await kerro("IHMINEN PÄÄTTÄÄ", "Agentti ei muuta aikatauluja itse. Suunnittelija hyväksyy tai hylkää, ja syy kirjataan.");
+        await kerro("IHMINEN PÄÄTTÄÄ", "Agentti ei muuta aikatauluja itse. Suunnittelija hyväksyy tai hylkää, ja syy kirjataan.", true);
         await liiku(hyv); await odota(3200); }   // ei klikata: kirjoittaisi oikean arvion
     }
 
@@ -228,14 +216,14 @@
     await kerro("TUOTANNOSSA", "Valvottu: Vahti tarkistaa joka aamu datan, ajot ja tekoälykutsut. Kustannukset näkyvät.");
     await klikkaa(tekstinMukaan("nav a", /^Pilotti ja menetelmä$/), { jalkeen: 1300 });
     await klikkaa(tekstinMukaan("a, button", /^Tekoäly tuotannossa$/), { jalkeen: 1600 });
-    const rivitV = $$("#v-kehitys tr, #v-kehitys .vrow").filter(x => x.getBoundingClientRect().height > 0).slice(0, 4);
+    const rivitV = $$("#v-kehitys tr, #v-kehitys .vrow").filter(x => x.getBoundingClientRect().height > 0).slice(0, 3);
     for (const rv of rivitV) { await liiku(rv.firstElementChild || rv, 650); await odota(500); }
     const kust = tekstinMukaan("#v-kehitys h3", /Käyttö ja kustannukset|Tuoteseloste/);
     if (kust) { await vieri(sivunY(kust, 110), 1800); await liiku(kust); await odota(2600); }
     piilotaTeksti(); await odota(400);
 
     // 8. loppukortti
-    await kortti("val", `${logo}<h1>Mittaa. Ennakoi. Ehdottaa.<br><em>Ihminen päättää.</em></h1><p>pontuskettunen-cyber.github.io/tyomaatutka</p><small>Pontus Kettunen · konsepti, ei HSL:n eikä kaupungin virallinen palvelu · avoin data, ei henkilötietoja</small>`, 6000);
+    await kortti("val", `${logo}<h1>Mittaa. Ennakoi. Ehdottaa.<br><em>Ihminen päättää.</em></h1><p>pontuskettunen-cyber.github.io/tyomaatutka</p><small>Pontus Kettunen · konsepti, ei HSL:n eikä kaupungin virallinen palvelu · avoin data, ei henkilötietoja</small>`, 5200);
     lopeta();
   }
 
