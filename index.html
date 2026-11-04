@@ -716,6 +716,17 @@ html.hsl .km-flow div{border:0;border-radius:16px}
 .vr .vi{font-weight:800;text-align:center}.vr.ok .vi{color:#0B7A3E}.vr.huom .vi{color:#B45309}.vr.virhe .vi{color:#B91C1C}
 .vr .vk{font-weight:600}.vr .va{font-family:"IBM Plex Mono";font-size:12.5px}.vr.huom .va{color:#B45309}.vr.virhe .va{color:#B91C1C}.vr .vd{color:var(--m);font-size:12.5px}
 @media(max-width:800px){.vr{grid-template-columns:22px 1fr}.vr .va,.vr .vd{grid-column:2}}
+#sugPanel{position:relative;z-index:30}
+.agentbar2{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--p);border-radius:var(--r);padding:8px 14px;margin-bottom:10px;font-size:14px}
+.agentbar2 .ai-more{margin-left:auto}
+.sugdrop{position:absolute;left:0;right:0;top:calc(100% - 6px);background:var(--p);border-radius:14px;box-shadow:0 12px 32px rgba(0,0,0,.18);padding:8px;max-height:60vh;overflow:auto}
+.sugr{display:flex;align-items:center;gap:10px;width:100%;text-align:left;font:inherit;background:none;border:0;border-bottom:1px solid var(--l);padding:9px 8px;cursor:pointer;border-radius:8px}
+.sugr:hover{background:var(--l2)}.sugr.arvioitu{opacity:.6}
+.sugr-t{flex:1;min-width:0}.sugr-t b{display:block;font-size:14px;font-weight:600}.sugr-t small{color:var(--m);font-size:12.5px}
+.sugr-s{font-size:12.5px;color:var(--m);white-space:nowrap}
+.sug-o{display:block;font-size:15px;margin:4px 0 6px}
+.sug-t{margin:4px 0 6px}.sug-t td,.sug-t th{font-size:13.5px}.sug-t tfoot td{border-top:2px solid var(--l);font-size:13.5px}
+.sug-d{margin:4px 0;font-size:13.5px}.sug-d summary{cursor:pointer;color:var(--a);font-weight:600;font-size:13px;padding:3px 0}.sug-d p{margin:4px 0}
 </style>
 </head>
 <body>
@@ -2563,14 +2574,26 @@ function nauhaSVG(nh){
 }
 function sugCard(x){
   const c = x.sisalto||{}, p = x.perusteet||{};
-  return `<div class="sug"><div class="sugh"><span class="ai-badge"><i></i>AGENTIN EHDOTUS</span><span class="lbadge ${TRAM.has(ln(x.route))?"tram":""}" style="height:22px;min-width:32px;font-size:12px">${esc(ln(x.route))}</span><span class="note">suunta ${x.dir} · ${JNAME[x.jakso]||esc(x.jakso)}</span><span class="aitag ${x.varmuus==="vahva"?"suuri":"pieni"}">${x.varmuus==="vahva"?"vahva näyttö":"alustava"}</span></div>
-    <b>${esc(c.otsikko||"")}</b><p>${esc(c.ehdotus||"")}</p>
-    <p class="note">${esc(c.perustelu||"")}</p>
-    ${(c.toimenpiteet||[]).length?`<ul>${c.toimenpiteet.map(t=>`<li>${esc(t)}</li>`).join("")}</ul>`:""}
-    ${(p.ajantasausvalit||[]).length?`<table class="t" style="margin:6px 0"><thead><tr><th>Ajantasausväli</th><th class="r">Nyt</th><th class="r">Ehdotus</th></tr></thead><tbody>${p.ajantasausvalit.filter(v=>v.ehdotus_min>0).map(v=>`<tr><td>${esc(v.alku)} → ${esc(v.loppu)}</td><td class="r">${v.aikataulu_min!=null?nf(v.aikataulu_min,1)+" min":"–"}</td><td class="r slow">${v.aikataulu_min!=null?nf(v.aikataulu_min+v.ehdotus_min,1)+" min":"+"+nf(v.ehdotus_min,1)+" min"}</td></tr>`).join("")}</tbody></table>`:""}
-    ${p.ajantasaus_huom?`<p class="note">${esc(p.ajantasaus_huom)}</p>`:""}
-    ${c.purku?`<p class="note"><b>Purku:</b> ${esc(c.purku)}</p>`:""}
-    <div class="sugf">${nf(p.vuoroja)} vuoroa · ${nf(p.mittauspaivia)} pv · mediaani ${sgn(p.mediaani_s)} · huonoin 10 % ${sgn(p.huonoin_10pros_s)} · ehdotettu lisäaika ${nf(p.ehdotettu_lisaaika_min,1)} min<br>Agentti ei muuta aikatauluja itse. · ${esc(x.malli||"")} ${ago(x.luotu)}</div>${sugArvio(x)}</div>`;
+  const valit = (p.ajantasausvalit||[]).filter(v=>v.ehdotus_min>0);
+  const lisa = valit.reduce((a,v)=>a+(v.aikataulu_min!=null ? v.ehdotus_min-v.aikataulu_min : 0),0);
+  return `<div class="sug">
+    <div class="sugh"><span class="lbadge ${TRAM.has(ln(x.route))?"tram":""}" style="height:22px;min-width:32px;font-size:12px">${esc(ln(x.route))}</span><span class="note">suunta ${x.dir} · ${JNAME[x.jakso]||esc(x.jakso)}</span><span class="aitag ${x.varmuus==="vahva"?"suuri":"pieni"}">${x.varmuus==="vahva"?"vahva näyttö":"alustava näyttö"}</span></div>
+    <b class="sug-o">${esc(c.otsikko||"")}</b>
+    ${valit.length?`<table class="t sug-t"><thead><tr><th>Ajantasausväli</th><th class="r">Nyt</th><th class="r">Ehdotus</th></tr></thead><tbody>${valit.map(v=>`<tr><td>${esc(v.alku)} → ${esc(v.loppu)}</td><td class="r">${v.aikataulu_min!=null?nf(v.aikataulu_min,1)+" min":"–"}</td><td class="r"><b>${v.aikataulu_min!=null?nf(v.ehdotus_min,1)+" min":"+"+nf(v.ehdotus_min,1)+" min"}</b></td></tr>`).join("")}</tbody>${lisa>0?`<tfoot><tr><td>Koko vuoro pitenee</td><td></td><td class="r"><b>+${nf(lisa,1)} min</b></td></tr></tfoot>`:""}</table>`:`<p>${esc(c.ehdotus||"")}</p>`}
+    <details class="sug-d"><summary>Miksi agentti ehdottaa tätä</summary>
+      ${valit.length&&c.ehdotus?`<p>${esc(c.ehdotus)}</p>`:""}<p class="note">${esc(c.perustelu||"")}</p>
+      <p class="note">Mitattu ${nf(p.vuoroja)} vuorosta ${nf(p.mittauspaivia)} päivänä: tavallinen vuoro ${sgn(p.mediaani_s)} työmailla, huonoin kymmenesosa ${sgn(p.huonoin_10pros_s)}.${x.varmuus!=="vahva"?" Vahva näyttö vaatii vähintään 3 mittauspäivää ja 40 vuoroa.":""}</p>
+      ${p.ajantasaus_huom?`<p class="note">${esc(p.ajantasaus_huom)}</p>`:""}
+    </details>
+    ${c.purku?`<details class="sug-d"><summary>Milloin muutos puretaan</summary><p class="note">${esc(c.purku)}</p></details>`:""}
+    <div class="sugf">Agentti ei muuta aikatauluja itse. · ${esc(x.malli||"")} · ${ago(x.luotu)}</div>${sugArvio(x)}</div>`;
+}
+/* Linjat-sivun yläpalkki: ehdotukset tiiviinä listana, koko ehdotus aukeaa linjan ohjaamoon */
+function sugRivi(x){
+  const c = x.sisalto||{};
+  return `<button type="button" class="sugr ${x.paatos?"arvioitu":""}" data-l="${esc(ln(x.route))}"><span class="lbadge ${TRAM.has(ln(x.route))?"tram":""}" style="height:22px;min-width:32px;font-size:12px">${esc(ln(x.route))}</span>
+    <span class="sugr-t"><b>${esc(c.otsikko||"")}</b><small>suunta ${x.dir} · ${JNAME[x.jakso]||esc(x.jakso)} · ${x.varmuus==="vahva"?"vahva näyttö":"alustava"}</small></span>
+    <span class="sugr-s">${x.paatos ? (x.paatos==="hyvaksy"?"✓ hyväksytty":"✕ hylätty") : "odottaa arviota"}</span></button>`;
 }
 const SYY = {luvut:"luvut eivät pidä", ei_tarpeen:"ei tarpeen", muu:"muu syy"};
 function sugArvio(x){
@@ -2595,11 +2618,16 @@ async function sugArvioi(id, paatos, syy){
 function alertBox(el, t){ if(el){ el.querySelector(".sa-virhe")?.remove(); el.insertAdjacentHTML("beforeend", `<span class="sa-virhe">${t}</span>`); } }
 function renderSug(){
   const el = document.getElementById("sugPanel"); if(!el) return;
-  const sg = S.sug||[];
+  const sg = (S.sug||[]).slice().sort((a,b)=>(!!a.paatos-!!b.paatos) || (a.varmuus==="vahva"?-1:1));
   const watch = Object.values(S.ltila||{}).flat().filter(r=>r.ikkuna==="7d" && ["aamu","ilta","paiva"].includes(r.jakso)).length;
+  const auki = sg.filter(x=>!x.paatos).length;
   el.innerHTML = sg.length
-    ? `<div class="panel" style="padding:12px 14px;margin-bottom:14px"><div class="h2row"><h2>Aikatauluagentin ehdotukset (${sg.length})</h2><span class="note">Päivittyy klo 7.35, 13.35 ja 19.35</span></div><div class="suggrid">${sg.map(sugCard).join("")}</div></div>`
+    ? `<div class="agentbar2"><span class="ai-badge"><i></i>AIKATAULUAGENTTI</span><span><b>${nf(auki)}</b> ${auki===1?"ehdotus odottaa":"ehdotusta odottaa"} suunnittelijan arviota${sg.length>auki?` · ${nf(sg.length-auki)} arvioitu`:""}</span>
+        <button type="button" class="ai-more" id="sugToggle">${S.sugAuki?"Piilota ↑":"Näytä ehdotukset ↓"}</button></div>
+       ${S.sugAuki?`<div class="sugdrop">${sg.map(sugRivi).join("")}<div class="note" style="padding:6px 4px 2px">Valitse ehdotus: se aukeaa linjan ohjaamoon välilehdelle "Agentin ehdotus", ja arvioit sen siellä. Päivittyy klo 7.35, 13.35 ja 19.35.</div></div>`:""}`
     : "";
+  const t = document.getElementById("sugToggle"); if(t) t.onclick = ()=>{ S.sugAuki = !S.sugAuki; renderSug(); };
+  el.querySelectorAll(".sugr").forEach(b=>b.onclick=()=>{ S.lSel = b.dataset.l; S.lSite = null; S.lVali = null; S.lReitti = false; S.lDir = null; S.lTab = "sug"; S.sugAuki = false; renderLinjat(); });
   const ag = document.getElementById("lAgent"); if(ag) ag.innerHTML = sg.length ? "" : `<span class="ai-badge"><i></i>AIKATAULUAGENTTI</span> Seuraa ${nf(watch)} linjasuunnan aikatauluja. Ehdotus syntyy, kun ruuhkajaksolla joka kymmenes vuoro saa työmailla yli 2 min lisäaikaa (vähintään 12 vuoroa). Ei ehdotuksia nyt.`;
 }
 
