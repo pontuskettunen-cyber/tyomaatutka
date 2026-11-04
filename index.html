@@ -730,6 +730,8 @@ html.hsl .km-flow div{border:0;border-radius:16px}
 html.uusi #saaBox{position:relative;align-self:center}
 .saa-pill{display:inline-flex;align-items:center;gap:6px;font:inherit;font-size:14px;background:var(--p);border:1px solid var(--l);border-radius:999px;padding:6px 14px 6px 10px;cursor:pointer;color:var(--i)}
 .saa-pill:hover{border-color:var(--i2)}.saa-pill b{font-weight:700}.saa-pill span{color:var(--i2)}.saa-pill em{font-style:normal;color:var(--m);font-size:11px}
+.saa-pill-l{color:var(--a)!important;font-weight:600;border-left:1px solid var(--l);padding-left:9px;margin-left:3px}
+@media(max-width:1100px){.saa-pill-l{display:none}}
 .saa-pill.var{border-color:#F4B740;background:#FFF8EB}.saa-pill i{font-style:normal;color:#B45309}
 html.hsl .saa-pill{border-color:#D9D9D9}
 .saa-pop{position:absolute;right:0;top:calc(100% + 8px);z-index:1200;width:min(460px,92vw);background:var(--p);border-radius:16px;box-shadow:0 14px 40px rgba(0,0,0,.2);padding:12px}
@@ -1231,7 +1233,7 @@ function saaNytTila(){
 function saaPilleri(){
   const t = saaNytTila(); if(!t) return "";
   const vNyt = (S.varoitukset||[]).filter(v=>{ const n = Date.now(); return (!v.alkaa || +new Date(v.alkaa) <= n + 12*3600e3) && (!v.paattyy || +new Date(v.paattyy) > n); });
-  return `<button type="button" class="saa-pill ${vNyt.length?"var":""}" id="saaPill" aria-expanded="${S.saaPop?"true":"false"}" title="Sää ja sen vaikutus busseihin">${wIcon(t.ik,20)}<b>${t.lampo!=null?Math.round(t.lampo)+"°":"–"}</b><span>${esc(t.txt)}</span>${vNyt.length?`<i>⚠</i>`:""}<em>▾</em></button>
+  return `<button type="button" class="saa-pill ${vNyt.length?"var":""}" id="saaPill" aria-expanded="${S.saaPop?"true":"false"}" title="Sää ja sen vaikutus busseihin">${wIcon(t.ik,20)}<b>${t.lampo!=null?Math.round(t.lampo)+"°":"–"}</b><span>${esc(t.txt)}</span>${vNyt.length?`<i>⚠</i>`:""}<span class="saa-pill-l">Sään vaikutus liikenteeseen</span><em>▾</em></button>
     <div class="saa-pop" id="saaPop" ${S.saaPop?"":"hidden"}>${saaKortti()}<div class="saa-pop-v">${olosuhteetHTML() || `<div class="note">Sään vaikutusta busseihin mitataan, ja luku näkyy, kun säätä on kertynyt riittävästi.</div>`}</div></div>`;
 }
 function saaKortti(){
@@ -1592,7 +1594,12 @@ function renderBrief(){
   const vehH = bd.total;
   const tr = trend();
   const sb = document.getElementById("saaBox"); if(sb){ sb.innerHTML = S.uusi ? saaPilleri() : saaKortti(); wireInfo(sb);
-    const pl = document.getElementById("saaPill"); if(pl) pl.onclick = e=>{ e.stopPropagation(); S.saaPop = !S.saaPop; document.getElementById("saaPop").hidden = !S.saaPop; pl.setAttribute("aria-expanded", S.saaPop); }; }
+    const pl = document.getElementById("saaPill"), pop = document.getElementById("saaPop");
+    if(pl){ const nayta = on=>{ pop.hidden = !on; pl.setAttribute("aria-expanded", on); };
+      pl.onclick = e=>{ e.stopPropagation(); S.saaPop = !S.saaPop; nayta(S.saaPop); };   // klikkaus kiinnittää auki
+      if(matchMedia("(hover:hover)").matches){ let tm;
+        sb.onmouseenter = ()=>{ clearTimeout(tm); nayta(true); };
+        sb.onmouseleave = ()=>{ tm = setTimeout(()=>{ if(!S.saaPop) nayta(false); }, 250); }; } } }
   // uusi: sään vaikutus näkyy vain, kun sillä on merkitystä (reilu sade, lumi, räntä tai säävaroitus)
   const merkittava = (()=>{ const w = (S.saa||[]).filter(x=>+new Date(x.bucket) >= Date.now()-4*3600e3); return vNyt.length || w.some(x=>(+x.sade_mm||0) >= 1 || /lumi|räntä|jäätävä|rankka/.test(x.luokka||"")); })();
   const ol = document.getElementById("olot"); if(ol){ ol.innerHTML = (!S.uusi || merkittava) ? olosuhteetHTML() : ""; wireInfo(ol); }
