@@ -934,7 +934,7 @@ a.lnk-linja:hover{color:var(--a)}
 /* ===== Työmaa-alue ===== */
 .alue-n{flex:none;margin-left:6px;font-size:11.5px;font-weight:800;color:var(--a);background:var(--a-soft);border-radius:999px;padding:1px 7px}
 .alue{background:#F3F6FA;border:1px solid var(--l);border-radius:10px;padding:7px 10px;margin:0 0 10px;font-size:13px;line-height:1.45}
-.alue .k{font-size:12.5px}.alue .al{margin:2px 0}.alue .al a{font-weight:700}
+.alue .k{font-size:12.5px}.alue .al{margin:3px 0 4px;padding-left:16px}.alue .al li{margin:1px 0}.alue .al a{font-weight:700}
 .alue .note{font-size:12px}
 </style>
 </head>
@@ -1128,6 +1128,8 @@ a.lnk-linja:hover{color:var(--a)}
     <div id="vahti"><div class="empty">Ladataan…</div></div>
     <p class="note"><b>Suunnitteilla:</b> itsekorjaus ennalta hyväksytyltä listalta (epäonnistunut ajo ajetaan kerran uudelleen, pysähtynyt datankeruu käynnistetään, tekoälyajot pysäytetään krediittien loppuessa, siivous ajetaan heti tilan täyttyessä); kaikki kirjataan lokiin. Kun vika ei poistu, kielimalli lukee lokit ja kirjoittaa todennäköisen syyn ja korjausehdotuksen, ja ihminen tekee muutoksen. Lisäksi agentti esitäyttämään tarkistuslistan kuittaukset ihmisen hyväksyttäviksi ja viikkokatsaus toistuvista havainnoista.</p>
     <p class="note"><b>Suunnitteilla, käyttäjille:</b> ilmoitukset suunnittelijoille vastuualueen mukaan (alue tai linjajoukko, ei yksittäinen linja), mieluiten aamukoonteena: "alueellasi alkaa tällä viikolla kolme työtä, yksi ilman tiedotetta" ja "agentti ehdottaa aikataulumuutosta linjalle 30". Liikennetilannekeskukselle reaaliaikainen ilmoitus, kun suuren haitan työ alkaa ilman tiedotetta. Pilotissa kokeiltava botti (esim. Telegram: <i>/linja 55</i>, <i>/tilaa alue</i>), tuotannossa sama logiikka Teams-kanavaan. Vastuunjako tarkistetaan HSL:n kanssa ennen rakentamista. Kuljettajille ja matkustajille ei erillistä kanavaa: kuljettajat saavat tiedon liikennöitsijän järjestelmistä, matkustajat HSL:n sovelluksesta.</p>
+    <p class="note"><b>Suunnitteilla, työmaat:</b> urakoitsijan ja työmaan vastuuhenkilön yhteystiedot kaupungin Haitaton-lupajärjestelmästä HSL:n kirjautuneille käyttäjille (avoimesta lupadatasta kentät on tyhjennetty). Liikennehälytyksessä sama tieto napiksi: <i>soita työmaalle</i>, kun bussit seisovat. Edellyttää sopimusta kaupungin kanssa; HSL on jo lausunnonantaja liikennejärjestelyissä.</p>
+    <p class="note"><b>Suunnitteilla, mittaus:</b> päällekkäisten töiden osuudet porrastuksesta. Kun samoja pysäkkivälejä mittaavista töistä ensimmäinen päättyy tai alkaa, yhteisten välien muutos kertoo sen osuuden (esim. Kinaporinkatu ja Pääskylänkatu, ensimmäinen päättyy 20.11.). Lisäksi kokonaisluku suoraan pysäkkiväleistä, jolloin jokainen väli lasketaan tasan kerran.</p>
 
     <h3>Tietoturva</h3>
     <table class="t ts-yht"><tbody>
@@ -3556,7 +3558,7 @@ function alueLaatikko(l){
   const porras = eka && toka && +new Date(eka.paattyy) < +new Date(toka.paattyy) - DAY
     ? ` Osuudet selviävät, kun <b>${esc(shortStreet(eka))}</b> päättyy ${fmtDate(eka.paattyy)}: jos yhteisten välien hidastus silloin pienenee, pudotus on sen osuus.` : "";
   return `<div class="alue"><div class="k"><b>Sama mittaus · ${kaikki.length} lupaa</b> mittaavat valtaosin samoja pysäkkivälejä</div>
-    <div class="al">${m.slice(0,5).map(x=>`<a href="#/?l=${encodeURIComponent(x.lupa_id)}">${esc(shortStreet(x))}</a>`).join(" · ")}${m.length>5?" …":""}</div>
+    <ul class="al">${[l, ...m].slice(0,6).map(x=>`<li>${x===l ? `<b>${esc(shortStreet(x))}</b>` : `<a href="#/?l=${encodeURIComponent(x.lupa_id)}">${esc(shortStreet(x))}</a>`} · ${esc(purpose(x))}${x.paattyy ? ` · ${fmtShort(x.paattyy)} asti` : ""}</li>`).join("")}</ul>
     <div class="note">Hidastus mitataan pysäkkiväleittäin, joten samanaikaisten töiden osuuksia ei voi vielä erottaa. Lisäaika on yksi mittaus: se näkyy kärkilistassa kerran ja lasketaan kokonaislukuun kerran.${porras}</div></div>`;
 }
 /* ================= Työmaa ↔ linja: linjasirut, linja Tilannekuvan kartalla (testissä ?tiivis) ja paluupolku ================= */
@@ -3726,7 +3728,8 @@ function hRivi(r, k, lapsi, lapsia){
       <details class="hr-lisa" ${HL.lisa.has(r.id) ? "open" : ""}><summary>${kortti ? "Virheviesti ja aikajana" : "Aikajana"} (${aj.length})</summary>
         ${kortti ? `<div class="hr-yks"><div class="k">VAIN ILMOITUKSEN SAAJALLE · KORTTI VOIMASSA ${hKlo(kortti.voimassa)} ASTI</div>
           ${virheet.length ? virheet.map(v=>`<div class="v"><b>${esc(v.mika)}</b> · ${esc(v.klo)}<code>${esc(v.viesti||"(ei virheviestiä)")}</code></div>`).join("")
-            : r.lahde==="liikenne" ? `<div class="v">Ohituksia ${esc(yks.ohitukset)} · nyt ${esc(yks.nyt_s)} s / väli · tavallisesti ${esc(yks.tavallisesti_s)} s · z = ${esc(yks.z)}${yks.muut_luvat ? ` · samalla kohdalla ${esc(yks.muut_luvat)} muuta lupaa` : ""}</div>`
+            : r.lahde==="liikenne" ? `<div class="v"><b>${sgn((yks.nyt_s??0)-(yks.tavallisesti_s??0))} / pysäkkiväli</b> tavalliseen verrattuna, ${esc(yks.ohitukset)} ohitusta viimeisen tunnin aikana.</div>
+              <div class="v">Aikataulusta kirityssä tai jäämisessä välin aikana: nyt ${sgn(yks.nyt_s)}, tavallisesti tähän aikaan ${sgn(yks.tavallisesti_s)} (14 vrk). Poikkeaman voimakkuus z = ${esc(String(yks.z).replace(".",","))}: hälytys avautuu, kun z ≥ 3, ja poistuu, kun z < 1,5.${yks.muut_luvat ? ` Samalla kohdalla ${esc(yks.muut_luvat)} muuta lupaa.` : ""}</div>`
             : `<div class="v">${esc(yks.arvo||"")} · ${esc(yks.kuvaus||"")}</div>`}
           <div class="v">${(kortti.aiemmat||[]).length ? `Aiemmin 30 vrk: ${kortti.aiemmat.map(a=>hKlo(a.alkoi)).join(", ")}` : "Ei aiempia samoja hälytyksiä 30 vrk aikana."}</div></div>` : ""}
         <ol class="hr-aj">${aj.map(e=>`<li class="${esc(e.laji)}"><time>${hKlo(e.t)}</time><span>${esc(e.kuvaus||e.laji)}${kortti && e.yksityinen ? `<span class="yk">${esc(e.yksityinen)}</span>` : ""}</span></li>`).join("")}</ol>
