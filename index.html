@@ -740,6 +740,25 @@ html.hsl .saa-pill{border-color:#D9D9D9}
 html.uusi #v-home #kpis.strip{grid-template-columns:1.3fr 1fr!important}
 .tile.odottaa .tsub a{color:var(--a);text-decoration:none;font-weight:600}.tile.odottaa .tsub a:hover{text-decoration:underline}
 .saa-chip{color:inherit;text-decoration:none;border-bottom:1px dotted currentColor}
+.tt-modal{position:fixed;inset:0;z-index:5000;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(0,30,50,.35);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.tt-modal[hidden]{display:none}
+html.tt-lukko{overflow:hidden}
+.tt-card{position:relative;background:#fff;border-radius:20px;max-width:640px;width:100%;max-height:calc(100vh - 40px);overflow:auto;padding:28px 30px 24px;box-shadow:0 24px 60px rgba(0,0,0,.25)}
+.tt-x{position:absolute;top:12px;right:14px;border:0;background:none;font-size:26px;line-height:1;color:var(--m);cursor:pointer;padding:6px}
+.tt-brand{display:flex;align-items:center;gap:8px;font-weight:700;color:#0074BF;font-size:15px}
+.tt-logo{width:22px;height:22px;border-radius:6px;background:#0074BF;box-shadow:inset 0 0 0 4px #fff,inset 0 0 0 7px #0074BF}
+.tt-card h2{font-size:24px;line-height:1.25;margin:10px 0 8px;font-weight:600}
+.tt-lead{font-size:16px;line-height:1.55;color:var(--i2);margin:0 0 16px}
+.tt-3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.tt-3 div{background:#EBF6FD;border-radius:12px;padding:12px;font-size:13.5px;line-height:1.45;color:#003456}
+.tt-3 b{display:block;font-size:15px;margin-bottom:3px}
+.tt-voit{margin:0 0 18px;padding-left:18px}.tt-voit li{font-size:14.5px;line-height:1.5;margin:4px 0;color:var(--i2)}
+.tt-foot{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.tt-go{font:inherit;font-size:15px;font-weight:600;background:#0074BF;color:#fff;border:0;border-radius:999px;padding:11px 24px;cursor:pointer}
+.tt-go:hover{background:#005A96}
+.tt-foot .note{flex:1;min-width:200px;font-size:12px}
+.tt-help{position:fixed;right:18px;bottom:18px;z-index:1500;width:40px;height:40px;border-radius:50%;border:0;background:#0074BF;color:#fff;font:700 18px/1 inherit;box-shadow:0 6px 18px rgba(0,0,0,.2);cursor:pointer}
+@media(max-width:640px){.tt-3{grid-template-columns:1fr}.tt-card{padding:22px 18px 18px}.tt-card h2{font-size:20px}}
 </style>
 </head>
 <body>
@@ -3088,6 +3107,24 @@ document.getElementById("omaForm").onsubmit = e => {
 document.getElementById("lQ").oninput = e => { S.lQ = e.target.value; renderLinjat(); };
 document.getElementById("lQ").onkeydown = e => { if(e.key==="Enter"){ const f = document.querySelector("#lList .lrow"); if(f) f.click(); } };
 document.querySelectorAll("#lMode button").forEach(b=>b.onclick=()=>{ S.lMode=b.dataset.m; document.querySelectorAll("#lMode button").forEach(x=>x.classList.toggle("on",x===b)); renderLinjat(); });
+
+/* Tervetuloikkuna: ensimmäisellä avauskerralla (esikatselu ?esittely), myöhemmin ?-painikkeesta */
+addEventListener("DOMContentLoaded", function(){
+  const m = document.getElementById("ttModal"), help = document.getElementById("ttHelp");
+  let esik = false; try{ esik = new URLSearchParams(location.search).has("esittely"); }catch(e){}
+  const KAYTOSSA = esik;   // vaihdetaan true:ksi, kun ikkuna hyväksytään kaikille
+  if(!KAYTOSSA) return;
+  help.hidden = false;
+  const auki = on=>{ m.hidden = !on; document.documentElement.classList.toggle("tt-lukko", on); if(on) document.getElementById("ttmGo").focus(); };
+  const sulje = ()=>{ auki(false); try{ localStorage.setItem("tt_tervetuloa","1"); }catch(e){} };
+  document.getElementById("ttmX").onclick = sulje; document.getElementById("ttmGo").onclick = sulje;
+  m.addEventListener("mousedown", e=>{ if(e.target===m) sulje(); });
+  addEventListener("keydown", e=>{ if(e.key==="Escape" && !m.hidden) sulje(); });
+  help.onclick = ()=>auki(true);
+  let nahty = null; try{ nahty = localStorage.getItem("tt_tervetuloa"); }catch(e){}
+  if(!nahty || esik) auki(true);
+  const ib = document.getElementById("intro"); if(ib) ib.style.display = "none";
+});
 document.getElementById("introX").onclick = ()=>{ document.getElementById("intro").style.display="none"; try{ localStorage.setItem("tt_intro","0"); }catch(e){} };
 try{ if(localStorage.getItem("tt_intro")==="0") document.getElementById("intro").style.display="none"; }catch(e){}
 
@@ -3320,5 +3357,30 @@ route(); load(); loadAI();
 setInterval(()=>{ if(!document.hidden) loadAI(); }, 600000);
 setInterval(()=>{ if(!document.hidden) load(); }, 120000);
 </script>
+
+<!-- ================= TERVETULOIKKUNA (ensimmäinen avaus) ================= -->
+<div class="tt-modal" id="ttModal" hidden role="dialog" aria-modal="true" aria-labelledby="ttmH">
+  <div class="tt-card">
+    <button class="tt-x" id="ttmX" aria-label="Sulje">×</button>
+    <div class="tt-brand"><span class="tt-logo"></span>Työmaatutka</div>
+    <h2 id="ttmH">Mitä katutyöt maksavat joukkoliikenteelle?</h2>
+    <p class="tt-lead">Työmaatutka mittaa avoimesta datasta joka päivä, paljonko Helsingin katutyöt hidastavat busseja ja ratikoita. Se kertoo myös, mitä asialle kannattaisi tehdä.</p>
+    <div class="tt-3">
+      <div><b>Mittaa</b>Jokaisen työmaan lisäaika linjoittain, tunteina ja euroina.</div>
+      <div><b>Ennakoi</b>Alkavien töiden vaikutus ja kasautumat samoille linjoille.</div>
+      <div><b>Ehdottaa</b>Tekoälyagentti ehdottaa aikataulumuutoksia. Ihminen päättää.</div>
+    </div>
+    <ul class="tt-voit">
+      <li><b>Klikkaa työmaata</b> kartalla tai listassa: näet mitatun vaikutuksen.</li>
+      <li><b>Hae linjaa</b> yläpalkista, esim. 55: näet sen kaikki työmaat reitillä.</li>
+      <li><b>Pilotti ja menetelmä</b> kertoo, miten tätä kokeiltaisiin HSL:ssä ja miten tekoälyä valvotaan.</li>
+    </ul>
+    <div class="tt-foot">
+      <button class="tt-go" id="ttmGo">Avaa tilannekuva →</button>
+      <span class="note">Konsepti, ei HSL:n eikä kaupungin virallinen palvelu. Avoin data, ei henkilötietoja. Tekijä Pontus Kettunen.</span>
+    </div>
+  </div>
+</div>
+<button class="tt-help" id="ttHelp" hidden title="Mikä Työmaatutka on?">?</button>
 </body>
 </html>
