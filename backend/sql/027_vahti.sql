@@ -16,9 +16,10 @@ alter table vahti_koko enable row level security;
 create or replace function vahti_tarkistukset(p_tallenna boolean default false)
 returns table (jarj int, k text, tila text, arvo text, kuvaus text)
 language plpgsql security definer set search_path = public, cron as $$
+#variable_conflict use_column
 declare
   v_mb numeric := round(pg_database_size(current_database()) / 1048576.0);
-  v_kap numeric := coalesce((select v::numeric from tutka_asetus where k = 'db_kap_mb'), 500);
+  v_kap numeric := coalesce((select ta.v::numeric from tutka_asetus ta where ta.k = 'db_kap_mb'), 500);
   v_kasvu numeric; v_paiv numeric; v_t timestamptz; v_n int; v_m int; v_txt text;
 begin
   -- koko tallennetaan vain päivittäisessä ajossa (sivun haku on vain luku)
