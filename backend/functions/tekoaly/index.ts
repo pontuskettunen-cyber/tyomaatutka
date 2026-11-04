@@ -381,6 +381,28 @@ async function kysy(body: any) {
   return { vastaus, malli: viesti ? MALLI_KIRJOITUS : MALLI_NOPEA };
 }
 
+
+/* ---------- Vahti: päivittäinen valvontakatsaus ---------- */
+async function vahti() {
+  // julkinen kutsu ei voi ajaa mallia toistuvasti: uusi raportti korkeintaan tunnin välein
+  const { data: viim } = await db.from("vahti_raportti").select("t").order("t", { ascending: false }).limit(1);
+  if (viim?.[0] && Date.now() - +new Date(viim[0].t) < 3600_000) return { tarkistuksia: 0, huomioita: 0, katsaus: false, ohitettu: "tuore raportti alle tunti sitten" };
+  const { data: tark, error } = await db.rpc("vahti_tarkistukset", { p_tallenna: true });
+  if (error) throw new Error("vahti: " + error.message);
+  const rivit = (tark ?? []).sort((a: any, b: any) => a.jarj - b.jarj);
+  let katsaus: any = null;
+  try {
+    const system = `Olet Työmaatutkan ylläpidon valvoja. Saat järjestelmän tarkistusten tulokset (tila: ok, huom tai virhe).
+Kirjoita ylläpitäjälle lyhyt aamukatsaus suomeksi. Palauta VAIN JSON: {"otsikko","huomiot":[{"k","teksti","ehdotus"}]}.
+- otsikko: yksi lause kokonaistilanteesta, enintään 12 sanaa.
+- huomiot: vain tarkistukset, joiden tila on huom tai virhe, vakavin ensin. k = tarkistuksen nimi sellaisenaan.
+  teksti: mitä havaittiin (enintään 20 sanaa), ehdotus: mitä ihmisen kannattaa tarkistaa tai tehdä (enintään 20 sanaa).
+- Älä keksi lukuja, syitä tai nimiä, joita tarkistuksissa ei ole. Jos kaikki on ok, huomiot on tyhjä taulukko.`;
+    katsaus = parseJSON(await claude(MALLI_NOPEA, system, JSON.stringify(rivit), 1200));
+  } catch (_) { katsaus = null; /* tarkistukset tallennetaan silti */ }
+  await db.from("vahti_raportti").insert({ tarkistukset: rivit, katsaus, malli: katsaus ? MALLI_NOPEA : null });
+  return { tarkistuksia: rivit.length, huomioita: rivit.filter((r: any) => r.tila !== "ok").length, katsaus: !!katsaus };
+}
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
   const url = new URL(req.url);
@@ -405,6 +427,7 @@ Deno.serve(async (req) => {
     if (tila === "aikataulu") { const r = await aikataulu(); await db.from("tallennin_loki").insert({ funktio: "tekoaly-aikataulu", rivit: r.kirjoitettu, virhe: (r as any).ohitettu ?? null }); return json({ ok: true, ...r }); }
     if (tila === "viikko") { const r = await viikko(); await db.from("tallennin_loki").insert({ funktio: "tekoaly-viikko", rivit: r.kirjoitettu.length }); return json({ ok: true, ...r }); }
     if (tila === "kysy") return json({ ok: true, ...(await kysy(body)) });
+    if (tila === "vahti") { const r = await vahti(); await db.from("tallennin_loki").insert({ funktio: "tekoaly-vahti", rivit: r.tarkistuksia }); return json({ ok: true, ...r }); }
     return json({ ok: false, virhe: "tuntematon tila" }, 400);
   } catch (e) {
     await db.from("tallennin_loki").insert({ funktio: "tekoaly-" + tila, rivit: 0, virhe: String((e as Error).message).slice(0, 300) });
