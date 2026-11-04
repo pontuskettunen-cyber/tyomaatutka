@@ -3536,6 +3536,8 @@ function avaaLinja(n, id){
   if(!lineIndex().some(e=>e.name===n)) return;
   S.lSel = n; S.lSite = id && S.byId[id] ? id : null; S.lVali = null; S.lReitti = false; S.lDir = null; S.lPaluu = id || null;
   location.hash = "#/linjat";
+  // kartta lentää siihen työmaahan, josta tultiin (reitti piirtyy ensin)
+  if(S.lSite) setTimeout(()=>{ const e = lineIndex().find(x=>x.name===n); if(e && S.lSel===n && S.lSite===id && M.linja) lValitse(e, id, true); }, 1300);
 }
 function hLinjaPalkki(){
   const n = S.hLinja; if(!n || !kompakti()) return "";
