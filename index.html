@@ -1468,7 +1468,7 @@ function period(){
   const span = S.ik==="7d" ? 7*DAY : DAY, now = Date.now();
   const st = S.tila.havainto_alkoi ? Math.max(now - span, +new Date(S.tila.havainto_alkoi)) : now - span;
   const d = now - st, h = Math.floor(d/3600e3), m = Math.round((d%3600e3)/60e3);
-  const dur = d > 2*DAY ? `${Math.round(d/DAY)} vrk` : h ? `${h} h ${m} min` : `${m} min`;
+  const dur = d > 2*DAY ? `${Math.round(d/DAY)} vrk` : h ? `${h} h${m?` ${m} min`:""}` : `${m} min`;
   const t = new Date(st);
   return { full: d >= span - 15*60e3, dur, txt: `${fmtDate(st)} klo ${t.getHours()}.${String(t.getMinutes()).padStart(2,"0")} – nyt (${dur})${infoBtn("jakso")}` };
 }
@@ -2140,7 +2140,9 @@ async function nousijat(l){
   if(_nous[l.lupa_id]) return _nous[l.lupa_id];
   const st = new Map();
   (S.segs[l.lupa_id]||[]).forEach(g=>["from","to"].forEach(w=>{ const id = String(g[w+"_stop"]); if(g[w+"_lat"]!=null && !st.has(id)) st.set(id, {id, nimi: g[w+"_nimi"]||id, lat:+g[w+"_lat"], lon:+g[w+"_lon"]}); }));
-  const P = [...st.values()]; if(!P.length) return null;
+  let P = [...st.values()]; if(!P.length) return null;
+  const c = l.geom && centroid(l.geom);
+  if(c){ P.forEach(p=>p.d = mEtaisyys(c[0], c[1], p.lat, p.lon)); const lah = P.filter(p=>p.d<=300); P = lah.length ? lah : P.sort((a,b)=>a.d-b.d).slice(0,2); }
   const pad = 0.002, lo = P.map(p=>p.lon), la = P.map(p=>p.lat);
   const env = [Math.min(...lo)-pad, Math.min(...la)-pad, Math.max(...lo)+pad, Math.max(...la)+pad].join(",");
   const q = `${NOUS_URL}?where=1%3D1&geometry=${env}&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=Nousijamaa&outSR=4326&f=json`;
@@ -2152,11 +2154,12 @@ async function nousijat(l){
 }
 async function taytaNousijat(l){
   const box = document.getElementById("nousBox"); if(!box) return;
+  for(let i=0; i<8 && !(S.segs[l.lupa_id]||[]).length; i++) await new Promise(ok=>setTimeout(ok,1000));   // pysäkkivälit latautuvat erikseen
   let r; try{ r = await nousijat(l); }catch(e){ r = null; }
   if(S.sel!==l.lupa_id || !document.getElementById("nousBox")) return;
   if(!r || !r.ok.length){ box.innerHTML = `<div class="note">Työmaan pysäkeille ei löytynyt nousijamäärää HSL:n avoimesta aineistosta.</div>`; return; }
   const pys = (l.ai_sulkee||[]).includes("pysakki");
-  box.innerHTML = `<div class="nous"><b>${nf(Math.round(r.tot/10)*10)}</b><div>nousua arkipäivänä työmaan pysäkkiväleillä (${r.ok.length} pysäkkiä, kaikki linjat).
+  box.innerHTML = `<div class="nous"><b>${nf(Math.round(r.tot/10)*10)}</b><div>nousua arkipäivänä työmaan lähipysäkeillä (${r.ok.length} pysäkkiä alle 300 m päässä, kaikki linjat).
     <div class="pk note">${r.ok.slice(0,3).map(p=>`${esc(p.nimi)} ${nf(p.n)}`).join(" · ")}${r.ok.length>3?" …":""}</div></div></div>
     ${pys?`<div class="note" style="margin:-4px 0 8px"><b>Lupa koskee pysäkkiä.</b> Siirto tai poisto koskee näitä matkustajia suoraan.</div>`:""}
     <div class="note" style="margin:-4px 0 8px">HSL:n nousijamäärät pysäkeittäin, arkipäivien keskiarvo 11/2016 (HRI, CC BY 4.0). Kertoo, kuinka moni käyttää pysäkkejä, ei kuinka moni on bussissa työmaan kohdalla.</div>`;
@@ -2193,7 +2196,7 @@ async function renderDetail(){
     : ls.length?`<table class="t"><thead><tr><th>Linja</th><th class="r">Ohituksia / 24 h</th><th class="r">Lisäviive</th></tr></thead><tbody>${ls.slice(0,10).map(r=>`<tr><td><span class="chip">${esc(ln(r.route))}</span> <span class="note">suunta ${r.dir}</span></td><td class="r">${nf(r.ohitukset_24h)}</td><td class="r ${r.lisaviive_s>10?"slow":r.lisaviive_s<-10?"fast":""}">${sgn(r.lisaviive_s)}</td></tr>`).join("")}</tbody></table>`:`<div class="chips">${lines(l.linjat).map(r=>`<span class="chip">${esc(r)}</span>`).join("")}</div>`}
     <div class="sec">Lisäaika per ohitus kahden tunnin jaksoissa ${(S.saa||[]).some(w=>w.luokka!=="pouta")?'<span class="wleg"><i style="background:#CFE6FB"></i>sade<i style="background:#93C5FD"></i>rankkasade<i style="background:#C7D2FE"></i>lumi<i style="background:#FDE68A"></i>liukas</span>':""}</div>
     <div class="chart" id="chart"><div class="empty">Ladataan…</div></div>${saaTyomaaHTML(l)}`:`<div class="note" style="margin-top:6px">Luvan alueen ohi ei kulje bussi- tai ratikkareittejä (alle 40 m), joten työ ei vaikuta suoraan joukkoliikenteeseen.</div>`}
-    ${onRoute(l) && segs.length && NOUS_TESTI ? `<div class="sec">Matkustajat työmaan pysäkeillä</div><div id="nousBox"><div class="note">Haetaan HSL:n nousijamääriä…</div></div>` : ""}
+    ${onRoute(l) && NOUS_TESTI ? `<div class="sec">Matkustajat työmaan pysäkeillä</div><div id="nousBox"><div class="note">Haetaan HSL:n nousijamääriä…</div></div>` : ""}
     ${im && im.vehH > 0.05 ? `<div class="sec">Mitä tämä maksaa</div>
     <div class="calc">
       <div class="row"><span>Busseille ja ratikoille kertyvä lisäaika</span><b>${nf(im.vehH,1)} h · ${esc(period().dur)}</b></div>
