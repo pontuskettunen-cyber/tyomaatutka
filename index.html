@@ -2173,6 +2173,20 @@ async function taytaNousijat(l){
     <div class="note" style="margin:-4px 0 8px">HSL:n nousijamäärät pysäkeittäin, arkipäivien keskiarvo 11/2016 (HRI, CC BY 4.0). Kertoo, kuinka moni käyttää pysäkkejä, ei kuinka moni on bussissa työmaan kohdalla.</div>`;
 }
 
+/* Helsingin liikennemittaukset (lidotiku.api.hel.fi, CC BY 4.0): autoliikenteen muutos työmaan kohdalla.
+   Vain työmaat, joiden alle 150 m:n päässä on toimiva laskuri. Haetaan yöllä tietokantaan (032), sivu lukee valmiin vertailun. */
+let _liik = null;
+async function taytaLiikenne(l){
+  try{ if(!_liik){ const rows = await get("v_lupa_liikenne"); _liik = Object.fromEntries((rows||[]).map(r=>[r.lupa_id, r])); } }catch(e){ _liik = {}; }
+  const box = document.getElementById("liikBox"), r = _liik[l.lupa_id];
+  if(!box || S.sel!==l.lupa_id || !r) return;
+  const nop = r.nopeus_ennen!=null && r.nopeus_nyt!=null;
+  box.innerHTML = `<div class="sec">Autoliikenne työmaan kohdalla</div>
+    <div class="nous"><b>${r.muutos_pct>0?"+":r.muutos_pct<0?"−":""}${nf(Math.abs(r.muutos_pct))} %</b><div>autoja arkipäivänä kuin neljällä viikolla ennen työn alkua (${nf(Math.round(r.autoja_ennen/10)*10)} → ${nf(Math.round(r.autoja_nyt/10)*10)} / pv).
+      ${nop?`<div class="pk note">Keskinopeus ${nf(r.nopeus_ennen,0)} → ${nf(r.nopeus_nyt,0)} km/h</div>`:""}</div></div>
+    <div class="note" style="margin:-4px 0 8px">Laskuri ${esc(r.laskuri)}, ${nf(r.etaisyys)} m työmaasta (${r.lahde==="LIVA"?"liikennevalojen silmukka":"liikenteen mittauspiste"}). Helsingin liikennemittaukset, CC BY 4.0. Muutokseen voi vaikuttaa myös muu, esimerkiksi lomaviikko.</div>`;
+}
+
 async function renderDetail(){
   const l = S.byId[S.sel], box = document.getElementById("detail");
   if(!l){ box.innerHTML = `<div class="det"><div class="empty">Valitse työmaa kortista tai kartalta.</div></div>`; return; }
@@ -2205,6 +2219,7 @@ async function renderDetail(){
     <div class="sec">Lisäaika per ohitus kahden tunnin jaksoissa ${(S.saa||[]).some(w=>w.luokka!=="pouta")?'<span class="wleg"><i style="background:#CFE6FB"></i>sade<i style="background:#93C5FD"></i>rankkasade<i style="background:#C7D2FE"></i>lumi<i style="background:#FDE68A"></i>liukas</span>':""}</div>
     <div class="chart" id="chart"><div class="empty">Ladataan…</div></div>${saaTyomaaHTML(l)}`:`<div class="note" style="margin-top:6px">Luvan alueen ohi ei kulje bussi- tai ratikkareittejä (alle 40 m), joten työ ei vaikuta suoraan joukkoliikenteeseen.</div>`}
     ${onRoute(l) && NOUS_TESTI ? `<div class="sec">Matkustajat työmaan pysäkeillä</div><div id="nousBox"><div class="note">Haetaan HSL:n nousijamääriä…</div></div>` : ""}
+    ${onRoute(l) && NOUS_TESTI ? `<div id="liikBox"></div>` : ""}
     ${im && im.vehH > 0.05 ? `<div class="sec">Mitä tämä maksaa</div>
     <div class="calc">
       <div class="row"><span>Busseille ja ratikoille kertyvä lisäaika</span><b>${nf(im.vehH,1)} h · ${esc(period().dur)}</b></div>
@@ -2226,6 +2241,7 @@ async function renderDetail(){
   const sh = document.getElementById("shareBtn");
   if(sh) sh.onclick = ()=>{ const u = location.origin+location.pathname+"#/?l="+encodeURIComponent(l.lupa_id); (navigator.share ? navigator.share({title:"Työmaatutka: "+title(l), url:u}).catch(()=>{}) : navigator.clipboard?.writeText(u)); sh.textContent = navigator.share ? "Jaa" : "Kopioitu"; };
   if(NOUS_TESTI && document.getElementById("nousBox")) taytaNousijat(l);
+  if(NOUS_TESTI && document.getElementById("liikBox")) taytaLiikenne(l);
   const r = document.getElementById("load");
   if(r) r.oninput = () => { S.load = +r.value; document.getElementById("loadV").textContent = S.load; document.getElementById("paxH").textContent = nf(im.vehH*S.load,0)+" h"; document.getElementById("paxE").textContent = eur(im.vehH*S.load*EUR_MATK); };
   if(onRoute(l)){
