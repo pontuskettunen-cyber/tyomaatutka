@@ -3262,6 +3262,8 @@ async function linjaKartta(e){
     if(lenna) m.flyToBounds(b,{padding:[20,20], duration:.9}); else m.fitBounds(b,{padding:[20,20]});
     LLay.fitFor = key;
     setTimeout(()=>lVilkuta(m, base), lenna ? 1000 : 350); }
+  // Tilannekuvasta tultaessa: koko reitti hetkeksi, sitten lento siihen työmaahan, josta tultiin
+  if(S.lLenna && S.lLenna===S.lSite){ const id = S.lLenna; S.lLenna = null; setTimeout(()=>{ if(S.lSel===key && S.lSite===id) lValitse(e, id, true); }, 1500); }
   lKorosta(e);
   const at = await loadAT(); if(S.lSel !== key || LLay.base !== base || !at) return;
   const tp = new Map();
@@ -3537,7 +3539,7 @@ function avaaLinja(n, id){
   S.lSel = n; S.lSite = id && S.byId[id] ? id : null; S.lVali = null; S.lReitti = false; S.lDir = null; S.lPaluu = id || null;
   location.hash = "#/linjat";
   // kartta lentää siihen työmaahan, josta tultiin (reitti piirtyy ensin)
-  if(S.lSite) setTimeout(()=>{ const e = lineIndex().find(x=>x.name===n); if(e && S.lSel===n && S.lSite===id && M.linja) lValitse(e, id, true); }, 1300);
+  S.lLenna = S.lSite;
 }
 function hLinjaPalkki(){
   const n = S.hLinja; if(!n || !kompakti()) return "";
