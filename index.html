@@ -862,14 +862,14 @@ html.hsl .top .hbell b{border-color:#0074BF}
   .hr-hd{grid-template-columns:22px minmax(0,1fr) auto;gap:8px;padding:8px 10px;min-height:52px}
   .hr-klo,.hr-chev{display:none}
   .hr-main{flex-direction:column;align-items:flex-start;gap:0}
-  .hr-t{max-width:100%;font-size:14px}
+  .hr-t{max-width:100%;font-size:14px;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.3}
   .hr-sub:before{content:attr(data-klo) " · "}
   .hr-tila{font-size:11.5px}
   .hr-tila b{display:none}
   .hrow.lapsi .hr-hd{padding-left:22px}
-  .hr-body,.hrow.lapsi .hr-body{padding:0 12px 12px 40px}
-  .hr-dl{grid-template-columns:1fr;gap:0}
-  .hr-dl dt{margin-top:6px}
+  .hr-body,.hrow.lapsi .hr-body{padding:0 12px 12px 12px}
+  .hr-dl{grid-template-columns:60px minmax(0,1fr);gap:4px 8px;font-size:13px}
+  .hr-dl dt{font-size:11.5px}
   .h-ctl .seg{width:100%;display:flex}.h-ctl .seg button{flex:1}
 }
 </style>
