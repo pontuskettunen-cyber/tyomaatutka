@@ -766,7 +766,7 @@ html.tt-lukko{overflow:hidden}
 .tt-foot .note{flex:1;min-width:200px;font-size:12px}
 .tt-help{position:fixed;right:18px;bottom:18px;z-index:1500;width:40px;height:40px;border-radius:50%;border:0;background:#0074BF;color:#fff;font:700 18px/1 inherit;box-shadow:0 6px 18px rgba(0,0,0,.2);cursor:pointer}
 @media(max-width:640px){.tt-3{grid-template-columns:1fr}.tt-card{padding:22px 18px 18px}.tt-card h2{font-size:20px}}
-/* ===== Hälytykset (rakennusautomaation hälytyslista: luokat, elinkaari, aikajana) ===== */
+/* ===== Hälytykset (rakennusautomaation hälytyslista: tiivis rivi, avautuva kortti) ===== */
 .hbell{position:relative;display:inline-grid;place-items:center;width:34px;height:34px;border-radius:50%;border:1px solid var(--l);background:var(--g);color:var(--i2);text-decoration:none;flex:none}
 .hbell[hidden]{display:none}
 .hbell svg{width:18px;height:18px}
@@ -775,88 +775,102 @@ html.tt-lukko{overflow:hidden}
 .hbell.lB b{background:#C2410C}.hbell.lC b{background:#007AC9}
 html.hsl .top .hbell{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.35);color:#fff}
 html.hsl .top .hbell b{border-color:#0074BF}
-#v-halytykset .prose{max-width:980px}
-.h-sum{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 12px}
-.h-chip{display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border-radius:999px;background:var(--p);font-size:13.5px;font-weight:700;color:var(--i2)}
-.h-chip i{width:10px;height:10px;border-radius:50%;background:var(--neutral)}
+#v-halytykset .prose{max-width:1040px}
+#v-halytykset h2{margin-bottom:2px}
+#v-halytykset .h-lead{margin:0 0 12px;color:var(--m);font-size:14px}
+#v-halytykset.kortti .h-lead{display:none}
+.h-ctl{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin:0 0 10px}
+.h-sum{display:flex;flex-wrap:wrap;gap:6px;margin-right:auto}
+.h-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:var(--p);font-size:13px;font-weight:700;color:var(--i2)}
+.h-chip i{width:9px;height:9px;border-radius:50%;background:var(--neutral)}
 .h-chip.A i{background:#B91C1C}.h-chip.B i{background:#C2410C}.h-chip.C i{background:#007AC9}.h-chip.ok i{background:#0B7A3E}
-.h-chip.nolla{opacity:.55}
-.h-ctl{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin:6px 0 10px}
-.h-ctl .seg button{white-space:nowrap}
+.h-ctl .seg button{white-space:nowrap;font-size:13px;padding:5px 12px}
 .h-ctl .seg button small{opacity:.75;font-weight:600;margin-left:4px}
-.h-list{display:flex;flex-direction:column;gap:8px}
-.hrow{background:var(--p);border-radius:14px;border-left:5px solid var(--neutral);overflow:hidden}
+.h-list{background:var(--p);border-radius:14px;overflow:hidden}
+.hrow{border-left:4px solid var(--neutral);border-bottom:1px solid var(--l)}
+.hrow:last-child{border-bottom:0}
 .hrow.lA{border-left-color:#B91C1C}.hrow.lB{border-left-color:#C2410C}.hrow.lC{border-left-color:#007AC9}
-.hrow.poistunut{border-left-color:#B8C2CA}
-.hrow.fokus{box-shadow:0 0 0 2px var(--a)}
-.hr-hd{all:unset;box-sizing:border-box;display:grid;grid-template-columns:40px 1fr auto;gap:12px;align-items:center;width:100%;padding:12px 14px;cursor:pointer}
-.hr-hd:focus-visible{outline:2px solid var(--a);outline-offset:-2px;border-radius:12px}
-.hr-lk{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;font-weight:800;font-size:15px;color:#fff;background:var(--neutral)}
+.hrow.poistunut{border-left-color:#C9D2D9}
+.hrow.fokus{background:#F4F9FD}
+.hrow.lapsi .hr-hd{padding-left:30px}
+.hrow.lapsi .hr-t{font-weight:600;font-size:13.5px}
+.hr-hd{all:unset;box-sizing:border-box;display:grid;grid-template-columns:24px 44px minmax(0,1fr) auto 12px;gap:10px;align-items:center;width:100%;padding:8px 12px;cursor:pointer;min-height:42px}
+.hr-hd:hover{background:var(--g)}
+.hr-hd:focus-visible{outline:2px solid var(--a);outline-offset:-2px}
+.hr-lk{width:22px;height:22px;border-radius:6px;display:grid;place-items:center;font-weight:800;font-size:12px;color:#fff;background:var(--neutral)}
 .lA .hr-lk{background:#B91C1C}.lB .hr-lk{background:#C2410C}.lC .hr-lk{background:#007AC9}
 .poistunut .hr-lk{background:#E4E9ED;color:#5C6B78}
-.hr-main{min-width:0}
-.hr-t{display:block;font-weight:800;font-size:15px;line-height:1.3}
-.hr-sub{display:block;font-size:12.5px;color:var(--m);margin-top:2px}
-.hr-tila{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;white-space:nowrap;padding:4px 10px;border-radius:999px;background:var(--l2);color:var(--i2)}
-.hr-tila i{width:8px;height:8px;border-radius:50%;background:currentColor}
-.hr-tila.kuittaamaton{background:#FDECEC;color:#B91C1C}
+.hr-klo{font-family:"IBM Plex Mono",monospace !important;font-size:12.5px;color:var(--m)}
+.hr-main{min-width:0;display:flex;align-items:baseline;gap:8px;overflow:hidden}
+.hr-t{font-weight:700;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.poistunut .hr-t{color:var(--i2);font-weight:600}
+.hr-sub{font-size:12.5px;color:var(--m);white-space:nowrap;flex:none}
+.hr-tila{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;white-space:nowrap;color:var(--m)}
+.hr-tila i{width:7px;height:7px;border-radius:50%;background:currentColor}
+.hr-tila.kuittaamaton{color:#B91C1C}
 .hr-tila.kuittaamaton i{animation:hpulse 1.4s ease-in-out infinite}
-.hr-tila.kuitattu{background:#FFF4E5;color:#9A4A06}
-.hr-tila.hiljennetty{background:#EEF0F3;color:#5C6B78}
-.hr-tila.poistunut-k{background:#FFF8E1;color:#8A5A00}
-.hr-tila.suljettu{background:#E7F5EC;color:#0B7A3E}
+.hr-tila.kuitattu{color:#9A4A06}
+.hr-tila.hiljennetty{color:#5C6B78}
+.hr-tila.poistunut-k{color:#8A5A00}
+.hr-tila.suljettu{color:#0B7A3E}
+.hr-chev{color:var(--m);font-size:14px;transition:transform .15s}
+.hrow.auki .hr-chev{transform:rotate(90deg)}
 @keyframes hpulse{0%,100%{opacity:1}50%{opacity:.25}}
-@media (prefers-reduced-motion:reduce){.hr-tila.kuittaamaton i{animation:none}}
-.hr-body{display:none;padding:0 14px 14px 66px}
+@media (prefers-reduced-motion:reduce){.hr-tila.kuittaamaton i{animation:none}.hr-chev{transition:none}}
+.hr-body{display:none;padding:2px 14px 12px 90px}
+.hrow.lapsi .hr-body{padding-left:106px}
 .hrow.auki .hr-body{display:block}
-.hr-kuv{margin:0 0 10px;font-size:14.5px;line-height:1.5;color:var(--i)}
-.hr-ohje{background:var(--a-soft);border-radius:10px;padding:10px 12px;font-size:14px;line-height:1.45;margin-bottom:10px}
-.hr-ohje b{display:block;font-size:12px;letter-spacing:.03em;text-transform:uppercase;color:var(--a);margin-bottom:2px}
-.hr-yks{border:1px dashed #B8C2CA;border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:13px}
-.hr-yks .k{font-size:12px;font-weight:800;color:var(--m);margin-bottom:6px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
-.hr-yks .v{margin:6px 0}.hr-yks .v b{font-size:13px}
-.hr-yks code{display:block;white-space:pre-wrap;word-break:break-word;font-family:"IBM Plex Mono",monospace !important;font-size:12px;background:var(--g);border-radius:6px;padding:6px 8px;margin-top:3px;color:#7A1F1F}
-.hr-meta{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;color:var(--m);margin-bottom:10px}
-.hr-meta a{font-weight:700}
-.hr-linjat{display:inline-flex;gap:4px;flex-wrap:wrap}
-.hr-linjat span{background:#007AC9;color:#fff;border-radius:6px;padding:0 6px;font-weight:800;font-size:12px}
-.hr-aj{list-style:none;margin:0 0 12px;padding:0 0 0 14px;border-left:2px solid var(--l)}
-.hr-aj li{position:relative;font-size:13px;line-height:1.4;padding:3px 0}
-.hr-aj li:before{content:"";position:absolute;left:-19px;top:9px;width:8px;height:8px;border-radius:50%;background:var(--p);border:2px solid #B8C2CA}
-.hr-aj li.alkoi:before,.hr-aj li.palasi:before,.hr-aj li.nousi:before{border-color:#B91C1C}
-.hr-aj li.kuitattu:before,.hr-aj li.hiljennetty:before{border-color:#C2410C}
-.hr-aj li.poistui:before,.hr-aj li.ajettu:before{border-color:#0B7A3E;background:#0B7A3E}
-.hr-aj li.ei_korjaantunut:before{border-color:#B91C1C;background:#B91C1C}
-.hr-aj li.ilmoitettu:before,.hr-aj li.uudelleenajo:before{border-color:#007AC9}
-.hr-aj time{font-family:"IBM Plex Mono",monospace !important;font-size:12px;color:var(--m);margin-right:8px}
-.hr-aj .yk{display:block;font-family:"IBM Plex Mono",monospace !important;font-size:11.5px;color:#7A1F1F;margin-top:2px;word-break:break-word}
-.hr-act{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.hr-act button{border:0;border-radius:999px;padding:9px 16px;font-weight:800;font-size:14px;background:var(--a);color:#fff;min-height:40px}
+.hr-dl{display:grid;grid-template-columns:72px minmax(0,1fr);gap:3px 10px;margin:0 0 10px;font-size:13.5px;line-height:1.45}
+.hr-dl dt{color:var(--m);font-weight:700;font-size:12px;padding-top:1px}
+.hr-dl dd{margin:0}
+.hr-dl dd.tee{font-weight:700}
+.hr-act{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.hr-act button{border:0;border-radius:999px;padding:5px 12px;font-weight:800;font-size:13px;background:var(--a);color:#fff;min-height:32px}
 .hr-act button.toissij{background:var(--p);color:var(--a);box-shadow:inset 0 0 0 1.5px var(--a)}
-.hr-act button:disabled{background:#E4E9ED;color:#8A97A3;box-shadow:none;cursor:not-allowed}
-.hr-act .note{font-size:12.5px;flex-basis:100%}
-.h-tyhja{background:var(--p);border-radius:14px;padding:22px;text-align:center;color:var(--m)}
-.h-tyhja b{display:block;color:#0B7A3E;font-size:16px;margin-bottom:2px}
-.h-kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:18px 0 8px}
-.h-kpi div{background:var(--p);border-radius:14px;padding:10px 12px}
-.h-kpi b{display:block;font-size:22px;line-height:1.2}
-.h-kpi small{display:block;font-size:12px;color:var(--m);line-height:1.35}
-.h-kpi em{font-style:normal;display:block;font-size:11.5px;color:#0B7A3E;font-weight:700;margin-top:2px}
-.h-kpi em.yli{color:#B91C1C}
-.h-toist{font-size:13px;color:var(--i2);margin:0 0 14px}
+.hr-act button:disabled{background:#EEF1F4;color:#8A97A3;box-shadow:none;cursor:not-allowed}
+.hr-act a{font-size:13px;font-weight:700;margin-left:4px}
+.hr-act .note{font-size:12px;margin-left:4px}
+.hr-lisa{margin-top:8px;font-size:13px}
+.hr-lisa summary{cursor:pointer;color:var(--a);font-weight:700;font-size:12.5px;list-style:none}
+.hr-lisa summary::-webkit-details-marker{display:none}
+.hr-lisa summary:before{content:"▸ "}
+.hr-lisa[open] summary:before{content:"▾ "}
+.hr-yks{margin:8px 0}
+.hr-yks .k{font-size:11.5px;font-weight:800;color:var(--m);margin-bottom:4px}
+.hr-yks .v{margin:4px 0}
+.hr-yks code{display:block;white-space:pre-wrap;word-break:break-word;font-family:"IBM Plex Mono",monospace !important;font-size:11.5px;background:var(--g);border-radius:6px;padding:5px 8px;margin-top:2px;color:#7A1F1F;max-height:120px;overflow:auto}
+.hr-aj{list-style:none;margin:6px 0 0;padding:0;font-size:12.5px;line-height:1.5}
+.hr-aj li{display:grid;grid-template-columns:44px 1fr;gap:8px}
+.hr-aj time{font-family:"IBM Plex Mono",monospace !important;font-size:11.5px;color:var(--m)}
+.hr-aj li.alkoi span,.hr-aj li.palasi span,.hr-aj li.ei_korjaantunut span{color:#B91C1C}
+.hr-aj li.poistui span,.hr-aj li.ajettu span{color:#0B7A3E}
+.hr-aj .yk{display:block;font-family:"IBM Plex Mono",monospace !important;font-size:11px;color:#7A1F1F;word-break:break-word}
+.hr-linjat{display:inline-flex;gap:3px;flex-wrap:wrap;vertical-align:middle}
+.hr-linjat span{background:#007AC9;color:#fff;border-radius:5px;padding:0 5px;font-weight:800;font-size:11.5px}
+.h-tyhja{padding:18px;text-align:center;color:var(--m);font-size:13.5px}
+.h-tyhja b{display:block;color:#0B7A3E;font-size:15px}
+.h-kpi{display:flex;flex-wrap:wrap;gap:4px 18px;margin:10px 2px 0;font-size:12.5px;color:var(--m)}
+.h-kpi b{color:var(--i);font-size:13px}
+.h-kpi .ok{color:#0B7A3E;font-weight:700}.h-kpi .yli{color:#B91C1C;font-weight:700}
 .h-toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#1A1A1A;color:#fff;padding:10px 18px;border-radius:999px;font-weight:700;font-size:14px;z-index:3000;box-shadow:0 6px 20px rgba(0,0,0,.25);max-width:calc(100vw - 32px)}
-.h-info{background:var(--p);border-radius:14px;padding:4px 16px;margin-top:16px}
-.h-info summary{cursor:pointer;font-weight:800;padding:10px 0}
-.h-info table{width:100%;border-collapse:collapse;font-size:13.5px;margin:4px 0 12px}
-.h-info td,.h-info th{text-align:left;padding:6px 8px 6px 0;border-bottom:1px solid var(--l);vertical-align:top}
-.h-info p{font-size:13.5px;line-height:1.5}
+.h-info{background:var(--p);border-radius:14px;padding:2px 14px;margin-top:12px}
+.h-info summary{cursor:pointer;font-weight:800;padding:8px 0;font-size:14px}
+.h-info table{width:100%;border-collapse:collapse;font-size:13px;margin:4px 0 10px}
+.h-info td,.h-info th{text-align:left;padding:5px 8px 5px 0;border-bottom:1px solid var(--l);vertical-align:top}
+.h-info p{font-size:13px;line-height:1.5}
 @media(max-width:700px){
-  .hr-hd{grid-template-columns:34px 1fr;gap:10px;padding:11px 12px}
-  .hr-lk{width:30px;height:30px;font-size:14px}
-  .hr-tila{grid-column:2;justify-self:start}
-  .hr-body{padding:0 12px 12px 12px}
-  .h-kpi{grid-template-columns:1fr 1fr}
-  .hr-act button{flex:1 1 auto}
+  .hr-hd{grid-template-columns:22px minmax(0,1fr) auto;gap:8px;padding:8px 10px;min-height:52px}
+  .hr-klo,.hr-chev{display:none}
+  .hr-main{flex-direction:column;align-items:flex-start;gap:0}
+  .hr-t{max-width:100%;font-size:14px}
+  .hr-sub:before{content:attr(data-klo) " · "}
+  .hr-tila{font-size:11.5px}
+  .hr-tila b{display:none}
+  .hrow.lapsi .hr-hd{padding-left:22px}
+  .hr-body,.hrow.lapsi .hr-body{padding:0 12px 12px 40px}
+  .hr-dl{grid-template-columns:1fr;gap:0}
+  .hr-dl dt{margin-top:6px}
+  .h-ctl .seg{width:100%;display:flex}.h-ctl .seg button{flex:1}
 }
 </style>
 </head>
@@ -1155,14 +1169,14 @@ html.hsl .top .hbell b{border-color:#0074BF}
 <section class="view" id="v-halytykset">
   <div class="prose">
     <h2>Hälytykset</h2>
-    <p class="lead">Tutkan kaikki hälytykset yhdessä listassa: järjestelmän viat ja liikenteen poikkeamat. Malli on rakennusautomaatiosta (Fidelix, Ouman, Desigo) ja hälytysten hallinnan standardeista ISA-18.2 ja EEMUA 191.</p>
+    <p class="h-lead">Järjestelmän viat ja liikenteen poikkeamat yhdessä listassa. Malli rakennusautomaatiosta (Fidelix, Ouman, Desigo) ja standardeista ISA-18.2 ja EEMUA 191.</p>
     <div id="hKortti"></div>
-    <div class="h-sum" id="hSum"></div>
     <div class="h-ctl">
+      <div class="h-sum" id="hSum"></div>
       <div class="seg" id="hTab"><button data-t="aktiiviset" class="on">Aktiiviset</button><button data-t="kuittaamattomat">Kuittaamatta</button><button data-t="historia">Historia</button></div>
       <div class="seg" id="hLahde"><button data-l="kaikki" class="on">Kaikki</button><button data-l="jarjestelma">Järjestelmä</button><button data-l="liikenne">Liikenne</button></div>
     </div>
-    <div class="h-list" id="hList"><div class="empty">Ladataan…</div></div>
+    <div class="h-list" id="hList"><div class="h-tyhja">Ladataan…</div></div>
     <div class="h-kpi" id="hKpi"></div>
     <p class="h-toist" id="hToist"></p>
     <details class="h-info">
@@ -3443,7 +3457,8 @@ async function renderVahti(){
     ${nyt.map(x=>`<div class="vr ${x.tila}"><span class="vi">${ik[x.tila]||"?"}</span><span class="vk">${esc(x.k)}</span><span class="va">${esc(x.arvo||"")}</span><span class="vd">${esc(x.kuvaus||"")}</span></div>`).join("")}</div>`;
 }
 /* ================= hälytyslista ================= */
-const HL = {data:null, tab:"aktiiviset", lahde:"kaikki", auki:new Set(), kortti:null, ajastin:null, bellAjastin:null, avattu:null};
+const HL = {data:null, tab:"aktiiviset", lahde:"kaikki", auki:new Set(), kortti:null, ajastin:null, bellAjastin:null, avattu:null, lisa:new Set()};
+document.addEventListener("toggle", e=>{ const d = e.target; if(!d.classList || !d.classList.contains("hr-lisa")) return; const id = +d.closest(".hrow").dataset.id; d.open ? HL.lisa.add(id) : HL.lisa.delete(id); }, true);
 const H_NIMI = {A:"Kriittinen", B:"Vakava", C:"Huomio"};
 async function hRpc(fn, body){
   const r = await fetch(API+"rpc/"+fn, {method:"POST", headers:{apikey:KEY, Authorization:"Bearer "+KEY, "Content-Type":"application/json"}, body:JSON.stringify(body||{})});
@@ -3462,47 +3477,49 @@ function hTila(r){
   if(!r.kuitattu) return ["poistunut-k", "Poistunut · kuittaamatta"];
   return ["suljettu", "Poistunut "+hKlo(r.poistui)];
 }
-function hRivi(r, k){
+function hRivi(r, k, lapsi, lapsia){
   const [tk, tt] = hTila(r), auki = HL.auki.has(r.id), fok = HL.kortti && HL.kortti.id===r.id;
   const kortti = fok && k ? k : null;
   const lahde = r.lahde==="liikenne" ? "Liikenne" : "Järjestelmä";
   const aj = (kortti ? kortti.tapahtumat : r.tapahtumat) || [];
   const yks = kortti && kortti.yksityinen || {};
-  const virheet = (yks.virheet || []);
-  const aktiivinen = !r.poistui;
-  const voiToimia = !!kortti;
-  const hilj = !r.poistui && r.hiljennetty_asti && new Date(r.hiljennetty_asti) > Date.now();
-  const syy = r.syy_id && HL.data ? HL.data.rivit.find(x=>x.id===r.syy_id) : null;
-  return `<article class="hrow l${r.luokka} ${r.poistui?"poistunut":""} ${auki?"auki":""} ${fok?"fokus":""}" data-id="${r.id}">
-    <button class="hr-hd" aria-expanded="${auki}" aria-controls="hb${r.id}">
+  const virheet = yks.virheet || [];
+  const aktiivinen = !r.poistui, voiToimia = !!kortti;
+  const hilj = aktiivinen && r.hiljennetty_asti && new Date(r.hiljennetty_asti) > Date.now();
+  const sub = [lahde, r.kertaa7 > 1 ? r.kertaa7+"× 7 vrk" : "", lapsia ? "+"+lapsia+" seurausta" : "", r.poistui ? "kesti "+hKesto(r.alkoi, r.poistui) : "kesto "+hKesto(r.alkoi)].filter(Boolean).join(" · ");
+  const lyhytTila = {kuittaamaton:"Kuittaamatta", kuitattu:"Kuitattu", hiljennetty:"Hiljennetty", "poistunut-k":"Poistunut, kuittaamatta", suljettu:"Poistunut"}[tk];
+  return `<article class="hrow l${r.luokka} ${r.poistui?"poistunut":""} ${auki?"auki":""} ${fok?"fokus":""} ${lapsi?"lapsi":""}" data-id="${r.id}">
+    <button class="hr-hd" aria-expanded="${auki}" aria-controls="hb${r.id}" title="${esc(tt)}">
       <span class="hr-lk" title="${H_NIMI[r.luokka]}">${r.luokka}</span>
-      <span class="hr-main"><span class="hr-t">${esc(r.otsikko)}</span>
-        <span class="hr-sub">${esc(H_NIMI[r.luokka])} · ${lahde}${r.lahde==="jarjestelma" ? "" : " · "+esc(r.kohde)} · alkoi ${hKlo(r.alkoi)} (${r.poistui ? "kesti "+hKesto(r.alkoi, r.poistui) : hKesto(r.alkoi)})${r.kertaa7 > 1 ? ` · ${r.kertaa7}× 7 vrk` : ""}</span></span>
-      <span class="hr-tila ${tk}"><i></i>${esc(tt)}</span>
+      <span class="hr-klo">${hKlo(r.alkoi)}</span>
+      <span class="hr-main"><span class="hr-t">${lapsi ? "↳ " : ""}${esc(r.otsikko)}</span><span class="hr-sub" data-klo="${hKlo(r.alkoi)}">${esc(sub)}</span></span>
+      <span class="hr-tila ${tk}"><i></i>${esc(lyhytTila)}</span>
+      <span class="hr-chev" aria-hidden="true">›</span>
     </button>
     <div class="hr-body" id="hb${r.id}">
-      <p class="hr-kuv">${esc(r.kuvaus||"")}</p>
-      ${r.ohje ? `<div class="hr-ohje"><b>Ensimmäinen toimenpide</b>${esc(r.ohje)}</div>` : ""}
-      ${kortti ? `<div class="hr-yks"><div class="k"><span>VIRHETIEDOT · näkyvät vain ilmoituksen saajalle</span><span>kortti voimassa ${hKlo(kortti.voimassa)} asti</span></div>
-        ${virheet.length ? virheet.map(v=>`<div class="v"><b>${esc(v.mika)}</b> · ${esc(v.klo)}<code>${esc(v.viesti||"(ei virheviestiä)")}</code></div>`).join("")
-          : r.lahde==="liikenne" ? `<div class="v">Ohituksia ${esc(yks.ohitukset)} · nyt ${esc(yks.nyt_s)} s / väli · tavallisesti ${esc(yks.tavallisesti_s)} s · poikkeama z = ${esc(yks.z)}${yks.muut_luvat ? ` · samalla kohdalla ${esc(yks.muut_luvat)} muuta lupaa` : ""}</div>`
-          : `<div class="v">${esc(yks.arvo||"")} · ${esc(yks.kuvaus||"")}</div>`}
-        ${(kortti.aiemmat||[]).length ? `<div class="v"><b>Aiemmin 30 vrk:</b> ${kortti.aiemmat.map(a=>`${hKlo(a.alkoi)} (${a.poistui ? hKesto(a.alkoi,a.poistui) : "auki"})`).join(", ")}</div>` : `<div class="v">Ei aiempia samoja hälytyksiä 30 vrk aikana.</div>`}
-      </div>` : ""}
-      <div class="hr-meta">
-        ${r.linjat && r.linjat.length ? `<span class="hr-linjat">${r.linjat.slice(0,8).map(l=>`<span>${esc(l)}</span>`).join("")}</span>` : ""}
-        ${r.lupa_id ? `<a href="#/?l=${encodeURIComponent(r.lupa_id)}">Näytä työmaa kartalla →</a>` : ""}
-        ${r.avain && r.avain.startsWith("vahti:") ? `<a href="#/kehitys?l=vahti">Vahdin tarkistukset →</a>` : ""}
-        ${syy ? `<span>Juurisyy: <a href="#" data-hfok="${syy.id}">${esc(syy.otsikko)}</a></span>` : ""}
-        ${r.toistot ? `<span>Palannut ${r.toistot} kertaa</span>` : ""}
-      </div>
-      <ol class="hr-aj">${aj.map(e=>`<li class="${esc(e.laji)}"><time>${hKlo(e.t)}</time>${esc(e.kuvaus||e.laji)}${kortti && e.yksityinen ? `<span class="yk">${esc(e.yksityinen)}</span>` : ""}</li>`).join("")}</ol>
+      <dl class="hr-dl">
+        <dt>Mitä</dt><dd>${esc(r.kuvaus||"")}${r.linjat && r.linjat.length ? ` <span class="hr-linjat">${r.linjat.slice(0,8).map(l=>`<span>${esc(l)}</span>`).join("")}</span>` : ""}</dd>
+        ${r.syy ? `<dt>Syy</dt><dd>${esc(r.syy)}</dd>` : ""}
+        ${r.vaikutus ? `<dt>Vaikutus</dt><dd>${esc(r.vaikutus)}</dd>` : ""}
+        ${r.ohje ? `<dt>Tee näin</dt><dd class="tee">${esc(r.ohje)}</dd>` : ""}
+        <dt>Tila</dt><dd>${esc(tt)} · alkoi ${hKlo(r.alkoi)}${r.toistot ? ` · palannut ${r.toistot} kertaa` : ""}</dd>
+      </dl>
       <div class="hr-act">
         <button data-toimi="kuittaa" ${voiToimia && !r.kuitattu ? "" : "disabled"}>✓ ${r.kuitattu ? "Kuitattu "+hKlo(r.kuitattu) : "Kuittaa"}</button>
-        ${r.ajettavissa ? `<button data-toimi="aja" class="toissij" ${voiToimia && aktiivinen && !(kortti && kortti.uusinta_kaynnissa) ? "" : "disabled"}>↻ ${kortti && kortti.uusinta_kaynnissa ? "Uudelleenajo käynnissä" : "Aja uudelleen"}</button>` : ""}
+        ${r.ajettavissa ? `<button data-toimi="aja" class="toissij" ${voiToimia && aktiivinen && !(kortti && kortti.uusinta_kaynnissa) ? "" : "disabled"}>↻ ${kortti && kortti.uusinta_kaynnissa ? "Ajo käynnissä" : "Aja uudelleen"}</button>` : ""}
         ${aktiivinen ? (hilj ? `<button class="toissij" disabled>Hiljennetty ${hKlo(r.hiljennetty_asti)} asti</button>` : `<button data-toimi="hiljenna" class="toissij" ${voiToimia ? "" : "disabled"}>Hiljennä 4 h</button>`) : ""}
-        ${voiToimia ? "" : `<span class="note">Toimenpiteet tehdään hälytysilmoituksen kautta: napit puhelimessa tai ilmoituksesta avattu kortti. Tuotannossa tähän tulisivat kirjautuminen ja roolit.</span>`}
+        ${r.lupa_id ? `<a href="#/?l=${encodeURIComponent(r.lupa_id)}">Kartalla →</a>` : ""}
+        ${r.avain && r.avain.startsWith("vahti:") ? `<a href="#/kehitys?l=vahti">Vahti →</a>` : ""}
+        ${voiToimia ? "" : `<span class="note">Toimenpiteet ilmoituksen kautta</span>`}
       </div>
+      <details class="hr-lisa" ${HL.lisa.has(r.id) ? "open" : ""}><summary>${kortti ? "Virheviesti ja aikajana" : "Aikajana"} (${aj.length})</summary>
+        ${kortti ? `<div class="hr-yks"><div class="k">VAIN ILMOITUKSEN SAAJALLE · KORTTI VOIMASSA ${hKlo(kortti.voimassa)} ASTI</div>
+          ${virheet.length ? virheet.map(v=>`<div class="v"><b>${esc(v.mika)}</b> · ${esc(v.klo)}<code>${esc(v.viesti||"(ei virheviestiä)")}</code></div>`).join("")
+            : r.lahde==="liikenne" ? `<div class="v">Ohituksia ${esc(yks.ohitukset)} · nyt ${esc(yks.nyt_s)} s / väli · tavallisesti ${esc(yks.tavallisesti_s)} s · z = ${esc(yks.z)}${yks.muut_luvat ? ` · samalla kohdalla ${esc(yks.muut_luvat)} muuta lupaa` : ""}</div>`
+            : `<div class="v">${esc(yks.arvo||"")} · ${esc(yks.kuvaus||"")}</div>`}
+          <div class="v">${(kortti.aiemmat||[]).length ? `Aiemmin 30 vrk: ${kortti.aiemmat.map(a=>hKlo(a.alkoi)).join(", ")}` : "Ei aiempia samoja hälytyksiä 30 vrk aikana."}</div></div>` : ""}
+        <ol class="hr-aj">${aj.map(e=>`<li class="${esc(e.laji)}"><time>${hKlo(e.t)}</time><span>${esc(e.kuvaus||e.laji)}${kortti && e.yksityinen ? `<span class="yk">${esc(e.yksityinen)}</span>` : ""}</span></li>`).join("")}</ol>
+      </details>
     </div>
   </article>`;
 }
@@ -3510,29 +3527,37 @@ function hPiirra(){
   const d = HL.data; if(!d) return;
   const R = d.rivit || [], akt = R.filter(r=>!r.poistui), kuit = R.filter(r=>!r.kuitattu);
   const lk = l => akt.filter(r=>r.luokka===l).length;
+  document.getElementById("v-halytykset").classList.toggle("kortti", !!HL.kortti);
   document.getElementById("hSum").innerHTML = akt.length
-    ? ["A","B","C"].map(l=>`<span class="h-chip ${l} ${lk(l)?"":"nolla"}"><i></i>${lk(l)} ${H_NIMI[l].toLowerCase()}</span>`).join("") + `<span class="h-chip"><i style="background:#B91C1C"></i>${kuit.length} kuittaamatta</span>`
-    : `<span class="h-chip ok"><i></i>Ei aktiivisia hälytyksiä</span>${kuit.length ? `<span class="h-chip"><i style="background:#8A5A00"></i>${kuit.length} kuittaamatta</span>` : ""}`;
+    ? ["A","B","C"].filter(l=>lk(l)).map(l=>`<span class="h-chip ${l}"><i></i>${lk(l)} ${H_NIMI[l].toLowerCase()}</span>`).join("")
+    : `<span class="h-chip ok"><i></i>Ei aktiivisia hälytyksiä</span>`;
   const tabs = {aktiiviset:akt, kuittaamattomat:kuit, historia:R};
   document.querySelectorAll("#hTab button").forEach(b=>{ const n = tabs[b.dataset.t].length; b.classList.toggle("on", b.dataset.t===HL.tab);
     b.innerHTML = {aktiiviset:"Aktiiviset", kuittaamattomat:"Kuittaamatta", historia:"Historia"}[b.dataset.t] + `<small>${n}</small>`; });
   document.querySelectorAll("#hLahde button").forEach(b=>b.classList.toggle("on", b.dataset.l===HL.lahde));
   let rivit = tabs[HL.tab].filter(r=>HL.lahde==="kaikki" || r.lahde===HL.lahde);
-  // ilmoituksesta avattu hälytys aina ensimmäisenä, vaikka se olisi jo poistunut
-  if(HL.kortti){ const f = R.find(r=>r.id===HL.kortti.id); if(f){ rivit = [f, ...rivit.filter(r=>r.id!==f.id)]; } }
+  if(HL.kortti){ const f = R.find(r=>r.id===HL.kortti.id); if(f) rivit = [f, ...rivit.filter(r=>r.id!==f.id)]; }
+  // juurisyyn seuraukset juurisyyn alle
+  const ids = new Set(rivit.map(r=>r.id));
+  const lapset = {}; rivit.forEach(r=>{ if(r.syy_id && ids.has(r.syy_id)) (lapset[r.syy_id] ||= []).push(r); });
+  const ylin = rivit.filter(r=>!(r.syy_id && ids.has(r.syy_id)));
+  const kk = HL.kortti && HL.kortti.data;
   const tyhja = {aktiiviset:"Ei aktiivisia hälytyksiä", kuittaamattomat:"Kaikki hälytykset on kuitattu", historia:"Ei hälytyksiä 7 vuorokauden aikana"}[HL.tab];
-  document.getElementById("hList").innerHTML = rivit.length ? rivit.map(r=>hRivi(r, HL.kortti && HL.kortti.data)).join("")
+  document.getElementById("hList").innerHTML = ylin.length
+    ? ylin.map(r=>hRivi(r, kk, false, (lapset[r.id]||[]).length) + (lapset[r.id]||[]).map(c=>hRivi(c, kk, true, 0)).join("")).join("")
     : `<div class="h-tyhja"><b>✓ ${tyhja}</b>${HL.tab==="aktiiviset" && R.length ? `${R.length} hälytystä 7 vrk aikana näkyy historiassa.` : "Tutka ja liikenne toimivat tavalliseen tapaan."}</div>`;
   const m = d.mittarit || {};
-  const per10 = m.vrk7 != null ? m.vrk7/(7*144) : null;
-  document.getElementById("hKpi").innerHTML = [
-    [nf(m.vrk), `hälytystä 24 h · ${nf(m.vrk7)} 7 vrk`, per10!=null ? [per10 <= 0.1, "EEMUA 191: alle 1 / 10 min"] : null],
-    [m.kuittaus_min!=null ? nf(m.kuittaus_min)+" min" : "–", "kuittausaika, mediaani 7 vrk", null],
-    [nf(m.pitkaaikaiset), "aktiivisena yli 24 h", [ (m.pitkaaikaiset||0) < 5, "tavoite alle 5"]],
-    [nf(m.tulvat7), "hälytystulvaa 7 vrk", [ !(m.tulvat7>0), "tavoite 0"]],
-  ].map(([b,s,t])=>`<div><b>${b}</b><small>${s}</small>${t ? `<em class="${t[0]?"":"yli"}">${t[0]?"✓ ":"! "}${t[1]}</em>` : ""}</div>`).join("");
+  const per10 = m.vrk7 != null ? m.vrk7/(7*144) : 0;
+  const tav = (ok, t) => `<span class="${ok?"ok":"yli"}">${ok?"✓":"!"} ${t}</span>`;
   const to = m.toistuvat || [];
-  document.getElementById("hToist").innerHTML = to.length ? `<b>Toistuvimmat 7 vrk:</b> ${to.map(x=>`${esc(x.otsikko)} ${x.kertaa}×`).join(" · ")}. Toistuva hälytys kertoo juurisyystä, joka kannattaa korjata pysyvästi.` : "";
+  document.getElementById("hKpi").innerHTML = [
+    `<span><b>${nf(m.vrk)}</b> hälytystä 24 h · <b>${nf(m.vrk7)}</b> 7 vrk ${tav(per10 <= 0.1, "EEMUA alle 1 / 10 min")}</span>`,
+    `<span>kuittausaika <b>${m.kuittaus_min!=null ? nf(m.kuittaus_min)+" min" : "–"}</b></span>`,
+    `<span>yli 24 h aktiivisena <b>${nf(m.pitkaaikaiset)}</b></span>`,
+    `<span>tulvia 7 vrk <b>${nf(m.tulvat7)}</b></span>`,
+    to.length ? `<span>toistuvimmat: ${to.map(x=>`${esc(x.otsikko)} <b>${x.kertaa}×</b>`).join(", ")}</span>` : "",
+  ].join("");
+  document.getElementById("hToist").innerHTML = "";
 }
 async function hLataa(){
   try{
