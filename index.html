@@ -766,6 +766,97 @@ html.tt-lukko{overflow:hidden}
 .tt-foot .note{flex:1;min-width:200px;font-size:12px}
 .tt-help{position:fixed;right:18px;bottom:18px;z-index:1500;width:40px;height:40px;border-radius:50%;border:0;background:#0074BF;color:#fff;font:700 18px/1 inherit;box-shadow:0 6px 18px rgba(0,0,0,.2);cursor:pointer}
 @media(max-width:640px){.tt-3{grid-template-columns:1fr}.tt-card{padding:22px 18px 18px}.tt-card h2{font-size:20px}}
+/* ===== Hälytykset (rakennusautomaation hälytyslista: luokat, elinkaari, aikajana) ===== */
+.hbell{position:relative;display:inline-grid;place-items:center;width:34px;height:34px;border-radius:50%;border:1px solid var(--l);background:var(--g);color:var(--i2);text-decoration:none;flex:none}
+.hbell[hidden]{display:none}
+.hbell svg{width:18px;height:18px}
+.hbell b{position:absolute;top:-5px;right:-6px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#B91C1C;color:#fff;font-size:11px;line-height:18px;text-align:center;font-weight:800;border:2px solid #fff}
+.hbell b:empty{display:none}
+.hbell.lB b{background:#C2410C}.hbell.lC b{background:#007AC9}
+html.hsl .top .hbell{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.35);color:#fff}
+html.hsl .top .hbell b{border-color:#0074BF}
+#v-halytykset .prose{max-width:980px}
+.h-sum{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 12px}
+.h-chip{display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border-radius:999px;background:var(--p);font-size:13.5px;font-weight:700;color:var(--i2)}
+.h-chip i{width:10px;height:10px;border-radius:50%;background:var(--neutral)}
+.h-chip.A i{background:#B91C1C}.h-chip.B i{background:#C2410C}.h-chip.C i{background:#007AC9}.h-chip.ok i{background:#0B7A3E}
+.h-chip.nolla{opacity:.55}
+.h-ctl{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin:6px 0 10px}
+.h-ctl .seg button small{opacity:.75;font-weight:600;margin-left:4px}
+.h-list{display:flex;flex-direction:column;gap:8px}
+.hrow{background:var(--p);border-radius:14px;border-left:5px solid var(--neutral);overflow:hidden}
+.hrow.lA{border-left-color:#B91C1C}.hrow.lB{border-left-color:#C2410C}.hrow.lC{border-left-color:#007AC9}
+.hrow.poistunut{border-left-color:#B8C2CA}
+.hrow.fokus{box-shadow:0 0 0 2px var(--a)}
+.hr-hd{all:unset;box-sizing:border-box;display:grid;grid-template-columns:40px 1fr auto;gap:12px;align-items:center;width:100%;padding:12px 14px;cursor:pointer}
+.hr-hd:focus-visible{outline:2px solid var(--a);outline-offset:-2px;border-radius:12px}
+.hr-lk{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;font-weight:800;font-size:15px;color:#fff;background:var(--neutral)}
+.lA .hr-lk{background:#B91C1C}.lB .hr-lk{background:#C2410C}.lC .hr-lk{background:#007AC9}
+.poistunut .hr-lk{background:#E4E9ED;color:#5C6B78}
+.hr-main{min-width:0}
+.hr-t{display:block;font-weight:800;font-size:15px;line-height:1.3}
+.hr-sub{display:block;font-size:12.5px;color:var(--m);margin-top:2px}
+.hr-tila{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;white-space:nowrap;padding:4px 10px;border-radius:999px;background:var(--l2);color:var(--i2)}
+.hr-tila i{width:8px;height:8px;border-radius:50%;background:currentColor}
+.hr-tila.kuittaamaton{background:#FDECEC;color:#B91C1C}
+.hr-tila.kuittaamaton i{animation:hpulse 1.4s ease-in-out infinite}
+.hr-tila.kuitattu{background:#FFF4E5;color:#9A4A06}
+.hr-tila.hiljennetty{background:#EEF0F3;color:#5C6B78}
+.hr-tila.poistunut-k{background:#FFF8E1;color:#8A5A00}
+.hr-tila.suljettu{background:#E7F5EC;color:#0B7A3E}
+@keyframes hpulse{0%,100%{opacity:1}50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){.hr-tila.kuittaamaton i{animation:none}}
+.hr-body{display:none;padding:0 14px 14px 66px}
+.hrow.auki .hr-body{display:block}
+.hr-kuv{margin:0 0 10px;font-size:14.5px;line-height:1.5;color:var(--i)}
+.hr-ohje{background:var(--a-soft);border-radius:10px;padding:10px 12px;font-size:14px;line-height:1.45;margin-bottom:10px}
+.hr-ohje b{display:block;font-size:12px;letter-spacing:.03em;text-transform:uppercase;color:var(--a);margin-bottom:2px}
+.hr-yks{border:1px dashed #B8C2CA;border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:13px}
+.hr-yks .k{font-size:12px;font-weight:800;color:var(--m);margin-bottom:6px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.hr-yks .v{margin:6px 0}.hr-yks .v b{font-size:13px}
+.hr-yks code{display:block;white-space:pre-wrap;word-break:break-word;font-family:"IBM Plex Mono",monospace !important;font-size:12px;background:var(--g);border-radius:6px;padding:6px 8px;margin-top:3px;color:#7A1F1F}
+.hr-meta{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;color:var(--m);margin-bottom:10px}
+.hr-meta a{font-weight:700}
+.hr-linjat{display:inline-flex;gap:4px;flex-wrap:wrap}
+.hr-linjat span{background:#007AC9;color:#fff;border-radius:6px;padding:0 6px;font-weight:800;font-size:12px}
+.hr-aj{list-style:none;margin:0 0 12px;padding:0 0 0 14px;border-left:2px solid var(--l)}
+.hr-aj li{position:relative;font-size:13px;line-height:1.4;padding:3px 0}
+.hr-aj li:before{content:"";position:absolute;left:-19px;top:9px;width:8px;height:8px;border-radius:50%;background:var(--p);border:2px solid #B8C2CA}
+.hr-aj li.alkoi:before,.hr-aj li.palasi:before,.hr-aj li.nousi:before{border-color:#B91C1C}
+.hr-aj li.kuitattu:before,.hr-aj li.hiljennetty:before{border-color:#C2410C}
+.hr-aj li.poistui:before,.hr-aj li.ajettu:before{border-color:#0B7A3E;background:#0B7A3E}
+.hr-aj li.ei_korjaantunut:before{border-color:#B91C1C;background:#B91C1C}
+.hr-aj li.ilmoitettu:before,.hr-aj li.uudelleenajo:before{border-color:#007AC9}
+.hr-aj time{font-family:"IBM Plex Mono",monospace !important;font-size:12px;color:var(--m);margin-right:8px}
+.hr-aj .yk{display:block;font-family:"IBM Plex Mono",monospace !important;font-size:11.5px;color:#7A1F1F;margin-top:2px;word-break:break-word}
+.hr-act{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.hr-act button{border:0;border-radius:999px;padding:9px 16px;font-weight:800;font-size:14px;background:var(--a);color:#fff;min-height:40px}
+.hr-act button.toissij{background:var(--p);color:var(--a);box-shadow:inset 0 0 0 1.5px var(--a)}
+.hr-act button:disabled{background:#E4E9ED;color:#8A97A3;box-shadow:none;cursor:not-allowed}
+.hr-act .note{font-size:12.5px;flex-basis:100%}
+.h-tyhja{background:var(--p);border-radius:14px;padding:22px;text-align:center;color:var(--m)}
+.h-tyhja b{display:block;color:#0B7A3E;font-size:16px;margin-bottom:2px}
+.h-kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:18px 0 8px}
+.h-kpi div{background:var(--p);border-radius:14px;padding:10px 12px}
+.h-kpi b{display:block;font-size:22px;line-height:1.2}
+.h-kpi small{display:block;font-size:12px;color:var(--m);line-height:1.35}
+.h-kpi em{font-style:normal;display:block;font-size:11.5px;color:#0B7A3E;font-weight:700;margin-top:2px}
+.h-kpi em.yli{color:#B91C1C}
+.h-toist{font-size:13px;color:var(--i2);margin:0 0 14px}
+.h-toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#1A1A1A;color:#fff;padding:10px 18px;border-radius:999px;font-weight:700;font-size:14px;z-index:3000;box-shadow:0 6px 20px rgba(0,0,0,.25);max-width:calc(100vw - 32px)}
+.h-info{background:var(--p);border-radius:14px;padding:4px 16px;margin-top:16px}
+.h-info summary{cursor:pointer;font-weight:800;padding:10px 0}
+.h-info table{width:100%;border-collapse:collapse;font-size:13.5px;margin:4px 0 12px}
+.h-info td,.h-info th{text-align:left;padding:6px 8px 6px 0;border-bottom:1px solid var(--l);vertical-align:top}
+.h-info p{font-size:13.5px;line-height:1.5}
+@media(max-width:700px){
+  .hr-hd{grid-template-columns:34px 1fr;gap:10px;padding:11px 12px}
+  .hr-lk{width:30px;height:30px;font-size:14px}
+  .hr-tila{grid-column:2;justify-self:start}
+  .hr-body{padding:0 12px 12px 12px}
+  .h-kpi{grid-template-columns:1fr 1fr}
+  .hr-act button{flex:1 1 auto}
+}
 </style>
 </head>
 <body>
@@ -781,6 +872,7 @@ html.tt-lukko{overflow:hidden}
     <a href="#/hsl" data-r="hsl">Pilotti HSL:ssä</a>
     <a href="#/menetelma" data-r="menetelma">Tietoa</a>
   </nav>
+  <a class="hbell" id="hBell" href="#/halytykset" hidden aria-label="Hälytykset" title="Hälytykset"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><b id="hBellN"></b></a>
   <div class="live" role="status"><span class="dot" id="dot"></span><span id="status">Yhdistetään…</span></div>
 </div></div>
 
@@ -1057,6 +1149,37 @@ html.tt-lukko{overflow:hidden}
     </tbody></table>
   </div>
 </section>
+
+<!-- ================= HÄLYTYKSET (piilossa: ?testi tai ilmoituksen linkki) ================= -->
+<section class="view" id="v-halytykset">
+  <div class="prose">
+    <h2>Hälytykset</h2>
+    <p class="lead">Tutkan kaikki hälytykset yhdessä listassa: järjestelmän viat ja liikenteen poikkeamat. Malli on rakennusautomaatiosta (Fidelix, Ouman, Desigo) ja hälytysten hallinnan standardeista ISA-18.2 ja EEMUA 191.</p>
+    <div id="hKortti"></div>
+    <div class="h-sum" id="hSum"></div>
+    <div class="h-ctl">
+      <div class="seg" id="hTab"><button data-t="aktiiviset" class="on">Aktiiviset</button><button data-t="kuittaamattomat">Kuittaamattomat</button><button data-t="historia">Historia 7 vrk</button></div>
+      <div class="seg" id="hLahde"><button data-l="kaikki" class="on">Kaikki</button><button data-l="jarjestelma">Järjestelmä</button><button data-l="liikenne">Liikenne</button></div>
+    </div>
+    <div class="h-list" id="hList"><div class="empty">Ladataan…</div></div>
+    <div class="h-kpi" id="hKpi"></div>
+    <p class="h-toist" id="hToist"></p>
+    <details class="h-info">
+      <summary>Miten hälytykset toimivat</summary>
+      <table>
+        <tr><th>Luokka</th><th>Milloin</th><th>Ilmoitus</th></tr>
+        <tr><td><b style="color:#B91C1C">A · Kriittinen</b></td><td>Palvelu ei toimi: ajoneuvodata pysähtynyt yli 2 h, tietokanta täynnä tai kaatunut.</td><td>Heti, ohittaa äänettömän tilan</td></tr>
+        <tr><td><b style="color:#C2410C">B · Vakava</b></td><td>Osa rikki nyt: ajo, funktio tai kielimalli epäonnistuu.</td><td>Heti</td></tr>
+        <tr><td><b style="color:#007AC9">C · Huomio</b></td><td>Tarkista pian: tila yli 70 %, lähdedata vanhentunut, työmaa hidastaa tavallista enemmän.</td><td>Hiljainen ilmoitus</td></tr>
+      </table>
+      <p><b>Elinkaari.</b> Hälytys on ensin <i>aktiivinen ja kuittaamaton</i>. Kuittaus kertoo, että joku hoitaa asiaa. Kun vika poistuu, hälytys siirtyy historiaan, mutta kuittaamaton jää listalle, jotta yölliset viat eivät huku. Jokainen muutos kirjataan aikajanalle.</p>
+      <p><b>Melun esto.</b> Ilmoitus lähtee vain, kun luokka nousee. Jos sama vika palaa puolen tunnin sisällä, sama rivi avautuu uudelleen ja toistolaskuri kasvaa. Tunnetun vian voi hiljentää 4 tunniksi. Tietokannan kaatumisen jälkeiset järjestelmähälytykset niputetaan sen alle (juurisyy), ja jos uusia hälytyksiä tulee kerralla yli kolme, puhelimeen lähtee yksi koosteilmoitus.</p>
+      <p><b>Liikennehälytys.</b> Työmaan pysäkkivälien viimeisen tunnin ohituksia verrataan samaan kellonaikaan edellisten 14 päivän aikana. Hälytys avautuu, kun ohituksia on vähintään 8 ja ne ovat keskimäärin vähintään 25 s hitaampia ja poikkeama on tilastollisesti selvä (z ≥ 3). Hälytys poistuu, kun ero putoaa alle 10 sekunnin (hystereesi estää värinää). Kolmen päivän testidatalla sääntö olisi laukaissut 1–5 hälytystä päivässä.</p>
+      <p><b>Toimenpiteet.</b> Ilmoituksen napeilla voi kuitata, hiljentää tai käynnistää ennalta hyväksytyn uudelleenajon. Tunniste kelpaa kerran tunnin ajan; ilmoituksen kortti on voimassa vuorokauden. Virheviestit näkyvät vain kortissa, eivät julkisessa listassa. Tuotannossa tähän tulisivat kirjautuminen, roolit ja hälytysten ohjaus oikealle ryhmälle.</p>
+    </details>
+  </div>
+</section>
+
 
 <!-- ================= ENNAKKOARVIO ================= -->
 <section class="view" id="v-ennakko">
@@ -3315,9 +3438,142 @@ async function renderVahti(){
     ${k ? `<div class="vahti-k"><span class="ai-badge"><i></i>VAHDIN AAMUKATSAUS</span> <span class="note">${fmtShort(r.t)} klo ${new Date(r.t).toLocaleTimeString("fi-FI",{hour:"2-digit",minute:"2-digit"})} · ${esc(r.malli||"")}</span>
       <b>${esc(k.otsikko||"")}</b>${(k.huomiot||[]).length ? `<ul>${k.huomiot.map(h=>`<li><b>${esc(h.k||"")}:</b> ${esc(h.teksti||"")} <span class="note">→ ${esc(h.ehdotus||"")}</span></li>`).join("")}</ul>` : ""}</div>`
       : `<div class="note" style="margin-bottom:8px">Ensimmäinen aamukatsaus kirjoitetaan seuraavana aamuna klo 7.20. Alla tarkistukset reaaliajassa.</div>`}
-    <div class="vahti-t"><div class="vahti-h">Tarkistukset nyt · ${huom ? `<b>${huom} vaatii huomiota</b>` : "kaikki kunnossa"}${korj ? ` · ${korj} korjautunut 24 h aikana` : ""}</div>
+    ${LIIK_TESTI ? `<p style="margin:0 0 8px"><a href="#/halytykset">Hälytyslista: aktiiviset, kuittaamattomat ja historia →</a></p>` : ""}<div class="vahti-t"><div class="vahti-h">Tarkistukset nyt · ${huom ? `<b>${huom} vaatii huomiota</b>` : "kaikki kunnossa"}${korj ? ` · ${korj} korjautunut 24 h aikana` : ""}</div>
     ${nyt.map(x=>`<div class="vr ${x.tila}"><span class="vi">${ik[x.tila]||"?"}</span><span class="vk">${esc(x.k)}</span><span class="va">${esc(x.arvo||"")}</span><span class="vd">${esc(x.kuvaus||"")}</span></div>`).join("")}</div>`;
 }
+/* ================= hälytyslista ================= */
+const HL = {data:null, tab:"aktiiviset", lahde:"kaikki", auki:new Set(), kortti:null, ajastin:null, bellAjastin:null, avattu:null};
+const H_NIMI = {A:"Kriittinen", B:"Vakava", C:"Huomio"};
+async function hRpc(fn, body){
+  const r = await fetch(API+"rpc/"+fn, {method:"POST", headers:{apikey:KEY, Authorization:"Bearer "+KEY, "Content-Type":"application/json"}, body:JSON.stringify(body||{})});
+  if(!r.ok) throw new Error(fn+" "+r.status); return r.json();
+}
+const hKlo = t => { if(!t) return ""; const d = new Date(t), nyt = new Date();
+  const k = d.toLocaleTimeString("fi-FI",{hour:"2-digit",minute:"2-digit",timeZone:"Europe/Helsinki"});
+  return d.toDateString()===nyt.toDateString() ? k : `${d.getDate()}.${d.getMonth()+1}. ${k}`; };
+const hKesto = (a, b) => { const m = Math.max(0, Math.round(((b ? new Date(b) : new Date()) - new Date(a))/60000));
+  if(m < 60) return m+" min"; if(m < 1440) return Math.floor(m/60)+" h"+(m%60 ? " "+(m%60)+" min" : ""); return Math.floor(m/1440)+" vrk"; };
+function hTila(r){
+  const nyt = Date.now();
+  if(!r.poistui && r.hiljennetty_asti && new Date(r.hiljennetty_asti) > nyt) return ["hiljennetty", "Hiljennetty "+hKlo(r.hiljennetty_asti)+" asti"];
+  if(!r.poistui && !r.kuitattu) return ["kuittaamaton", "Aktiivinen · kuittaamatta"];
+  if(!r.poistui) return ["kuitattu", "Kuitattu "+hKlo(r.kuitattu)];
+  if(!r.kuitattu) return ["poistunut-k", "Poistunut · kuittaamatta"];
+  return ["suljettu", "Poistunut "+hKlo(r.poistui)];
+}
+function hRivi(r, k){
+  const [tk, tt] = hTila(r), auki = HL.auki.has(r.id), fok = HL.kortti && HL.kortti.id===r.id;
+  const kortti = fok && k ? k : null;
+  const lahde = r.lahde==="liikenne" ? "Liikenne" : "Järjestelmä";
+  const aj = (kortti ? kortti.tapahtumat : r.tapahtumat) || [];
+  const yks = kortti && kortti.yksityinen || {};
+  const virheet = (yks.virheet || []);
+  const aktiivinen = !r.poistui;
+  const voiToimia = !!kortti;
+  const syy = r.syy_id && HL.data ? HL.data.rivit.find(x=>x.id===r.syy_id) : null;
+  return `<article class="hrow l${r.luokka} ${r.poistui?"poistunut":""} ${auki?"auki":""} ${fok?"fokus":""}" data-id="${r.id}">
+    <button class="hr-hd" aria-expanded="${auki}" aria-controls="hb${r.id}">
+      <span class="hr-lk" title="${H_NIMI[r.luokka]}">${r.luokka}</span>
+      <span class="hr-main"><span class="hr-t">${esc(r.otsikko)}</span>
+        <span class="hr-sub">${esc(H_NIMI[r.luokka])} · ${lahde}${r.lahde==="jarjestelma" ? "" : " · "+esc(r.kohde)} · alkoi ${hKlo(r.alkoi)} (${r.poistui ? "kesti "+hKesto(r.alkoi, r.poistui) : hKesto(r.alkoi)})${r.kertaa7 > 1 ? ` · ${r.kertaa7}× 7 vrk` : ""}</span></span>
+      <span class="hr-tila ${tk}"><i></i>${esc(tt)}</span>
+    </button>
+    <div class="hr-body" id="hb${r.id}">
+      <p class="hr-kuv">${esc(r.kuvaus||"")}</p>
+      ${r.ohje ? `<div class="hr-ohje"><b>Ensimmäinen toimenpide</b>${esc(r.ohje)}</div>` : ""}
+      ${kortti ? `<div class="hr-yks"><div class="k"><span>VIRHETIEDOT · näkyvät vain ilmoituksen saajalle</span><span>kortti voimassa ${hKlo(kortti.voimassa)} asti</span></div>
+        ${virheet.length ? virheet.map(v=>`<div class="v"><b>${esc(v.mika)}</b> · ${esc(v.klo)}<code>${esc(v.viesti||"(ei virheviestiä)")}</code></div>`).join("")
+          : r.lahde==="liikenne" ? `<div class="v">Ohituksia ${esc(yks.ohitukset)} · nyt ${esc(yks.nyt_s)} s / väli · tavallisesti ${esc(yks.tavallisesti_s)} s · poikkeama z = ${esc(yks.z)}${yks.muut_luvat ? ` · samalla kohdalla ${esc(yks.muut_luvat)} muuta lupaa` : ""}</div>`
+          : `<div class="v">${esc(yks.arvo||"")} · ${esc(yks.kuvaus||"")}</div>`}
+        ${(kortti.aiemmat||[]).length ? `<div class="v"><b>Aiemmin 30 vrk:</b> ${kortti.aiemmat.map(a=>`${hKlo(a.alkoi)} (${a.poistui ? hKesto(a.alkoi,a.poistui) : "auki"})`).join(", ")}</div>` : `<div class="v">Ei aiempia samoja hälytyksiä 30 vrk aikana.</div>`}
+      </div>` : ""}
+      <div class="hr-meta">
+        ${r.linjat && r.linjat.length ? `<span class="hr-linjat">${r.linjat.slice(0,8).map(l=>`<span>${esc(l)}</span>`).join("")}</span>` : ""}
+        ${r.lupa_id ? `<a href="#/?l=${encodeURIComponent(r.lupa_id)}">Näytä työmaa kartalla →</a>` : ""}
+        ${r.avain && r.avain.startsWith("vahti:") ? `<a href="#/kehitys?l=vahti">Vahdin tarkistukset →</a>` : ""}
+        ${syy ? `<span>Juurisyy: <a href="#" data-hfok="${syy.id}">${esc(syy.otsikko)}</a></span>` : ""}
+        ${r.toistot ? `<span>Palannut ${r.toistot} kertaa</span>` : ""}
+      </div>
+      <ol class="hr-aj">${aj.map(e=>`<li class="${esc(e.laji)}"><time>${hKlo(e.t)}</time>${esc(e.kuvaus||e.laji)}${kortti && e.yksityinen ? `<span class="yk">${esc(e.yksityinen)}</span>` : ""}</li>`).join("")}</ol>
+      <div class="hr-act">
+        <button data-toimi="kuittaa" ${voiToimia && !r.kuitattu ? "" : "disabled"}>✓ ${r.kuitattu ? "Kuitattu "+hKlo(r.kuitattu) : "Kuittaa"}</button>
+        ${r.ajettavissa ? `<button data-toimi="aja" class="toissij" ${voiToimia && aktiivinen && !(kortti && kortti.uusinta_kaynnissa) ? "" : "disabled"}>↻ ${kortti && kortti.uusinta_kaynnissa ? "Uudelleenajo käynnissä" : "Aja uudelleen"}</button>` : ""}
+        ${aktiivinen ? `<button data-toimi="hiljenna" class="toissij" ${voiToimia ? "" : "disabled"}>Hiljennä 4 h</button>` : ""}
+        ${voiToimia ? "" : `<span class="note">Toimenpiteet tehdään hälytysilmoituksen kautta: napit puhelimessa tai ilmoituksesta avattu kortti. Tuotannossa tähän tulisivat kirjautuminen ja roolit.</span>`}
+      </div>
+    </div>
+  </article>`;
+}
+function hPiirra(){
+  const d = HL.data; if(!d) return;
+  const R = d.rivit || [], akt = R.filter(r=>!r.poistui), kuit = R.filter(r=>!r.kuitattu);
+  const lk = l => akt.filter(r=>r.luokka===l).length;
+  document.getElementById("hSum").innerHTML = akt.length
+    ? ["A","B","C"].map(l=>`<span class="h-chip ${l} ${lk(l)?"":"nolla"}"><i></i>${lk(l)} ${H_NIMI[l].toLowerCase()}</span>`).join("") + `<span class="h-chip"><i style="background:#B91C1C"></i>${kuit.length} kuittaamatta</span>`
+    : `<span class="h-chip ok"><i></i>Ei aktiivisia hälytyksiä</span>${kuit.length ? `<span class="h-chip"><i style="background:#8A5A00"></i>${kuit.length} kuittaamatta</span>` : ""}`;
+  const tabs = {aktiiviset:akt, kuittaamattomat:kuit, historia:R};
+  document.querySelectorAll("#hTab button").forEach(b=>{ const n = tabs[b.dataset.t].length; b.classList.toggle("on", b.dataset.t===HL.tab);
+    b.innerHTML = {aktiiviset:"Aktiiviset", kuittaamattomat:"Kuittaamattomat", historia:"Historia 7 vrk"}[b.dataset.t] + `<small>${n}</small>`; });
+  document.querySelectorAll("#hLahde button").forEach(b=>b.classList.toggle("on", b.dataset.l===HL.lahde));
+  let rivit = tabs[HL.tab].filter(r=>HL.lahde==="kaikki" || r.lahde===HL.lahde);
+  // ilmoituksesta avattu hälytys aina ensimmäisenä, vaikka se olisi jo poistunut
+  if(HL.kortti){ const f = R.find(r=>r.id===HL.kortti.id); if(f){ rivit = [f, ...rivit.filter(r=>r.id!==f.id)]; } }
+  const tyhja = {aktiiviset:"Ei aktiivisia hälytyksiä", kuittaamattomat:"Kaikki hälytykset on kuitattu", historia:"Ei hälytyksiä 7 vuorokauden aikana"}[HL.tab];
+  document.getElementById("hList").innerHTML = rivit.length ? rivit.map(r=>hRivi(r, HL.kortti && HL.kortti.data)).join("")
+    : `<div class="h-tyhja"><b>✓ ${tyhja}</b>${HL.tab==="aktiiviset" && R.length ? `${R.length} hälytystä 7 vrk aikana näkyy historiassa.` : "Tutka ja liikenne toimivat tavalliseen tapaan."}</div>`;
+  const m = d.mittarit || {};
+  const per10 = m.vrk7 != null ? m.vrk7/(7*144) : null;
+  document.getElementById("hKpi").innerHTML = [
+    [nf(m.vrk), `hälytystä 24 h · ${nf(m.vrk7)} 7 vrk`, per10!=null ? [per10 <= 0.1, "EEMUA 191: alle 1 / 10 min"] : null],
+    [m.kuittaus_min!=null ? nf(m.kuittaus_min)+" min" : "–", "kuittausaika, mediaani 7 vrk", null],
+    [nf(m.pitkaaikaiset), "aktiivisena yli 24 h", [ (m.pitkaaikaiset||0) < 5, "tavoite alle 5"]],
+    [nf(m.tulvat7), "hälytystulvaa 7 vrk", [ !(m.tulvat7>0), "tavoite 0"]],
+  ].map(([b,s,t])=>`<div><b>${b}</b><small>${s}</small>${t ? `<em class="${t[0]?"":"yli"}">${t[0]?"✓ ":"! "}${t[1]}</em>` : ""}</div>`).join("");
+  const to = m.toistuvat || [];
+  document.getElementById("hToist").innerHTML = to.length ? `<b>Toistuvimmat 7 vrk:</b> ${to.map(x=>`${esc(x.otsikko)} ${x.kertaa}×`).join(" · ")}. Toistuva hälytys kertoo juurisyystä, joka kannattaa korjata pysyvästi.` : "";
+}
+async function hLataa(){
+  try{
+    const [d, k] = await Promise.all([hRpc("halytykset_lista"), HL.kortti ? hRpc("halytys_kortti", {p_id:HL.kortti.id, p_t:HL.kortti.t}).catch(()=>null) : null]);
+    HL.data = d; if(HL.kortti) HL.kortti.data = k;
+    const ilm = document.getElementById("hKortti");
+    if(HL.kortti && !k) ilm.innerHTML = `<div class="hr-ohje" style="background:#FFF4E5"><b style="color:#9A4A06">Kortin tunniste on vanhentunut</b>Kortti on voimassa vuorokauden ilmoituksesta. Hälytyksen tiedot näkyvät alla ilman virheviestejä.</div>`;
+    else ilm.innerHTML = "";
+    if(HL.kortti && HL.avattu!==HL.kortti.id){ HL.auki.add(HL.kortti.id); HL.avattu = HL.kortti.id;
+      const f = d.rivit.find(r=>r.id===HL.kortti.id); if(f && f.poistui && HL.tab==="aktiiviset") HL.tab = f.kuitattu ? "historia" : "kuittaamattomat"; }
+    hPiirra(); hBell(d);
+  }catch(e){ document.getElementById("hList").innerHTML = `<div class="empty">Hälytyksiä ei saatu ladattua. Yritetään uudelleen hetken päästä.</div>`; }
+}
+function hBell(d){
+  const b = document.getElementById("hBell"); if(!b || !d) return;
+  b.hidden = !(LIIK_TESTI || S.nakyma==="halytykset");
+  const akt = (d.rivit||[]).filter(r=>!r.poistui && !r.kuitattu);
+  const pahin = akt.map(r=>r.luokka).sort()[0];
+  document.getElementById("hBellN").textContent = akt.length || "";
+  b.className = "hbell" + (pahin ? " l"+pahin : "");
+  b.title = akt.length ? `${akt.length} kuittaamatonta hälytystä` : "Hälytykset: ei kuittaamattomia";
+}
+function renderHalytykset(h, t){
+  HL.kortti = h ? {id:+h, t:t||"", data:null} : null;
+  if(!HL.kortti) HL.avattu = null;
+  hLataa();
+  clearInterval(HL.ajastin); HL.ajastin = setInterval(()=>{ if(S.nakyma==="halytykset" && !document.hidden) hLataa(); }, 30000);
+}
+function hToast(t){ const d = document.createElement("div"); d.className = "h-toast"; d.setAttribute("role","status"); d.textContent = t; document.body.appendChild(d); setTimeout(()=>d.remove(), 3500); }
+document.addEventListener("click", async e=>{
+  const v = e.target.closest("#v-halytykset"); if(!v) return;
+  const tb = e.target.closest("#hTab button"); if(tb){ HL.tab = tb.dataset.t; hPiirra(); return; }
+  const lb = e.target.closest("#hLahde button"); if(lb){ HL.lahde = lb.dataset.l; hPiirra(); return; }
+  const fk = e.target.closest("[data-hfok]"); if(fk){ e.preventDefault(); const id = +fk.dataset.hfok; HL.auki.add(id); HL.tab = "historia"; hPiirra();
+    const el = document.querySelector(`.hrow[data-id="${id}"]`); if(el) el.scrollIntoView({behavior:"smooth", block:"center"}); return; }
+  const hd = e.target.closest(".hr-hd"); if(hd){ const id = +hd.closest(".hrow").dataset.id; HL.auki.has(id) ? HL.auki.delete(id) : HL.auki.add(id); hPiirra(); return; }
+  const tm = e.target.closest("[data-toimi]"); if(tm && !tm.disabled && HL.kortti){
+    const id = +tm.closest(".hrow").dataset.id; tm.disabled = true;
+    try{ const vast = await hRpc("halytys_toimi", {p_id:id, p_t:HL.kortti.t, p_toimi:tm.dataset.toimi}); hToast(vast); }
+    catch(err){ hToast("Toimenpide ei onnistunut. Yritä uudelleen."); }
+    hLataa();
+  }
+});
 /* ================= tekoälyn käyttö ja kustannukset (LLMOps) ================= */
 async function renderKehitys(){
 const AI_TOIM = {luokittele:"Lupatekstin luku", katsaus:"Tilannekatsaus", viikko:"Viikkokatsaus", aikataulu:"Aikatauluagentti",
@@ -3374,19 +3630,22 @@ async function renderLaatu(){
 }
 
 /* ================= reititys ================= */
-function parseHash(){ const h = location.hash.replace(/^#\/?/,""); const [path, qs] = h.split("?"); const p = new URLSearchParams(qs||""); return {path: path||"", l: p.get("l")}; }
+function parseHash(){ const h = location.hash.replace(/^#\/?/,""); const [path, qs] = h.split("?"); const p = new URLSearchParams(qs||""); return {path: path||"", l: p.get("l"), h: p.get("h"), t: p.get("t")}; }
 function setHash(path, l){ const h = "#/"+path+(l?"?l="+encodeURIComponent(l):""); if(location.hash!==h) history.replaceState(null,"",h); }
 function route(nav){
-  const {path, l} = parseHash();
+  const {path, l, h: hId, t: hT} = parseHash();
   if(path==="live"){ history.replaceState(null,"","#/"); S.forceLive = true; }
   if(path==="uusi"){ history.replaceState(null,"","#/"); }   // vanha vertailulinkki
-  const v = ["tyot","menetelma","linjat","raportti","ennakko","hsl","kehitys"].includes(path) ? path : "home";
+  const v = ["tyot","menetelma","linjat","raportti","ennakko","hsl","kehitys","halytykset"].includes(path) ? path : "home";
   document.documentElement.classList.toggle("uusi", !!S.uusi && v==="home");
   document.querySelectorAll("#v-home .subnav a").forEach(a=>a.classList.toggle("on", a.getAttribute("href")==="#/"));
   document.querySelectorAll(".view").forEach(x=>x.classList.toggle("on", x.id==="v-"+v));
   const va = (window.NAV_ALIAS||{})[v] || v;
   document.querySelectorAll("nav a").forEach(a=>a.classList.toggle("on", (a.dataset.r||"home")===(va==="home"?"home":va) || (a.dataset.r===""&&va==="home")));
   const edel = S.nakyma; S.nakyma = v;
+  // hälytyslista ei tarvitse tutkan muuta dataa: piirretään heti (puhelimen ilmoituksesta avattaessa nopeus ratkaisee)
+  if(v==="halytykset"){ const avain = (hId||"")+"|"+(hT||""); if(HL.reitti!==avain || nav==="hash"){ HL.reitti = avain; renderHalytykset(hId, hT); } }
+  else { clearInterval(HL.ajastin); HL.reitti = null; }
   if(!S.loaded) return;
   // toiselta sivulta (esim. tarkistuslistalta) avattu työmaa: erittely kiinni ja työmaa näkyviin, ei sivun ylälaitaan
   const toiseltaSivulta = nav==="hash" && v==="home" && l && edel && edel!=="home";
@@ -3467,6 +3726,9 @@ async function load(){
   }
 }
 route(); load(); loadAI();
+/* Hälytyskello yläpalkissa (testitilassa): kuittaamattomien määrä ja pahin luokka, päivittyy minuutin välein */
+if(LIIK_TESTI){ const hk = ()=>{ if(!document.hidden && S.nakyma!=="halytykset") hRpc("halytykset_lista").then(hBell).catch(()=>{}); };
+  document.getElementById("hBell").hidden = false; hk(); setInterval(hk, 60000); }
 // esitysajo videota varten (?demo): ladataan vain pyydettäessä
 try{ if(new URLSearchParams(location.search).has("demo")){ const es = document.createElement("script"); es.src = "esitys.js?v=6"; document.body.appendChild(es); } }catch(e){}
 setInterval(()=>{ if(!document.hidden) loadAI(); }, 600000);
