@@ -2165,10 +2165,12 @@ async function nousijat(l){
   if(c){ P.forEach(p=>p.d = mEtaisyys(c[0], c[1], p.lat, p.lon)); const lah = P.filter(p=>p.d<=300); P = lah.length ? lah : P.sort((a,b)=>a.d-b.d).slice(0,2); }
   const pad = 0.002, lo = P.map(p=>p.lon), la = P.map(p=>p.lat);
   const env = [Math.min(...lo)-pad, Math.min(...la)-pad, Math.max(...lo)+pad, Math.max(...la)+pad].join(",");
-  const q = `${NOUS_URL}?where=1%3D1&geometry=${env}&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=Nousijamaa&outSR=4326&f=json`;
+  const q = `${NOUS_URL}?where=1%3D1&geometry=${env}&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=OBJECTID,Nousijamaa,Lyhyt_tunn&outSR=4326&f=json`;
   const j = await (await fetch(q)).json();
-  const F = (j.features||[]).map(f=>({n:+f.attributes.Nousijamaa||0, lat:f.geometry.y, lon:f.geometry.x}));
-  P.forEach(p=>{ let best=null, bd=60; F.forEach(f=>{ const d = mEtaisyys(p.lat,p.lon,f.lat,f.lon); if(d<bd){ bd=d; best=f; } }); p.n = best ? best.n : null; });
+  // vain bussi- ja ratikkapysäkit (lyhyttunnus); juna- ja metroasemilla tunnus puuttuu, eikä katutyö koske niiden matkustajia
+  const F = (j.features||[]).filter(f=>String(f.attributes.Lyhyt_tunn||"").trim()).map(f=>({id:f.attributes.OBJECTID, n:+f.attributes.Nousijamaa||0, lat:f.geometry.y, lon:f.geometry.x}));
+  const kaytetty = new Set();
+  P.forEach(p=>{ let best=null, bd=60; F.forEach(f=>{ const d = mEtaisyys(p.lat,p.lon,f.lat,f.lon); if(d<bd){ bd=d; best=f; } }); p.n = best && !kaytetty.has(best.id) ? best.n : null; if(best) kaytetty.add(best.id); });
   const ok = P.filter(p=>p.n!=null).sort((a,b)=>b.n-a.n);
   return (_nous[l.lupa_id] = {P, ok, tot: ok.reduce((s,p)=>s+p.n,0)});
 }
