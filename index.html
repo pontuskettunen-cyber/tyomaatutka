@@ -728,7 +728,7 @@ html.hsl .km-flow div{border:0;border-radius:16px}
 .sug-t{margin:4px 0 6px}.sug-t td,.sug-t th{font-size:13.5px}.sug-t tfoot td{border-top:2px solid var(--l);font-size:13.5px}
 .sug-d{margin:4px 0;font-size:13.5px}.sug-d summary{cursor:pointer;color:var(--a);font-weight:600;font-size:13px;padding:3px 0}.sug-d p{margin:4px 0}
 html.uusi #saaBox{display:none}
-html.uusi #kpis{grid-template-columns:1.4fr 1fr}
+html.uusi #v-home #kpis.strip{grid-template-columns:1.3fr 1fr!important}
 .tile.odottaa .tsub a{color:var(--a);text-decoration:none;font-weight:600}.tile.odottaa .tsub a:hover{text-decoration:underline}
 .saa-chip{color:inherit;text-decoration:none;border-bottom:1px dotted currentColor}
 </style>
@@ -1563,7 +1563,7 @@ function renderBrief(){
   const vNyt = (S.varoitukset||[]).filter(v=>{ const n = Date.now(); return (!v.alkaa || +new Date(v.alkaa) <= n + 12*3600e3) && (!v.paattyy || +new Date(v.paattyy) > n); });
   const varTxt = vNyt.length ? ` · <span class="saa-var" title="${esc(vNyt.map(v=>v.otsikko).join("\n"))}">⚠ ${esc(vNyt[0].tapahtuma||"säävaroitus")}${vNyt.length>1?` +${vNyt.length-1}`:""}</span>` : "";
   const saaLyh = (()=>{ const n = S.saaNyt; if(!n) return ""; const h = WAWA(n.wawa); const t = h ? h[1] : (n.ri>0.2 ? "sadetta" : ""); return ` · <a class="saa-k saa-chip" href="#/linjat" title="Sää Helsinki Kaisaniemi. Sään vaikutus linjoihin näkyy linjan ohjaamossa.">${Math.round(n.t2m)}°${t?" "+esc(t):""}</a>`; })();
-  document.getElementById("briefWhen").innerHTML = S.uusi ? `Viimeiset ${per.dur||"24 h"} · päivitetty ${ago(upd)}${saaLyh}${varTxt}` : `Luvut ajalta ${per.txt} · laskettu ${ago(upd)}${saaTxt}${varTxt}`;
+  document.getElementById("briefWhen").innerHTML = S.uusi ? `Viimeiset ${S.ik==="7d"?"7 vrk":"24 h"} · päivitetty ${ago(upd)}${saaLyh}${varTxt}` : `Luvut ajalta ${per.txt} · laskettu ${ago(upd)}${saaTxt}${varTxt}`;
   const bd = breakdown();
   const vehH = bd.total;
   const tr = trend();
