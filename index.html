@@ -7,13 +7,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Työmaatutka · katutöiden vaikutus joukkoliikenteeseen</title>
 <meta name="description" content="Työmaatutka mittaa, paljonko Helsingin katutyöt hidastavat busseja ja ratikoita, ja varoittaa etukäteen töistä, jotka osuvat joukkoliikenteen reiteille.">
+<link rel="canonical" href="https://pontuskettunen-cyber.github.io/tyomaatutka/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Työmaatutka · katutöiden vaikutus joukkoliikenteeseen">
+<meta property="og:description" content="Mittaa, paljonko Helsingin katutyöt hidastavat busseja ja ratikoita, ja varoittaa etukäteen töistä, jotka osuvat joukkoliikenteen reiteille. Konsepti.">
+<meta property="og:url" content="https://pontuskettunen-cyber.github.io/tyomaatutka/">
+<meta property="og:locale" content="fi_FI">
+<meta name="robots" content="index,follow">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script>
 /* Teema: HSL-henkinen ilme on oletus. ?teema=oma palauttaa vanhan ilmeen (muistetaan), ?teema=hsl takaisin. */
 (function(){ var t = "hsl"; try{ var q = new URLSearchParams(location.search).get("teema"); if(q) localStorage.setItem("tt_teema", q); t = q || localStorage.getItem("tt_teema") || "hsl"; }catch(e){}
   if(t !== "oma") document.documentElement.classList.add("hsl"); })();
-(function(){ try{ if(new URLSearchParams(location.search).has("tiivis")) document.documentElement.classList.add("kompakti"); }catch(e){} })();
+(function(){ try{ if(!new URLSearchParams(location.search).has("vanha")) document.documentElement.classList.add("kompakti"); }catch(e){} })();
 </script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
