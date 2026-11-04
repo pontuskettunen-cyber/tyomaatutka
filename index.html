@@ -3285,7 +3285,7 @@ async function load(){
     S.sug = sug;
     Promise.all([get("v_hairiot"), get("v_tarkistus_kuittaus").catch(()=>[])]).then(([h,k])=>{ S.hairiot = Array.isArray(h) && h.length ? h : null;
       S.kuittaus = Object.fromEntries((Array.isArray(k)?k:[]).map(r=>[r.lupa_id, r]));
-      if(document.getElementById("v-tyot").classList.contains("on")) renderTyot(); if(S.uusi && document.getElementById("v-home").classList.contains("on")) renderBrief(); }).catch(()=>{ S.hairiot = null; });
+      if(S.loaded && document.getElementById("v-tyot").classList.contains("on")) renderTyot(); if(S.loaded && S.uusi && document.getElementById("v-home").classList.contains("on")) try{ renderBrief(); }catch(e){} }).catch(()=>{ S.hairiot = null; });
     Promise.all([get("v_saa_nyt").then(x=>{ S.saaNyt = x && x[0] || null; }).catch(()=>{}), loadEnnuste()]).then(()=>{ if(document.getElementById("v-home").classList.contains("on")) renderBrief(); });
     Promise.all([get("v_saa_kerroin"), get("v_saa_linja"), get("v_saa_tyomaa")]).then(([k,li,ty])=>{
       S.saaK = Array.isArray(k) ? k : []; S.saaL = Array.isArray(li) ? li : [];
