@@ -146,7 +146,8 @@
     const piste = punainenPiste(kartta);
     if (piste) { await kerro("KARTTA", "Punainen väli on hidas pysäkkiväli. Klikkaus kertoo linjat ja lisäviiveen.");
       await klikkaa(kartta, { piste, kartta: true, jalkeen: 2600 });
-      const sulje = $("#map .leaflet-popup-close-button"); if (sulje) await klikkaa(sulje, { jalkeen: 500 }); }
+      const sulje = $("#map .leaflet-popup-close-button"); if (sulje) await liiku(sulje); await odota(250);
+      if (window.M && M.home) M.home.closePopup(); await odota(400); }
     const nous = await odotaEl(() => { const b = $("#nousBox .nous b"); return b && b.getBoundingClientRect().height ? b : null; }, 6000);
     if (nous) {
       const sec = $("#nousSec"); await vieri(sisaY(det, sec, 16), 1300, det); await odota(300);
@@ -207,6 +208,7 @@
 
     // 6. ENNAKOI
     await kerro("ENNAKOI", "Suuren haitan työmaat, joista HSL:n häiriötiedotteissa ei ole mitään.");
+    S.bdOpen = false;
     await klikkaa(tekstinMukaan("nav a", /^Tilannekuva$/), { jalkeen: 1500 });
     const tarkLinkki = await odotaEl(() => $$('#v-home a[href="#/tyot"]').find(a => /tarkistettavaa/.test(a.textContent) && a.getBoundingClientRect().height > 0));
     if (tarkLinkki) { await klikkaa(tarkLinkki, { jalkeen: 1600 });
@@ -254,9 +256,12 @@
 
   /* ---------- käynnistys ---------- */
   const alku = document.createElement("div"); alku.className = "es-alku";
-  alku.innerHTML = `<div><button type="button">▶ Käynnistä esitys</button><p>Käynnistä ensin näytöntallennus. Älä liikuta hiirtä esityksen aikana. Välilyönti käynnistää, Esc keskeyttää.</p></div>`;
+  alku.innerHTML = `<div><button type="button" disabled>Ladataan tietoja…</button><p>Käynnistä ensin näytöntallennus. Älä liikuta hiirtä esityksen aikana. Välilyönti käynnistää, Esc keskeyttää.</p></div>`;
   document.body.appendChild(alku);
-  const kaynnista = async () => { if (!alku.isConnected) return; alku.remove(); await odota(400);
+  let valmis = false;
+  (async () => { while (!(window.S && S.loaded)) await odota(200); await odota(1500); valmis = true;
+    const b = alku.querySelector("button"); b.disabled = false; b.textContent = "▶ Käynnistä esitys"; })();
+  const kaynnista = async () => { if (!alku.isConnected || !valmis) return; alku.remove(); await odota(400);
     try { await kierros(); } catch (e) { console.warn("Esitys:", e.message); lopeta(); } };
   alku.querySelector("button").onclick = kaynnista;
   addEventListener("keydown", e => { if (e.code === "Space" && alku.isConnected) { e.preventDefault(); kaynnista(); } if (e.key === "Escape") seis = true; });
