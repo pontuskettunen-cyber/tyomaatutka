@@ -2167,8 +2167,9 @@ async function nousijat(l){
   const env = [Math.min(...lo)-pad, Math.min(...la)-pad, Math.max(...lo)+pad, Math.max(...la)+pad].join(",");
   const q = `${NOUS_URL}?where=1%3D1&geometry=${env}&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=OBJECTID,Nousijamaa,Lyhyt_tunn&outSR=4326&f=json`;
   const j = await (await fetch(q)).json();
-  // vain bussi- ja ratikkapysäkit (lyhyttunnus); juna- ja metroasemilla tunnus puuttuu, eikä katutyö koske niiden matkustajia
-  const F = (j.features||[]).filter(f=>String(f.attributes.Lyhyt_tunn||"").trim()).map(f=>({id:f.attributes.OBJECTID, n:+f.attributes.Nousijamaa||0, lat:f.geometry.y, lon:f.geometry.x}));
+  // vain bussi- ja ratikkapysäkit (lyhyttunnus kuten H2409); juna-asemilta tunnus puuttuu ja metroasemilla se on kaksikirjaiminen (SN),
+  // eikä katutyö koske niiden matkustajia
+  const F = (j.features||[]).filter(f=>/^[A-Za-z]{1,3}\d/.test(String(f.attributes.Lyhyt_tunn||"").trim())).map(f=>({id:f.attributes.OBJECTID, n:+f.attributes.Nousijamaa||0, lat:f.geometry.y, lon:f.geometry.x}));
   const kaytetty = new Set();
   P.forEach(p=>{ let best=null, bd=60; F.forEach(f=>{ const d = mEtaisyys(p.lat,p.lon,f.lat,f.lon); if(d<bd){ bd=d; best=f; } }); p.n = best && !kaytetty.has(best.id) ? best.n : null; if(best) kaytetty.add(best.id); });
   const ok = P.filter(p=>p.n!=null).sort((a,b)=>b.n-a.n);
