@@ -919,6 +919,7 @@ a.lnk-linja:hover{color:var(--a)}
 .hlpalkki .t{flex:1;min-width:200px;font-size:13px;line-height:1.4}
 .hlpalkki .t .note{display:block;font-size:11.5px;margin-top:1px}
 .hlpalkki .hl-avaa{border:0;border-radius:999px;background:var(--a);color:#fff;font-weight:800;font-size:13px;padding:6px 12px}
+.hlpalkki .hl-koko{border:1px solid #9CC9EA;border-radius:999px;background:#fff;color:var(--a);font-weight:700;font-size:12.5px;padding:5px 10px}
 .hlpalkki .hl-x{border:0;background:none;font-size:16px;color:var(--m);width:30px;height:30px;border-radius:50%}
 .hlpalkki .hl-x:hover{background:#fff;color:var(--i)}
 #map.vilkkuu .lnromk>*{animation:lpomppu .55s ease-in-out 3;transform-origin:center}
@@ -3542,7 +3543,7 @@ function hLinjaPalkki(){
     ws[0] ? `suurin hidastaja <b>${esc(shortStreet(ws[0].l))}</b> (${sgn(ws[0].s)})` : ""].filter(Boolean);
   return `<div class="hlpalkki"><span class="lbadge ${e.tram?"tram":""}">${esc(n)}</span>
     <div class="t">${osat.join(" · ")}<span class="note">Numerot kartalla ovat linjan työmaat. Klikkaa numeroa siirtyäksesi linjaa pitkin.</span></div>
-    <button type="button" class="hl-avaa" data-hl-avaa>Avaa linja →</button><button type="button" class="hl-x" data-hl-x aria-label="Sulje linja" title="Sulje linja (Esc)">✕</button></div>`;
+    <button type="button" class="hl-koko" data-hl-koko title="Näytä linjan koko reitti">⤢ Koko reitti</button><button type="button" class="hl-avaa" data-hl-avaa>Avaa linja →</button><button type="button" class="hl-x" data-hl-x aria-label="Sulje linja" title="Sulje linja (Esc)">✕</button></div>`;
 }
 function hLinjaPois(hiljaa){
   if(HLay.g){ HLay.g.remove(); HLay.g = null; } HLay.vilk = []; HLay.rengas = null;
@@ -3582,15 +3583,17 @@ async function hLinja(n){
     const pts = Array.isArray(s.viiva)&&s.viiva.length>1 ? s.viiva : [[s.from_lat,s.from_lon],[s.to_lat,s.to_lon]];
     L.polyline(pts,{renderer:HLay.r, color:"#fff", weight:9, opacity:.9, interactive:false}).addTo(g);
     const pl = L.polyline(pts,{renderer:HLay.r, color:"#B42318", weight:6, opacity:1, interactive:false}).addTo(g); HLay.vilk.push([pl,1]); }));
-  const nro = lNumerot(e);
-  ids.forEach(id=>{ const x = S.byId[id], c = x && x.geom && centroid(x.geom); if(!c) return;
+  const nro = lNumerot(e), bt = L.latLngBounds([]);
+  ids.forEach(id=>{ const x = S.byId[id], c = x && x.geom && centroid(x.geom); if(!c) return; bt.extend(c);
     const kind = lKind(e, id), w = e.works.get(id), ds = w ? Object.entries(w.dirs).filter(([,d])=>d.ok) : [];
     L.marker(c,{icon:L.divIcon({className:"lnromk", html:lNro(nro.get(id)||"", kind, true), iconSize:[24,24], iconAnchor:[12,12]}), keyboard:false, zIndexOffset:900, riseOnHover:true})
       .bindTooltip(`<b>${nro.get(id)}. ${esc(title(x))}</b><br>${w ? (ds.length ? ds.map(([dd,d])=>`suunta ${dd}: ${sgn(d.s)}`).join(" · ") : "mittaus kesken") : "alkaa "+fmtShort(x.alkaa)}<br><span style="color:#6B737B">Klikkaa: työmaan tiedot oikealle</span>`,{sticky:true})
       .on("click", ()=>{ select(id, false); }).addTo(g);
     if(!geom.length) b.extend(c); });
-  hRengas();
-  if(b.isValid()) M.home.flyToBounds(b,{padding:[28,28], duration:.7});
+  hRengas(); HLay.koko = b;
+  // kohdistus linjan työmaihin (pitkä reitti loitontaisi liikaa); koko reitti painikkeesta
+  const kohde = bt.isValid() ? bt.pad(0.15) : b;
+  if(kohde.isValid()) M.home.flyToBounds(kohde,{padding:[36,36], maxZoom:15, duration:.7});
   setTimeout(()=>{ if(HLay.g!==g) return; const mc = M.home.getContainer(); mc.classList.remove("vilkkuu"); void mc.offsetWidth; mc.classList.add("vilkkuu");
     const t0 = performance.now(), kesto = 1650;
     const askel = t=>{ if(HLay.g!==g) return; const p = Math.min(1,(t-t0)/kesto), k = 0.5+0.5*Math.cos(p*3*2*Math.PI);
@@ -3603,6 +3606,7 @@ document.addEventListener("click", ev=>{
   if(a){ ev.preventDefault(); const n = a.dataset.linja; if(kompakti()) hLinja(n); else avaaLinja(n, S.sel); return; }
   if(ev.target.closest("#detail [data-hl-x]")){ hLinjaPois(); return; }
   if(ev.target.closest("#detail [data-hl-avaa]")){ avaaLinja(S.hLinja, S.sel); return; }
+  if(ev.target.closest("#detail [data-hl-koko]")){ if(HLay.koko && HLay.koko.isValid()) M.home.flyToBounds(HLay.koko,{padding:[24,24], duration:.6}); return; }
 });
 document.addEventListener("keydown", ev=>{
   if(ev.key==="Escape" && S.hLinja && S.nakyma==="home"){ hLinjaPois(); return; }
