@@ -782,6 +782,7 @@ html.hsl .top .hbell b{border-color:#0074BF}
 .h-chip.A i{background:#B91C1C}.h-chip.B i{background:#C2410C}.h-chip.C i{background:#007AC9}.h-chip.ok i{background:#0B7A3E}
 .h-chip.nolla{opacity:.55}
 .h-ctl{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin:6px 0 10px}
+.h-ctl .seg button{white-space:nowrap}
 .h-ctl .seg button small{opacity:.75;font-weight:600;margin-left:4px}
 .h-list{display:flex;flex-direction:column;gap:8px}
 .hrow{background:var(--p);border-radius:14px;border-left:5px solid var(--neutral);overflow:hidden}
@@ -1158,7 +1159,7 @@ html.hsl .top .hbell b{border-color:#0074BF}
     <div id="hKortti"></div>
     <div class="h-sum" id="hSum"></div>
     <div class="h-ctl">
-      <div class="seg" id="hTab"><button data-t="aktiiviset" class="on">Aktiiviset</button><button data-t="kuittaamattomat">Kuittaamattomat</button><button data-t="historia">Historia 7 vrk</button></div>
+      <div class="seg" id="hTab"><button data-t="aktiiviset" class="on">Aktiiviset</button><button data-t="kuittaamattomat">Kuittaamatta</button><button data-t="historia">Historia</button></div>
       <div class="seg" id="hLahde"><button data-l="kaikki" class="on">Kaikki</button><button data-l="jarjestelma">Järjestelmä</button><button data-l="liikenne">Liikenne</button></div>
     </div>
     <div class="h-list" id="hList"><div class="empty">Ladataan…</div></div>
@@ -3470,6 +3471,7 @@ function hRivi(r, k){
   const virheet = (yks.virheet || []);
   const aktiivinen = !r.poistui;
   const voiToimia = !!kortti;
+  const hilj = !r.poistui && r.hiljennetty_asti && new Date(r.hiljennetty_asti) > Date.now();
   const syy = r.syy_id && HL.data ? HL.data.rivit.find(x=>x.id===r.syy_id) : null;
   return `<article class="hrow l${r.luokka} ${r.poistui?"poistunut":""} ${auki?"auki":""} ${fok?"fokus":""}" data-id="${r.id}">
     <button class="hr-hd" aria-expanded="${auki}" aria-controls="hb${r.id}">
@@ -3498,7 +3500,7 @@ function hRivi(r, k){
       <div class="hr-act">
         <button data-toimi="kuittaa" ${voiToimia && !r.kuitattu ? "" : "disabled"}>✓ ${r.kuitattu ? "Kuitattu "+hKlo(r.kuitattu) : "Kuittaa"}</button>
         ${r.ajettavissa ? `<button data-toimi="aja" class="toissij" ${voiToimia && aktiivinen && !(kortti && kortti.uusinta_kaynnissa) ? "" : "disabled"}>↻ ${kortti && kortti.uusinta_kaynnissa ? "Uudelleenajo käynnissä" : "Aja uudelleen"}</button>` : ""}
-        ${aktiivinen ? `<button data-toimi="hiljenna" class="toissij" ${voiToimia ? "" : "disabled"}>Hiljennä 4 h</button>` : ""}
+        ${aktiivinen ? (hilj ? `<button class="toissij" disabled>Hiljennetty ${hKlo(r.hiljennetty_asti)} asti</button>` : `<button data-toimi="hiljenna" class="toissij" ${voiToimia ? "" : "disabled"}>Hiljennä 4 h</button>`) : ""}
         ${voiToimia ? "" : `<span class="note">Toimenpiteet tehdään hälytysilmoituksen kautta: napit puhelimessa tai ilmoituksesta avattu kortti. Tuotannossa tähän tulisivat kirjautuminen ja roolit.</span>`}
       </div>
     </div>
@@ -3513,7 +3515,7 @@ function hPiirra(){
     : `<span class="h-chip ok"><i></i>Ei aktiivisia hälytyksiä</span>${kuit.length ? `<span class="h-chip"><i style="background:#8A5A00"></i>${kuit.length} kuittaamatta</span>` : ""}`;
   const tabs = {aktiiviset:akt, kuittaamattomat:kuit, historia:R};
   document.querySelectorAll("#hTab button").forEach(b=>{ const n = tabs[b.dataset.t].length; b.classList.toggle("on", b.dataset.t===HL.tab);
-    b.innerHTML = {aktiiviset:"Aktiiviset", kuittaamattomat:"Kuittaamattomat", historia:"Historia 7 vrk"}[b.dataset.t] + `<small>${n}</small>`; });
+    b.innerHTML = {aktiiviset:"Aktiiviset", kuittaamattomat:"Kuittaamatta", historia:"Historia"}[b.dataset.t] + `<small>${n}</small>`; });
   document.querySelectorAll("#hLahde button").forEach(b=>b.classList.toggle("on", b.dataset.l===HL.lahde));
   let rivit = tabs[HL.tab].filter(r=>HL.lahde==="kaikki" || r.lahde===HL.lahde);
   // ilmoituksesta avattu hälytys aina ensimmäisenä, vaikka se olisi jo poistunut
@@ -3541,7 +3543,9 @@ async function hLataa(){
     else ilm.innerHTML = "";
     if(HL.kortti && HL.avattu!==HL.kortti.id){ HL.auki.add(HL.kortti.id); HL.avattu = HL.kortti.id;
       const f = d.rivit.find(r=>r.id===HL.kortti.id); if(f && f.poistui && HL.tab==="aktiiviset") HL.tab = f.kuitattu ? "historia" : "kuittaamattomat"; }
+    const vieritys = HL.kortti && HL.vieritetty!==HL.kortti.id; if(vieritys) HL.vieritetty = HL.kortti.id;
     hPiirra(); hBell(d);
+    if(vieritys){ const el = document.querySelector(`.hrow[data-id="${HL.kortti.id}"]`); if(el) setTimeout(()=>window.scrollTo({top: el.getBoundingClientRect().top + scrollY - 76}), 60); }
   }catch(e){ document.getElementById("hList").innerHTML = `<div class="empty">Hälytyksiä ei saatu ladattua. Yritetään uudelleen hetken päästä.</div>`; }
 }
 function hBell(d){
