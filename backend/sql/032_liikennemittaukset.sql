@@ -73,39 +73,51 @@ begin
            limit greatest(0, 4 - (select count(*) from lido_jono where tila = 'pyydetty')) loop
     update lido_jono set tila = 'pyydetty', yritykset = yritykset + 1, paivitetty = now(),
       req_id = net.http_get(
-        url := format('https://lidotiku.api.hel.fi/api/observations/aggregate/?counter=%s&period=day&measurementType=%s&page_size=300&format=json', r.laskuri, r.mittaus),
+        url := format('https://lidotiku.api.hel.fi/api/observations/aggregate/?counter=%s&period=day&measurementType=%s&page_size=400&format=json', r.laskuri, r.mittaus),
         timeout_milliseconds := 60000)
     where laskuri = r.laskuri and mittaus = r.mittaus;
   end loop;
-  delete from lido_paiva where paiva < current_date - 400;
+  delete from lido_paiva where paiva < current_date - 420;
   return n;
 end $$;
 
--- Vertailu työmaittain: paras laskuri (nopeus ensin, sitten lähin), vain luotettavat (ennen ≥ 200 autoa/pv, päiviä riittävästi)
-create or replace function lido_vertailu() returns table(lupa_id text, laskuri text, lahde text, etaisyys int,
+-- Vertailu työmaittain: paras laskuri (nopeus ensin, sitten lähin), vain luotettavat (vertailutaso ≥ 200 autoa/pv, päiviä riittävästi).
+-- Vertailutaso: arkipäivät 4 viikkoa ennen työn alkua. Jos niiltä ajoilta ei ole dataa (kaupungin mittauksissa oli katko 3-10/2026),
+-- käytetään samoja päiviä vuotta aiemmin (364 pv, sama viikonpäivä), kunhan ne ovat ennen työn alkua.
+create or replace function lido_ka(p_laskuri int, p_mittaus text, p_alku date, p_loppu date, out ka float8, out n int)
+language sql stable set search_path = public as $$
+  select avg(arvo), count(*) filter (where arvo > 0)::int from lido_paiva
+  where laskuri = p_laskuri and mittaus = p_mittaus and extract(isodow from paiva) <= 5 and paiva between p_alku and p_loppu;
+$$;
+drop view if exists v_lupa_liikenne;
+drop function if exists lido_vertailu();
+create or replace function lido_vertailu() returns table(lupa_id text, laskuri text, lahde text, etaisyys int, vertailu text,
   autoja_ennen int, autoja_nyt int, muutos_pct int, nopeus_ennen numeric, nopeus_nyt numeric, paivia_ennen int, paivia_nyt int)
 language sql stable security definer set search_path = public as $$
   with x as (
-    select ll.*,
-      (select avg(arvo) from lido_paiva d where d.laskuri = ll.laskuri and d.mittaus = 'count' and extract(isodow from d.paiva) <= 5
-         and d.paiva between ll.alkaa::date - 28 and ll.alkaa::date - 1) a_e,
-      (select count(*) from lido_paiva d where d.laskuri = ll.laskuri and d.mittaus = 'count' and extract(isodow from d.paiva) <= 5
-         and d.paiva between ll.alkaa::date - 28 and ll.alkaa::date - 1 and d.arvo > 0) n_e,
-      (select avg(arvo) from lido_paiva d where d.laskuri = ll.laskuri and d.mittaus = 'count' and extract(isodow from d.paiva) <= 5
-         and d.paiva between greatest(ll.alkaa::date + 1, current_date - 14) and current_date - 1) a_n,
-      (select count(*) from lido_paiva d where d.laskuri = ll.laskuri and d.mittaus = 'count' and extract(isodow from d.paiva) <= 5
-         and d.paiva between greatest(ll.alkaa::date + 1, current_date - 14) and current_date - 1 and d.arvo > 0) n_n,
-      (select avg(arvo) from lido_paiva d where d.laskuri = ll.laskuri and d.mittaus = 'speed' and extract(isodow from d.paiva) <= 5
-         and d.paiva between ll.alkaa::date - 28 and ll.alkaa::date - 1) v_e,
-      (select avg(arvo) from lido_paiva d where d.laskuri = ll.laskuri and d.mittaus = 'speed' and extract(isodow from d.paiva) <= 5
-         and d.paiva between greatest(ll.alkaa::date + 1, current_date - 14) and current_date - 1) v_n
-    from lido_lupa_laskurit() ll
+    select ll.*, greatest(ll.alkaa::date + 1, current_date - 14) n_alku, current_date - 1 n_loppu from lido_lupa_laskurit() ll
+  ), y as (
+    select x.*, nyt.ka a_n, nyt.n n_n, ennen.ka a_e1, ennen.n n_e1, vuosi.ka a_e2, vuosi.n n_e2,
+      vnyt.ka v_n, vennen.ka v_e1, vvuosi.ka v_e2
+    from x
+    cross join lateral lido_ka(x.laskuri, 'count', x.n_alku, x.n_loppu) nyt
+    cross join lateral lido_ka(x.laskuri, 'count', x.alkaa::date - 28, x.alkaa::date - 1) ennen
+    cross join lateral lido_ka(x.laskuri, 'count', x.n_alku - 364, x.n_loppu - 364) vuosi
+    cross join lateral lido_ka(x.laskuri, 'speed', x.n_alku, x.n_loppu) vnyt
+    cross join lateral lido_ka(x.laskuri, 'speed', x.alkaa::date - 28, x.alkaa::date - 1) vennen
+    cross join lateral lido_ka(x.laskuri, 'speed', x.n_alku - 364, x.n_loppu - 364) vvuosi
+  ), z as (
+    select y.*,
+      case when a_e1 >= 200 and n_e1 >= 5 then 'ennen' when a_e2 >= 200 and n_e2 >= 5 and n_loppu - 364 < alkaa::date then 'vuosi' end vert
+    from y where a_n > 0 and n_n >= 3
   )
-  select distinct on (lupa_id) lupa_id, nimi, lahde, etaisyys, round(a_e)::int, round(a_n)::int,
-         round((a_n / a_e - 1) * 100)::int, round(v_e::numeric, 1), round(v_n::numeric, 1), n_e::int, n_n::int
-  from x
-  where a_e >= 200 and n_e >= 5 and n_n >= 3 and a_n > 0
-  order by lupa_id, (v_e is not null and v_n is not null) desc, etaisyys;
+  select distinct on (lupa_id) lupa_id, nimi, lahde, etaisyys, vert,
+    round(case vert when 'ennen' then a_e1 else a_e2 end)::int, round(a_n)::int,
+    round((a_n / case vert when 'ennen' then a_e1 else a_e2 end - 1) * 100)::int,
+    round((case vert when 'ennen' then v_e1 else v_e2 end)::numeric, 1), round(v_n::numeric, 1),
+    case vert when 'ennen' then n_e1 else n_e2 end, n_n
+  from z where vert is not null
+  order by lupa_id, (v_n is not null and (case vert when 'ennen' then v_e1 else v_e2 end) is not null) desc, (vert = 'ennen') desc, etaisyys;
 $$;
 grant execute on function lido_vertailu() to anon, authenticated;
 drop view if exists v_lupa_liikenne;

@@ -2194,9 +2194,10 @@ async function taytaLiikenne(l){
   if(!box || S.sel!==l.lupa_id || !r) return;
   const nop = r.nopeus_ennen!=null && r.nopeus_nyt!=null;
   box.innerHTML = `<div class="sec">Autoliikenne työmaan kohdalla</div>
-    <div class="nous"><b>${r.muutos_pct>0?"+":r.muutos_pct<0?"−":""}${nf(Math.abs(r.muutos_pct))} %</b><div>autoja arkipäivänä kuin neljällä viikolla ennen työn alkua (${nf(Math.round(r.autoja_ennen/10)*10)} → ${nf(Math.round(r.autoja_nyt/10)*10)} / pv).
+    <div class="nous"><b>${r.muutos_pct>0?"+":r.muutos_pct<0?"−":""}${nf(Math.abs(r.muutos_pct))} %</b><div>autoja arkipäivänä kuin ${r.vertailu==="ennen"?"neljällä viikolla ennen työn alkua":"vuotta aiemmin samaan aikaan"} (${nf(Math.round(r.autoja_ennen/10)*10)} → ${nf(Math.round(r.autoja_nyt/10)*10)} / pv).
       ${nop?`<div class="pk note">Keskinopeus ${nf(r.nopeus_ennen,0)} → ${nf(r.nopeus_nyt,0)} km/h</div>`:""}</div></div>
-    <div class="note" style="margin:-4px 0 8px">Laskuri ${esc(r.laskuri)}, ${nf(r.etaisyys)} m työmaasta (${r.lahde==="LIVA"?"liikennevalojen silmukka":"liikenteen mittauspiste"}). Helsingin liikennemittaukset, CC BY 4.0. Muutokseen voi vaikuttaa myös muu, esimerkiksi lomaviikko.</div>`;
+    ${Math.abs(r.muutos_pct)>=70?`<div class="note" style="margin:-4px 0 8px"><b>Poikkeuksellisen suuri muutos.</b> Kaista voi olla suljettu ilmaisimen kohdalta, tai ilmaisin ei toimi.</div>`:""}
+    <div class="note" style="margin:-4px 0 8px">${r.lahde==="LIVA"?"Liikennevalojen ilmaisin":"Liikenteen mittauspiste "+esc(r.laskuri)} ${nf(r.etaisyys)} m työmaasta. Helsingin liikennemittaukset, CC BY 4.0. Muutokseen voi vaikuttaa myös muu kuin työmaa.</div>`;
 }
 
 async function renderDetail(){
