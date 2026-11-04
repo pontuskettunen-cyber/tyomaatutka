@@ -945,6 +945,15 @@ a.lnk-linja:hover{color:var(--a)}
 .h-tausta td,.h-tausta th{text-align:left;padding:5px 10px 5px 0;border-bottom:1px solid var(--l);vertical-align:top}
 .h-tausta th{font-size:12px;color:var(--m)}
 .h-tausta td:first-child{width:38%;font-weight:700}
+
+/* Valvomo yläpalkissa: työpöydällä välilehti laskurilla, mobiilissa kello */
+.navn{display:inline-grid;place-items:center;min-width:18px;height:18px;padding:0 5px;margin-left:6px;border-radius:9px;background:#B91C1C;color:#fff;font-size:11px;font-weight:800;line-height:1}
+.navn:empty{display:none}
+.navn.lB{background:#C2410C}.navn.lC{background:#007AC9}
+html.hsl .navn{border:2px solid #fff}
+html.hsl .navn.lC{background:#003456}
+@media(min-width:861px){.hbell{display:none !important}}
+@media(max-width:860px){nav a.nav-valvomo{display:none}}
 </style>
 </head>
 <body>
@@ -956,6 +965,7 @@ a.lnk-linja:hover{color:var(--a)}
     <span class="navk" title="Työkalut HSL:n liikennesuunnittelijoille">Suunnittelijoille</span>
     <a href="#/linjat" data-r="linjat">Linjat</a>
     <a href="#/ennakko" data-r="ennakko">Ennakkoarvio</a>
+    <a href="#/halytykset" data-r="halytykset" class="nav-valvomo" title="Valvomo: hälytykset ja niiden käsittely">Valvomo<b class="navn" id="navValvomoN"></b></a>
     <span class="navsep"></span>
     <a href="#/hsl" data-r="hsl">Pilotti HSL:ssä</a>
     <a href="#/menetelma" data-r="menetelma">Tietoa</a>
@@ -1028,15 +1038,15 @@ a.lnk-linja:hover{color:var(--a)}
   const st = document.getElementById("status"); new MutationObserver(()=>{ live.title = st.textContent; }).observe(st,{childList:true,characterData:true,subtree:true});
   const split = h.querySelector(".split.fit"); split.after(h.querySelector(".todo-sec")); h.querySelector(".todo-sec").after(document.getElementById("aiBox"));
   /* Valikko: Tilannekuva · Linjat · Ennakkoarvio · Pilotti ja menetelmä. Työmaat ja Tietoa ovat alasivuja. */
-  window.NAV_ALIAS = { tyot: "home", menetelma: "hsl", raportti: "home", kehitys: "hsl", halytykset: "hsl" };
+  window.NAV_ALIAS = { tyot: "home", menetelma: "hsl", raportti: "home", kehitys: "hsl" };
   const nav = document.querySelector(".top nav");
   nav.querySelectorAll('a[data-r="tyot"], a[data-r="menetelma"], .navk, .navsep').forEach(x=>x.style.display="none");
   const ph = nav.querySelector('a[data-r="hsl"]'); ph.textContent = "Pilotti ja menetelmä";
   const sub = (pairs, cur) => { const d = document.createElement("div"); d.className = "subnav"; d.innerHTML = pairs.map(([href,t,k])=>`<a href="${href}" class="${k===cur?"on":""}">${t}</a>`).join(""); return d; };
-  const A = [["#/","Yleiskuva","home"],["#/tyot","Kaikki työmaat","tyot"]], B = [["#/hsl","Pilotti HSL:ssä","hsl"],["#/kehitys","Tekoäly tuotannossa","kehitys"],["#/halytykset","Valvomo","halytykset"],["#/menetelma","Menetelmä ja lähteet","menetelma"]];
+  const A = [["#/","Yleiskuva","home"],["#/tyot","Kaikki työmaat","tyot"]], B = [["#/hsl","Pilotti HSL:ssä","hsl"],["#/kehitys","Tekoäly tuotannossa","kehitys"],["#/menetelma","Menetelmä ja lähteet","menetelma"]];
   h.prepend(sub(A,"home"));
   document.addEventListener("DOMContentLoaded", ()=>{ document.getElementById("v-tyot").prepend(sub(A,"tyot"));
-    document.getElementById("v-hsl").prepend(sub(B,"hsl")); document.getElementById("v-menetelma").prepend(sub(B,"menetelma")); document.getElementById("v-kehitys").prepend(sub(B,"kehitys")); document.getElementById("v-halytykset").prepend(sub(B,"halytykset")); });
+    document.getElementById("v-hsl").prepend(sub(B,"hsl")); document.getElementById("v-menetelma").prepend(sub(B,"menetelma")); document.getElementById("v-kehitys").prepend(sub(B,"kehitys")); });
 })();
 </script>
 
@@ -3813,11 +3823,13 @@ async function hLataa(){
 }
 function hBell(d){
   const b = document.getElementById("hBell"); if(!b || !d) return;
-  b.hidden = !(LIIK_TESTI || S.nakyma==="halytykset");
+  b.hidden = false;
   const akt = (d.rivit||[]).filter(r=>!r.poistui && !r.kuitattu);
   const pahin = akt.map(r=>r.luokka).sort()[0];
   document.getElementById("hBellN").textContent = akt.length || "";
   b.className = "hbell" + (pahin ? " l"+pahin : "");
+  const nb = document.getElementById("navValvomoN"); if(nb){ nb.textContent = akt.length || ""; nb.className = "navn" + (pahin ? " l"+pahin : ""); }
+  const na = nb && nb.parentElement; if(na) na.title = akt.length ? `Valvomo: ${akt.length} kuittaamatonta hälytystä` : "Valvomo: ei kuittaamattomia hälytyksiä";
   b.title = akt.length ? `${akt.length} kuittaamatonta hälytystä` : "Hälytykset: ei kuittaamattomia";
 }
 function renderHalytykset(h, t){
@@ -3994,7 +4006,8 @@ async function load(){
 }
 route(); load(); loadAI();
 /* Hälytyskello yläpalkissa (testitilassa): kuittaamattomien määrä ja pahin luokka, päivittyy minuutin välein */
-if(LIIK_TESTI){ const hk = ()=>{ if(!document.hidden && S.nakyma!=="halytykset") hRpc("halytykset_lista").then(hBell).catch(()=>{}); };
+/* Valvomon laskuri yläpalkissa (työpöydällä välilehdessä, mobiilissa kellossa): kuittaamattomat ja pahin luokka, minuutin välein */
+{ const hk = ()=>{ if(!document.hidden && S.nakyma!=="halytykset") hRpc("halytykset_lista").then(hBell).catch(()=>{}); };
   document.getElementById("hBell").hidden = false; hk(); setInterval(hk, 60000); }
 // esitysajo videota varten (?demo): ladataan vain pyydettäessä
 try{ if(new URLSearchParams(location.search).has("demo")){ const es = document.createElement("script"); es.src = "esitys.js?v=6"; document.body.appendChild(es); } }catch(e){}
