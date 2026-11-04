@@ -720,8 +720,8 @@ html.hsl .km-flow div{border:0;border-radius:16px}
 .vahti-t{background:var(--p);border-radius:12px;padding:6px 14px}
 .vahti-h{font-size:12.5px;color:var(--m);padding:6px 0;border-bottom:1px solid var(--l)}
 .vr{display:grid;grid-template-columns:22px 170px 230px 1fr;gap:8px;align-items:baseline;padding:7px 0;border-bottom:1px solid var(--l);font-size:13.5px}.vr:last-child{border-bottom:0}
-.vr .vi{font-weight:800;text-align:center}.vr.ok .vi{color:#0B7A3E}.vr.huom .vi{color:#B45309}.vr.virhe .vi{color:#B91C1C}
-.vr .vk{font-weight:600}.vr .va{font-family:"IBM Plex Mono";font-size:12.5px}.vr.huom .va{color:#B45309}.vr.virhe .va{color:#B91C1C}.vr .vd{color:var(--m);font-size:12.5px}
+.vr .vi{font-weight:800;text-align:center}.vr.ok .vi{color:#0B7A3E}.vr.huom .vi{color:#B45309}.vr.virhe .vi{color:#B91C1C}.vr.korjautunut .vi{color:#A16207}
+.vr .vk{font-weight:600}.vr .va{font-family:"IBM Plex Mono";font-size:12.5px}.vr.huom .va{color:#B45309}.vr.virhe .va{color:#B91C1C}.vr.korjautunut .va{color:#A16207}.vr .vd{color:var(--m);font-size:12.5px}
 @media(max-width:800px){.vr{grid-template-columns:22px 1fr}.vr .va,.vr .vd{grid-column:2}}
 #sugPanel{position:relative;z-index:30}
 .agentbar2{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--p);border-radius:var(--r);padding:8px 14px;margin-bottom:10px;font-size:14px}
@@ -952,9 +952,9 @@ html.tt-lukko{overflow:hidden}
     <p class="lead">Miten tutkan tekoälyä valvotaan, mitä se maksaa ja kuka siitä vastaa. Sama malli toimisi mille tahansa HSL:n tekoälypalvelulle.</p>
 
     <h3>Järjestelmän tila <span class="vahti-nimi">Vahti</span></h3>
-    <p style="margin-top:0">Joka aamu: tuleeko data perille, onnistuvatko ajot ja tekoälykutsut, riittääkö tila. Tarkistukset ovat SQL:ää, kielimalli kirjoittaa vain katsauksen. Vahti ei korjaa itse.</p>
+    <p style="margin-top:0">Joka aamu: tuleeko data perille, onnistuvatko ajot ja tekoälykutsut, riittääkö tila. Tarkistukset ovat SQL:ää, kielimalli kirjoittaa vain katsauksen. Vakavasta viasta ja sen korjautumisesta tulee ilmoitus puhelimeen 5 minuutin sisällä. Vahti ei korjaa itse.</p>
     <div id="vahti"><div class="empty">Ladataan…</div></div>
-    <p class="note"><b>Suunnitteilla:</b> sähköpostihälytys punaisesta (tietokanta ehti kaatua seitsemän kertaa ennen kuin kukaan katsoi), agentti esitäyttämään tarkistuslistan kuittaukset ihmisen hyväksyttäviksi ja viikkokatsaus toistuvista havainnoista.</p>
+    <p class="note"><b>Suunnitteilla:</b> itsekorjaus ennalta hyväksytyltä listalta (epäonnistunut ajo ajetaan kerran uudelleen, pysähtynyt datankeruu käynnistetään, tekoälyajot pysäytetään krediittien loppuessa, siivous ajetaan heti tilan täyttyessä); kaikki kirjataan lokiin. Kun vika ei poistu, kielimalli lukee lokit ja kirjoittaa todennäköisen syyn ja korjausehdotuksen, ja ihminen tekee muutoksen. Lisäksi agentti esitäyttämään tarkistuslistan kuittaukset ihmisen hyväksyttäviksi ja viikkokatsaus toistuvista havainnoista.</p>
 
     <h3>Tietoturva</h3>
     <table class="t ts-yht"><tbody>
@@ -3307,13 +3307,13 @@ async function renderVahti(){
   let nyt = [], rap = [];
   try{ [nyt, rap] = await Promise.all([get("v_vahti_nyt"), get("v_vahti_raportti?limit=1").catch(()=>[])]); }catch(e){ el.innerHTML = `<div class="empty">Tarkistuksia ei saatu ladattua.</div>`; return; }
   const r = rap[0], k = r && r.katsaus;
-  const ik = {ok:"✓", huom:"!", virhe:"✕"};
-  const huom = nyt.filter(x=>x.tila!=="ok").length;
+  const ik = {ok:"✓", huom:"!", virhe:"✕", korjautunut:"↻"};
+  const huom = nyt.filter(x=>x.tila==="huom"||x.tila==="virhe").length, korj = nyt.filter(x=>x.tila==="korjautunut").length;
   el.innerHTML = `
     ${k ? `<div class="vahti-k"><span class="ai-badge"><i></i>VAHDIN AAMUKATSAUS</span> <span class="note">${fmtShort(r.t)} klo ${new Date(r.t).toLocaleTimeString("fi-FI",{hour:"2-digit",minute:"2-digit"})} · ${esc(r.malli||"")}</span>
       <b>${esc(k.otsikko||"")}</b>${(k.huomiot||[]).length ? `<ul>${k.huomiot.map(h=>`<li><b>${esc(h.k||"")}:</b> ${esc(h.teksti||"")} <span class="note">→ ${esc(h.ehdotus||"")}</span></li>`).join("")}</ul>` : ""}</div>`
       : `<div class="note" style="margin-bottom:8px">Ensimmäinen aamukatsaus kirjoitetaan seuraavana aamuna klo 7.20. Alla tarkistukset reaaliajassa.</div>`}
-    <div class="vahti-t"><div class="vahti-h">Tarkistukset nyt · ${huom ? `<b>${huom} vaatii huomiota</b>` : "kaikki kunnossa"}</div>
+    <div class="vahti-t"><div class="vahti-h">Tarkistukset nyt · ${huom ? `<b>${huom} vaatii huomiota</b>` : "kaikki kunnossa"}${korj ? ` · ${korj} korjautunut 24 h aikana` : ""}</div>
     ${nyt.map(x=>`<div class="vr ${x.tila}"><span class="vi">${ik[x.tila]||"?"}</span><span class="vk">${esc(x.k)}</span><span class="va">${esc(x.arvo||"")}</span><span class="vd">${esc(x.kuvaus||"")}</span></div>`).join("")}</div>`;
 }
 /* ================= tekoälyn käyttö ja kustannukset (LLMOps) ================= */
