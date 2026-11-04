@@ -1265,7 +1265,7 @@ function olosuhteetHTML(){
   const tyoLinjat = new Set((S.luvat||[]).filter(l=>phase(l).k==="kaynnissa" && onRoute(l)).flatMap(l=>lines(l.linjat)));
   const herkat = (S.saaL||[]).filter(l=>l.luokka==="sade" && l.jaksot>=SAA_MIN_J && l.n>=300 && tyoLinjat.has(ln(l.route))).sort((a,b)=>b.kerroin-a.kerroin).slice(0,4);
   const alust = Object.values(K).some(x=>x.jaksot>=SAA_MIN_J && x.jaksot<10);
-  const nytTxt = nytK && nytK.jaksot>=SAA_MIN_J ? `<b class="olo-nyt">Nyt ${esc(nyt.luokka)}: bussit noin ${pctS(nytK.kerroin)} poutaa hitaampia</b>` : nyt && nyt.luokka!=="pouta" ? `<b class="olo-nyt">Nyt ${esc(nyt.luokka)}</b>` : `<span class="note">Nyt poutaa</span>`;
+  const nytTxt = nytK && nytK.jaksot>=SAA_MIN_J ? `<b class="olo-nyt">Viimeiset 2 h ${esc(nyt.luokka)}: bussit noin ${pctS(nytK.kerroin)} poutaa hitaampia</b>` : nyt && nyt.luokka!=="pouta" ? `<b class="olo-nyt">Viimeiset 2 h ${esc(nyt.luokka)}</b>` : `<span class="note">Viimeiset 2 h poutaa</span>`;
   return `<div class="olo"><span class="olo-k">Sään vaikutus busseihin ${infoBtn("saavaik")}</span>${nytTxt}<span class="olo-cs">${chips}</span>${herkat.length?`<span class="olo-h">Herkimmät sateella (työmaalinjat${alust?", alustava":""}): ${herkat.map(l=>`<a href="#/linjat" onclick="S.lSel='${esc(ln(l.route))}'"><span class="lbadge ${TRAM.has(ln(l.route))?"tram":""}" style="height:18px;min-width:26px;font-size:11px">${esc(ln(l.route))}</span> ${pctS(l.kerroin)}</a>`).join(" ")}</span>`:""}</div>`;
 }
 function saaTyomaaHTML(l){
