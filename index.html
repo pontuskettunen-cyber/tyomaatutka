@@ -388,6 +388,10 @@ footer{max-width:1360px;margin:0 auto;padding:0 28px 32px;color:var(--m);font-si
 .ltab-h button{border:0;background:none;padding:10px 10px 8px;font:500 12.5px var(--sans,"IBM Plex Sans");color:var(--m);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
 .ltab-h button.on{color:var(--i);font-weight:600;border-bottom-color:var(--a)}
 .ltab-b{flex:1;overflow:auto;min-height:0}
+@media (max-height:900px){ #v-linjat .lright.sugtila #lNauha, #v-linjat .lright.sugtila.eivalintaa #lSite{display:none} }
+/* linjan valinta: reitti ja työmaat vilkkuvat hetken, jotta ne löytyvät kartalta */
+@keyframes lpomppu{0%,100%{transform:scale(1)}50%{transform:scale(1.45)}}
+#lMap.vilkkuu .lnromk>*{animation:lpomppu .55s ease-in-out 3;transform-origin:center}
 .ltab-b tr[data-site]{cursor:pointer}.ltab-b tr[data-site]:hover td{background:#FBF4EF}.ltab-b tr.valittu td{background:#FFF1E6}
 .lnauha svg circle{cursor:pointer}
 .lveh{position:absolute}
@@ -2970,6 +2974,8 @@ function lTabs(e){
   if(S.lTab==="sug") body = e.sug.map(sugCard).join("");
   el.innerHTML = `<div class="ltab-h">${tabs.map(([t,n])=>`<button type="button" data-t="${t}" class="${S.lTab===t?"on":""}">${n}</button>`).join("")}</div><div class="ltab-b">${body}</div>`;
   el.querySelectorAll(".ltab-h button").forEach(b=>b.onclick=()=>{ S.lTab = b.dataset.t; lTabs(e); });
+  // agentin ehdotus tarvitsee korkeutta: matalalla näytöllä reittinauha ja linjan tilanne väistyvät, kunnes jotain valitaan
+  const oik = el.closest(".lright"); if(oik){ oik.classList.toggle("sugtila", S.lTab==="sug"); oik.classList.toggle("eivalintaa", !S.lSite && !S.lVali && !S.lReitti); }
   el.querySelectorAll("tr[data-site]").forEach(tr=>tr.onclick=()=>lValitse(e, tr.dataset.site, true));
   wireInfo(el);
 }
@@ -3007,14 +3013,14 @@ async function linjaKartta(e){
   }
   const m = M.linja, key = e.name;
   setTimeout(()=>m.invalidateSize(), 30);
-  if(LLay.base) LLay.base.remove(); LLay.base = L.layerGroup().addTo(m); LLay.sites = new Map();
+  if(LLay.base) LLay.base.remove(); LLay.base = L.layerGroup().addTo(m); LLay.sites = new Map(); LLay.vilk = [];
   const base = LLay.base;
   const ids = new Set([...e.works.keys(), ...e.up.map(l=>l.lupa_id)]);
   const b = L.latLngBounds([]);
   const geom = await routeGeom(e.raw.size ? e.raw : new Set());
   if(S.lSel !== key || LLay.base !== base) return;   // käyttäjä vaihtoi linjaa haun aikana
   geom.forEach(g=>{ const oma = String(g.dir)===S.lDir;
-    const pl = L.polyline(g.paths,{color:e.tram?"#00985F":"#1D6FB8", weight: oma?6:4, opacity: oma?.75:.3}).addTo(base); b.extend(pl.getBounds());
+    const pl = L.polyline(g.paths,{color:e.tram?"#00985F":"#1D6FB8", weight: oma?6:4, opacity: oma?.75:.3}).addTo(base); b.extend(pl.getBounds()); (LLay.vilk ||= []).push([pl, oma?.75:.3]);
     pl.bindTooltip(oma ? `Linjan ${esc(e.name)} reitti · klikkaa: näytä reitin hidastavat työmaat` : `Vastasuunta · klikkaa vaihtaaksesi suuntaa`,{sticky:true});
     pl._tag = "reitti"+String(g.dir);
     pl.on("click", ()=>{ if(!oma){ S.lDir = String(g.dir); S.lReitti = true; } else S.lReitti = !S.lReitti; S.lSite = null; S.lVali = null; renderLinjaDet(e); }); });
@@ -3031,7 +3037,7 @@ async function linjaKartta(e){
     L.polyline(pts,{color:"#fff", weight:9, opacity:.9, interactive:false}).addTo(base);
     const tip = `<b>${esc(stopName(g,"from"))} → ${esc(stopName(g,"to"))}</b><br>${sgn(g.lisaviive_s)} per ajo · ${nf(g.n_24h)} ajoa / 24 h<br><span style="color:#6B737B">Klikkaa: tiedot oikealle</span>`;
     const pl = L.polyline(pts,{color:"#B42318", weight:6}).bindTooltip(tip,{sticky:true}).on("click", ()=>lValitseVali(e, key)).addTo(base);
-    pl._tag = "vali";
+    pl._tag = "vali"; (LLay.vilk ||= []).push([pl, 1]);
     pl.on("mouseover", ()=>pl.setStyle({weight:10})).on("mouseout", ()=>pl.setStyle({weight:6}));
   }));
   LLay.nro = lNumerot(e);
@@ -3050,7 +3056,10 @@ async function linjaKartta(e){
     if(!geom.length) b.extend(lay.getBounds());
   });
   LLay.bounds = b;
-  if(b.isValid() && LLay.fitFor !== key){ m.fitBounds(b,{padding:[20,20]}); LLay.fitFor = key; }
+  if(b.isValid() && LLay.fitFor !== key){ const lenna = !!LLay.fitFor;
+    if(lenna) m.flyToBounds(b,{padding:[20,20], duration:.9}); else m.fitBounds(b,{padding:[20,20]});
+    LLay.fitFor = key;
+    setTimeout(()=>lVilkuta(m, base), lenna ? 1000 : 350); }
   lKorosta(e);
   const at = await loadAT(); if(S.lSel !== key || LLay.base !== base || !at) return;
   const tp = new Map();
@@ -3058,7 +3067,17 @@ async function linjaKartta(e){
   tp.forEach(v=>L.marker([v.lat,v.lon],{icon:L.divIcon({className:"tpm"+(v.ajt?"":" end"), iconSize:[10,10]})})
     .bindTooltip(`<b>${esc(v.n)}</b><br>${v.ajt?"Ajantasauspysäkki":"Päätepysäkki"}`,{direction:"top"}).addTo(base));
 }
-const LLay = {base:null, sites:new Map(), ring:null, fitFor:null};
+const LLay = {base:null, sites:new Map(), ring:null, fitFor:null, vilk:[]};
+/* Linjan valinta: reitti ja hitaat välit (canvas, siksi JS) sekä työmaanumerot (CSS) vilkkuvat kolmesti. */
+function lVilkuta(m, base){
+  const mc = m.getContainer(); mc.classList.remove("vilkkuu"); void mc.offsetWidth; mc.classList.add("vilkkuu");
+  const t0 = performance.now(), kesto = 1650, kerrat = 3;
+  const askel = t=>{ if(LLay.base !== base) return;
+    const p = Math.min(1, (t - t0)/kesto), k = 0.5 + 0.5*Math.cos(p*kerrat*2*Math.PI);   // 1 → 0 → 1 kolmesti
+    LLay.vilk.forEach(([pl, op])=>pl.setStyle({opacity: op*(0.12 + 0.88*k), weight: (pl.options._w0 ||= pl.options.weight) * (1 + 0.6*(1-k))}));
+    if(p < 1) requestAnimationFrame(askel); else { LLay.vilk.forEach(([pl, op])=>pl.setStyle({opacity: op, weight: pl.options._w0})); mc.classList.remove("vilkkuu"); } };
+  requestAnimationFrame(askel);
+}
 /* Poikkeusreitti: aikataulun mukaan työmaan välin pitäisi ajaa N vuoroa, mutta havaittuja ohituksia on vain murto-osa. */
 function lKierto(e, id, d){
   if(!S.at || !S.at.linjat) return null;
@@ -3365,7 +3384,11 @@ function route(nav){
   document.querySelectorAll(".view").forEach(x=>x.classList.toggle("on", x.id==="v-"+v));
   const va = (window.NAV_ALIAS||{})[v] || v;
   document.querySelectorAll("nav a").forEach(a=>a.classList.toggle("on", (a.dataset.r||"home")===(va==="home"?"home":va) || (a.dataset.r===""&&va==="home")));
+  const edel = S.nakyma; S.nakyma = v;
   if(!S.loaded) return;
+  // toiselta sivulta (esim. tarkistuslistalta) avattu työmaa: erittely kiinni ja työmaa näkyviin, ei sivun ylälaitaan
+  const toiseltaSivulta = nav==="hash" && v==="home" && l && edel && edel!=="home";
+  if(toiseltaSivulta) S.bdOpen = false;
   if(v==="home"){ const changed = l && S.byId[l] && S.sel!==l; if(changed) S.sel = l;
     renderBrief(); renderAI(); renderCards(); renderHomeMap(); renderDetail(); setTimeout(()=>M.home.invalidateSize(),50);
     if(!S.liveInit){ S.liveInit = true; let pref = null; try{ pref = localStorage.getItem("tt_live2"); }catch(e){}
@@ -3378,7 +3401,8 @@ function route(nav){
   if(v==="raportti") renderRaportti(l);
   if(v==="ennakko") initEnnakko(l);
   if(v==="kehitys"){ renderKehitys(); renderVahti(); }
-  if(nav==="hash") window.scrollTo(0,0);
+  if(toiseltaSivulta){ const d = document.getElementById("detail"); window.scrollTo(0, 0); if(d) setTimeout(()=>window.scrollTo({top: Math.max(0, d.getBoundingClientRect().top + scrollY - 90), behavior:"smooth"}), 120); }
+  else if(nav==="hash") window.scrollTo(0,0);
 }
 window.addEventListener("hashchange", ()=>route("hash"));
 
@@ -3440,6 +3464,8 @@ async function load(){
   }
 }
 route(); load(); loadAI();
+// esitysajo videota varten (?demo): ladataan vain pyydettäessä
+try{ if(new URLSearchParams(location.search).has("demo")){ const es = document.createElement("script"); es.src = "esitys.js?v=1"; document.body.appendChild(es); } }catch(e){}
 setInterval(()=>{ if(!document.hidden) loadAI(); }, 600000);
 setInterval(()=>{ if(!document.hidden) load(); }, 120000);
 </script>
