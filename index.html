@@ -777,7 +777,7 @@ html.uusi #v-home #kpis.strip{grid-template-columns:1.3fr 1fr!important}
     <div id="breakdown"></div>
   </div>
   <section class="todo-sec">
-    <div class="h2row"><h2>Tänään huomioitavaa</h2><span class="note">Kolme asiaa, joihin kannattaa reagoida nyt</span></div>
+    <div class="h2row"><h2>Tänään huomioitavaa</h2></div>
     <div class="todos" id="todo"></div>
   </section>
   <section class="ai aic" id="aiBox">
@@ -839,29 +839,24 @@ html.uusi #v-home #kpis.strip{grid-template-columns:1.3fr 1fr!important}
 <section class="view" id="v-hsl">
   <div class="prose">
     <h2>Miten Työmaatutka toimisi HSL:ssä</h2>
-    <p class="lead">Työmaatutka on prototyyppi ja hypoteesi, ei valmis järjestelmä. Tällä sivulla on rehellisesti auki, mitä tekoäly siinä tekee ja mitä ei, mitkä virheet on jo löydetty, ja miten idea testattaisiin HSL:ssä kuudessa viikossa.</p>
+    <p class="lead">Työmaatutka on prototyyppi, ei valmis järjestelmä. Tällä sivulla: mitä on jo löydetty, mitä ei vielä tiedetä ja miten idea testattaisiin HSL:ssä kuudessa viikossa.</p>
+    <p><b>Työnjako lyhyesti:</b> kaikki luvut lasketaan toistettavasti SQL:llä. Kielimalli lukee lupatekstejä ja kirjoittaa katsauksia ja luonnoksia. Ihminen päättää kaikesta. Tarkemmin <a href="#/kehitys">Tekoäly tuotannossa → Tuoteseloste</a>.</p>
 
-    <h3>Mitä tekoäly tekee ja mitä ei</h3>
-    <table class="t roolit"><thead><tr><th>Tehtävä</th><th>Kuka tekee</th><th>Miksi näin</th></tr></thead><tbody>
-      <tr><td>Kaikki luvut: lisäaika, ohitukset, todennettu vaikutus, ennakkoarvion laskelma, ajantasausvälit</td><td><b>Laskenta</b> (SQL, toistettava)</td><td>Luvut pitää pystyä tarkistamaan ja toistamaan. Kielimalli ei laske yhtään lukua.</td></tr>
-      <tr><td>Lupatekstin luku: sulkeeko työ kaistan, mikä on haitta luvan mukaan</td><td><b>Kielimalli</b> (Claude Haiku)</td><td>Luvan vapaa teksti on kirjavaa. Tulkinta näytetään erikseen merkittynä. Mittauksessa sitä ei käytetä. Sillä rajataan päällekkäisten töiden listasta pois työt, jotka luvan mukaan eivät haittaa ajoneuvoliikennettä.</td></tr>
-      <tr><td>Tilannekatsaus, viikkokatsaus, vastaukset kysymyksiin</td><td><b>Kielimalli</b> (Claude Sonnet / Haiku)</td><td>Saa valmiiksi lasketut luvut. Ohje kieltää keksimästä lukuja, nimiä ja syitä.</td></tr>
-      <tr><td>Aikataulun väljennysehdotus, lausunto- ja tiedoteluonnos</td><td><b>Agentti</b>: laskenta + kielimalli</td><td>Laskenta valitsee tapaukset ja luvut, kielimalli kirjoittaa perustelut. <b>Ihminen päättää</b>: agentti ei muuta mitään itse.</td></tr>
-    </tbody></table>
-
-    <h3>Tunnetut virheet ja opit</h3>
+    <h3>Löydetyt viat ja korjaukset</h3>
     <ul>
-      <li><b>Tekoälyn haittaluokka ei ennusta todellista haittaa.</b> Kun mitattuja töitä verrattiin siihen, mitä kielimalli päätteli lupatekstistä (pieni, kohtalainen tai suuri haitta), luokkien välillä ei ollut eroa. Siksi ennakkoarvio perustuu mitattuun jakaumaan eikä tekoälyn luokitteluun.</li>
-      <li><b>Alustava arvio voi olla liian suuri.</b> Jo käynnissä olevien töiden luku vertaa katuosuutta linjan muihin osuuksiin. Osa kaduista on hitaita ilman työtäkin. Todennettu luku (sama katuosuus ilman työtä) korjaa tämän, mutta vaatii mittauksen ennen työtä tai sen jälkeen.</li>
-      <li><b>Datan katkeaminen löydettiin ja korjattiin.</b> Tietokantarajapinta palautti vain 1000 riviä kerralla, joten osa luvuista puuttui hiljaa. Löytyi kun kartalta puuttui viivoja. Nyt kaikki haut tehdään sivuittain.</li>
-      <li><b>Kattavuus.</b> Lupadata kattaa vain Helsingin. Työmaan ja pysäkkivälin yhdistämisraja (40 m) voi liittää viereisen kadun töitä väärään väliin.</li>
-      <li><b>Pikavuorojen pitkät välit.</b> Työmaa liitettiin aluksi pysäkkiväliin suoran viivan perusteella, ja pikavuorojen yli kilometrin välit osuivat sivukatujen töihin (esim. Kivelänkatu liitettiin Mannerheimintien linjoihin). Nyt etäisyys lasketaan välin katuviivasta.</li>
-      <li><b>Vähäinen data ja harvat linjat.</b> Alle 10 ohituksen luku näytetään vain merkinnällä "ei vielä riittävästi dataa", eikä sitä lasketa hidastajiin. Harvaan kulkevilla linjoilla (esim. 66K, 4 vuoroa päivässä) suuntakohtainen tulos syntyy vasta päivien kuluessa.</li>
-      <li><b>Poikkeusreitit.</b> Jos linja kiertää työmaan, se ei aja mitattua väliä, eikä hidastusta näy. Tutka vertaa nyt aikataulun vuoroja havaittuihin ohituksiin ja merkitsee "kiertää?", kun vain murto-osa vuoroista ajoi välin. Tunnistus on uusi ja tarkistettava liikennöintitiedoista.</li>
-      <li><b>Vahti löysi ensimmäisellä ajollaan kaksi piilossa ollutta vikaa (4.11.2026).</b> Lupasegmenttien tunnittainen päivitys kaatoi tietokannan joka tunti, ja kanta käynnistyi uudelleen pari minuuttia ajon alusta. Kumpikaan vika ei näkynyt sivulla, koska keruu jatkui uudelleenkäynnistysten välissä. Lisäksi kielimallin krediitit olivat loppuneet, joten lupatekstien luku ja katsaukset epäonnistuivat. Päivitys kevennettiin ja harvennettiin 3 tunnin välein. Krediittien loppuminen näkyy nyt Vahdin kielimallitarkistuksessa.</li>
-      <li><b>Tietokannan kasvua ei mitattu alusta asti.</b> Koko HSL-alueen pysäkkivälikooste kasvaa noin 38 Mt vuorokaudessa, eikä sitä siivottu lainkaan. Maksuttoman tason 500 Mt olisi täyttynyt noin 9.–10.11.2026, jolloin kanta lukittuu vain luettavaksi ja keruu pysähtyy. Asia huomattiin 4.11., kun kannan koko tarkistettiin taulukohtaisesti. Nyt kooste säilytetään 60 vrk, kapasiteetti on mitoitettu (noin 2,6 Gt), ja täyttöaste näkyy sivulla varoitusrajoineen. Tuotannossa kapasiteetin seuranta ja säilytyspolitiikka kuuluvat ensimmäiseen versioon.</li>
-      <li><b>Kielimallin hiljainen vika löytyi käyttölokista.</b> Uudempi malli käytti koko vastausrajansa sisäiseen päättelyyn ja palautti tyhjän tekstin. Aikatauluagentti ja tilannekatsaus eivät siksi tuottaneet mitään 2.–3.11.2026, vaikka ajot näyttivät onnistuneen. Vika näkyi heti, kun jokaisesta kutsusta alettiin kirjata tokenit ja katkeaminen. Nyt päättely on pois näistä kutsuista, ja tyhjä vastaus kirjataan virheeksi.</li>
-      <li><b>Lyhyt historia.</b> Keruu alkoi 2.11.2026. Luvut tarkentuvat päivä päivältä, ja vuorokausi- ja viikkovertailut tulevat käyttöön sitä mukaa.</li>
+      <li><b>Tietokanta kaatui joka tunti (4.11.).</b> Vahti löysi sen ensimmäisellä ajollaan. Sivulla vika ei näkynyt, koska keruu jatkui kaatumisten välissä. Raskas päivitys kevennettiin ja harvennettiin.</li>
+      <li><b>Kielimalli palautti tyhjää (2.–3.11.).</b> Malli käytti vastausrajansa sisäiseen päättelyyn. Käyttöloki paljasti vian heti, ja nyt tyhjä vastaus kirjataan virheeksi.</li>
+      <li><b>Tietokanta olisi täyttynyt (9.–10.11.).</b> Kooste kasvaa noin 38 Mt vuorokaudessa, eikä sitä siivottu. Nyt kooste säilytetään 60 vrk, ja täyttöaste näkyy sivulla.</li>
+      <li><b>Hiljaa puuttuvat rivit.</b> Rajapinta palautti 1000 riviä kerrallaan. Kaikki haut tehdään nyt sivuittain.</li>
+      <li><b>Pitkät pysäkkivälit.</b> Suora viiva liitti sivukatujen töitä pikavuoroihin. Nyt etäisyys lasketaan katuviivasta.</li>
+    </ul>
+    <h3>Rajoitukset</h3>
+    <ul>
+      <li><b>Tekoälyn haittaluokka ei ennusta haittaa.</b> Siksi ennakkoarvio perustuu mittaukseen.</li>
+      <li><b>Alustava arvio voi olla liian suuri,</b> koska osa kaduista on hitaita ilman työtäkin. Todennettu luku korjaa tämän.</li>
+      <li><b>Poikkeusreitit:</b> kiertävä linja ei aja mitattua väliä. Tutka merkitsee sen "kiertää?", mutta tunnistus on vielä tarkistettava.</li>
+      <li><b>Kattavuus:</b> luvat vain Helsingistä. Harvoilla linjoilla tulos syntyy päivien kuluessa, ja alle 10 ohituksen lukuja ei näytetä.</li>
+      <li><b>Lyhyt historia:</b> keruu alkoi 2.11.2026.</li>
     </ul>
 
     <h3>Kuuden viikon pilotti</h3>
@@ -874,49 +869,46 @@ html.uusi #v-home #kpis.strip{grid-template-columns:1.3fr 1fr!important}
       <tr><td>Ennusteen osuvuus</td><td>Ennakkoarvio vs. todennettu vaikutus samalle työlle</td><td>Oikea suuruusluokka valtaosassa töistä</td></tr>
       <tr><td>Haittakohteiden tunnistus</td><td>Tutkan 10 pahinta vs. suunnittelijoiden oma lista</td><td>Löytää kohteita, jotka muuten jäisivät huomaamatta</td></tr>
       <tr><td>Ajansäästö</td><td>Lausunnon valmisteluaika luonnoksen kanssa ja ilman</td><td>Selvä säästö ilman laadun heikkenemistä</td></tr>
-      <tr><td>Mitattu säästö euroina</td><td>Todennettu lisäajan muutos ennen ja jälkeen toimenpiteen × kuljettajan tuntikulu (50 €/h) ja matkustajien ajan arvo (5 €/h)</td><td>Jokaiselle muutetulle tai päättyneelle työlle euromääräinen tulos</td></tr>
+      <tr><td>Mitattu säästö euroina</td><td>Lisäajan muutos ennen ja jälkeen toimenpiteen × 50 €/h (kuljettaja) ja 5 €/h (matkustaja)</td><td>Euromäärä jokaiselle muutetulle työlle</td></tr>
       <tr><td>Käyttäjien arvio</td><td>Suunnittelijoiden lyhyt arvio viikoittain</td><td>Hyödyllinen omassa työssä</td></tr>
     </tbody></table>
     <p class="note">Pilotin tavoitteet sovitaan tiimin kanssa ennen aloitusta. Yllä olevat ovat ehdotus.</p>
 
     <h3>Seuraava askel: milloin viive maksaa oikeaa rahaa</h3>
-    <p>Pieni viive ei maksa HSL:lle mitään: se mahtuu aikataulun väljyyteen ja kääntöaikaan päätepysäkillä. Rahaa se maksaa vasta, kun viive siirtyy seuraavaan lähtöön. Silloin aikataulua pitää pidentää tai linjalle tarvitaan lisäauto.</p>
+    <p>Pieni viive mahtuu aikatauluun eikä maksa mitään. Rahaa se maksaa vasta, kun se siirtyy seuraavaan lähtöön: silloin tarvitaan pidempi aikataulu tai lisäauto.</p>
     <ul>
-      <li><b>Data on jo olemassa.</b> HSL:n avoimessa aikataulussa on jokaiselle vuorolle viivevara (max_delay, 0–5 min) ja ratikoille vaunukierrot. Tarkistus 2.11.2026: ratikoilla viivevara on kääntöaika miinus noin 3–4 minuuttia 81 %:ssa vuoropareista.</li>
-      <li><b>Tutka näyttää jo nyt</b> Linjat-näkymässä, kuinka suuren osan viivevarasta työmaat vievät. Alle puolet: ei kustannusta. Yli 100 %: viive siirtyy seuraaviin lähtöihin.</li>
-      <li><b>Pilotissa HSL:n kanssa:</b> tulkinta varmistetaan aikataulusuunnittelijoilta, bussien autokierrot saadaan liikennöitsijöiltä, ja ajoneuvodatasta mitataan, lähtevätkö vuorot päätepysäkiltä myöhässä. Sen jälkeen tutka voi kertoa, millä linjalla lisäauto on tarpeen ja mitä se maksaa (auton pääomakulu noin 200 € päivässä ja kuljettajan tunnit noin 50 €/h, Väylävirasto 2022).</li>
+      <li><b>Data on olemassa:</b> HSL:n aikataulussa jokaisella vuorolla on viivevara (max_delay). Ratikoilla se vastaa kääntöaikaa 81 %:ssa vuoropareista.</li>
+      <li><b>Tutka näyttää jo</b> linjan ohjaamossa, kuinka suuren osan viivevarasta työmaat vievät.</li>
+      <li><b>Pilotissa</b> lisätään bussien autokierrot liikennöitsijöiltä. Silloin tutka voi kertoa, millä linjalla lisäauto on tarpeen ja mitä se maksaa (noin 200 € päivässä + 50 €/h, Väylävirasto 2022).</li>
     </ul>
-    <p class="note">Tutka ei näytä lisäautoja tai säästöjä euroina ennen kuin ne on mitattu. Mittaus alkoi 2.11.2026.</p>
 
-    <h3>Sää ja sen seuraukset</h3>
-    <p>Sää vaikuttaa tutkaan kahdella tavalla. Ensinnäkin se voi vääristää vertailua: jos samaa katuosuutta verrataan kuivana päivänä ennen työtä ja lumipyryssä työn aikana, tutka voisi syyttää työmaata lumesta. Toiseksi sää synnyttää itse katutöitä: pakkanen rikkoo vesijohtoja ja rankkasade tulvii alikulkuja.</p>
+    <h3>Sää</h3>
+    <p>Sää voi vääristää vertailua: lumipyry ei saa näyttää työmaan vialta. Siksi sää mitataan erikseen.</p>
     <ul>
-      <li><b>Jo käytössä:</b> Ilmatieteen laitoksen havainnot (Helsinki Kaisaniemi) tallennetaan 10 minuutin välein syyskuusta 2026 alkaen. Sadejaksot näkyvät työmaan kaaviossa, ja lupateksteistä tunnistetaan kiireelliset korjaukset, kuten vesijohtovuodot.</li>
-      <li><b>Sään vaikutus mitataan:</b> jokaisen pysäkkivälin ajoaikaa verrataan sen omaan poutatasoon samassa vuorokaudenjaksossa. Ensimmäinen tulos (3.11.2026, 5 sadejaksoa): sateella bussit ja ratikat ovat koko kaupungissa noin 3 % poutaa hitaampia. Työmaille lasketaan, pahentaako sää niiden haittaa muuta kaupunkia enemmän, ja linjoille sääherkkyys minuutteina vuoroa kohden verrattuna viivevaraan. Lumi ja liukkaus täyttyvät talven mittaan.</li>
-      <li><b>Seuraavaksi:</b> todennettu ennen–jälkeen-vertailu tehdään vain samankaltaisten sääolojen välillä.</li>
-      <li><b>Viime talvet vertailuksi</b> (Ilmatieteen laitos, Kaisaniemi, marraskuu–huhtikuu):
-        <table class="t" style="margin:6px 0 4px"><thead><tr><th></th><th class="r">2024–25</th><th class="r">2025–26</th></tr></thead><tbody>
-          <tr><td>Päiviä, joina lunta vähintään 10 cm</td><td class="r">7</td><td class="r">60</td></tr>
-          <tr><td>Suurin lumensyvyys</td><td class="r">20 cm</td><td class="r">31 cm</td></tr>
-          <tr><td>Kovan pakkasen päiviä (alin −10 °C tai kylmempi)</td><td class="r">9</td><td class="r">33</td></tr>
-          <tr><td>Nollakelipäiviä (pakkasta ja suojaa samana päivänä)</td><td class="r">66</td><td class="r">32</td></tr>
-          <tr><td>Päiviä, joina uutta lunta vähintään 3 cm</td><td class="r">7</td><td class="r">7</td></tr>
-        </tbody></table>
-        Talvet eroavat paljon: leuto talvi tuo nollakelejä ja liukkautta, kova talvi lumipeitteen ja pakkasen, joka rikkoo vesijohtoja. Bussien viiveitä viime talvilta ei ole avoimena datana, joten tutkan oma talvivertailu kertyy tästä talvesta alkaen. HSL:n oma ajoneuvoarkisto mahdollistaisi viime talven analyysin heti.</li>
-      <li><b>Säävaroitukset:</b> Ilmatieteen laitoksen Helsinkiä koskevat varoitukset (liikennesää, liukkaus, sade, tulva) tallennetaan marraskuusta 2026 alkaen ja näkyvät tilannekuvassa.</li>
-      <li><b>Pilotissa:</b> jokaisen säätapahtuman jälkeen seurataan 72 tuntia: kiireelliset kaivut bussireiteillä, HSL:n poikkeustiedotteet ja viiveiden muutos. Ennusteen ja viivevaran yhdistelmästä voidaan varoittaa etukäteen linjoista, joilla viive todennäköisesti siirtyy seuraaviin lähtöihin. Hulevesitulvien riskialueet (HSY) voidaan merkitä bussireiteille.</li>
+      <li><b>Mitataan nyt:</b> Ilmatieteen laitoksen havainnot ja varoitukset (Kaisaniemi). Jokaista pysäkkiväliä verrataan sen omaan poutatasoon. Ensimmäinen tulos: sateella bussit ovat noin 1–3 % hitaampia. Lumi ja liukkaus kertyvät talven mittaan.</li>
+      <li><b>Seuraavaksi:</b> ennen–jälkeen-vertailu vain samankaltaisessa säässä.</li>
+      <li><b>Pilotissa:</b> varoitus etukäteen linjoista, joilla ennustettu sää ja työmaat yhdessä ylittävät viivevaran.</li>
     </ul>
+    <details class="sug-d"><summary>Viime talvet vertailuksi (Kaisaniemi, marras–huhtikuu)</summary>
+      <table class="t" style="margin:6px 0 4px;max-width:520px"><thead><tr><th></th><th class="r">2024–25</th><th class="r">2025–26</th></tr></thead><tbody>
+        <tr><td>Päiviä, lunta vähintään 10 cm</td><td class="r">7</td><td class="r">60</td></tr>
+        <tr><td>Suurin lumensyvyys</td><td class="r">20 cm</td><td class="r">31 cm</td></tr>
+        <tr><td>Kovan pakkasen päiviä (alle −10 °C)</td><td class="r">9</td><td class="r">33</td></tr>
+        <tr><td>Nollakelipäiviä</td><td class="r">66</td><td class="r">32</td></tr>
+      </tbody></table>
+      <p class="note">Bussien viiveitä viime talvilta ei ole avoimena datana. HSL:n oma ajoneuvoarkisto mahdollistaisi vertailun heti.</p>
+    </details>
 
     <h3>Mitä tuotanto vaatisi</h3>
     <ul>
-      <li><b>HSL:n oma data:</b> ajoneuvodatan arkisto antaisi vertailutason heti myös käynnissä oleville töille, ja automaattinen matkustajalaskenta korvaisi oletuksen 20 matkustajasta ajoa kohden.</li>
-      <li><b>Kaupungin lupajärjestelmä:</b> arvio jo lupaa käsiteltäessä, ei vasta työn alettua. Espoon ja Vantaan luvat koko HSL-alueen kattavuuteen.</li>
-      <li><b>Validointi ja vastuu:</b> analytiikkatiimin hyväksymä menetelmä, tekoälyn käytön lokitus, ihmisen päätös kaikissa toimenpiteissä, saavutettavuus.</li>
-      <li><b>Ylläpito:</b> datankeruun valvonta ja hälytykset, versionhallittu laskenta, selkeä omistaja HSL:ssä.</li>
+      <li><b>HSL:n data:</b> ajoneuvoarkisto vertailutasoksi ja matkustajalaskenta oletuksen (20 matkustajaa) tilalle.</li>
+      <li><b>Lupajärjestelmä:</b> arvio jo lupakäsittelyssä. Espoo ja Vantaa mukaan.</li>
+      <li><b>Vastuu:</b> analytiikkatiimin hyväksymä menetelmä, ihmisen päätös, kirjautuminen ja saavutettavuus.</li>
+      <li><b>Ylläpito:</b> omistaja HSL:ssä. Valvonta (Vahti), lokitus ja säilytysajat ovat jo mukana.</li>
     </ul>
 
     <h3>Kustannukset nyt</h3>
-    <p>Sivusto (GitHub Pages) ja viikoittainen aikatauludatan käsittely (GitHub Actions) pyörivät maksuttomilla palvelutasoilla. Tietokannan maksuton taso (500 Mt) ei riitä, koska koko HSL-alueen pysäkkivälidata kasvaa noin 38 Mt vuorokaudessa. Siksi tietokanta siirretään marraskuussa 2026 maksulliselle tasolle (Supabase Pro, 25 $/kk, 8 Gt), ja vanha data siivotaan automaattisesti: koosteet 60 vrk, raakahavainnot 21 vrk. Tietokannan täyttöaste näkyy sivun alareunassa, ja se muuttuu oranssiksi 70 %:n ja punaiseksi 90 %:n kohdalla ja viikoittainen aikatauludatan käsittely (GitHub Actions). Ainoa käytön mukaan maksava osa on kielimalli: kutsut on rajattu ajastettuihin katsauksiin ja enintään 300 kysymykseen päivässä. Kaikki data on avointa, eikä järjestelmä käsittele henkilötietoja.</p>
+    <p>Sivusto ja aikatauludatan käsittely ovat maksuttomia (GitHub). Tietokanta siirretään marraskuussa 2026 maksulliselle tasolle (Supabase Pro, 25 $/kk), koska data kasvaa noin 38 Mt vuorokaudessa. Kielimalli maksaa käytön mukaan, tyypillisesti senttejä päivässä. Kustannukset näkyvät Tekoäly tuotannossa -sivulla. Kaikki data on avointa, eikä henkilötietoja käsitellä.</p>
   </div>
 </section>
 
@@ -924,22 +916,22 @@ html.uusi #v-home #kpis.strip{grid-template-columns:1.3fr 1fr!important}
 <section class="view" id="v-kehitys">
   <div class="prose">
     <h2>Tekoäly tuotannossa: käyttö, kustannukset ja vastuu</h2>
-    <p class="lead">Kielimalli on tutkassa työkalu, ei musta laatikko. Jokaisesta kutsusta kirjataan, mikä toiminto sitä käytti, paljonko se maksoi, kauanko se kesti ja onnistuiko se. Jokaisella tekoälyä käyttävällä toiminnolla on tuoteseloste: mitä se tekee, mitä sille annetaan, missä ihminen päättää ja mitä siitä tiedetään.</p>
+    <p class="lead">Miten tutkan tekoälyä valvotaan, mitä se maksaa ja kuka siitä vastaa. Sama malli toimisi mille tahansa HSL:n tekoälypalvelulle.</p>
 
     <h3>Järjestelmän tila <span class="vahti-nimi">Vahti</span></h3>
-    <p style="margin-top:0">Vahti tarkistaa joka aamu, toimiiko tutka: tuleeko data perille, onnistuvatko ajot ja tekoälykutsut, ja riittääkö tietokannan tila. Tarkistukset ovat toistettavaa SQL:ää. Kielimalli kirjoittaa niistä vain katsauksen. Vahti ei korjaa mitään itse, vaan ihminen korjaa.</p>
+    <p style="margin-top:0">Joka aamu: tuleeko data perille, onnistuvatko ajot ja tekoälykutsut, riittääkö tila. Tarkistukset ovat SQL:ää, kielimalli kirjoittaa vain katsauksen. Vahti ei korjaa itse.</p>
     <div id="vahti"><div class="empty">Ladataan…</div></div>
-    <p class="note"><b>Suunnitteilla, ei vielä rakennettu:</b> 1) Sähköpostihälytys ylläpitäjälle heti, kun jokin tarkistus menee punaiselle. Paneeli ei auta, jos sitä ei avata: tietokanta ehti kaatua seitsemän kertaa samana aamuna ennen kuin kukaan katsoi. 2) Agentti, joka esitäyttää tarkistettavien työmaiden kuittaukset, esimerkiksi "raitiotietä rakennetaan, liikennettä ei vielä ole". Ehdotuksen hyväksyy aina ihminen. 3) Viikkokatsaus Vahdin havainnoista: mikä toistuu, ja mitä pitäisi korjata pysyvästi.</p>
+    <p class="note"><b>Suunnitteilla:</b> sähköpostihälytys punaisesta (tietokanta ehti kaatua seitsemän kertaa ennen kuin kukaan katsoi), agentti esitäyttämään tarkistuslistan kuittaukset ihmisen hyväksyttäviksi ja viikkokatsaus toistuvista havainnoista.</p>
 
     <h3>Tietoturva</h3>
     <table class="t ts-yht"><tbody>
-      <tr><th>Mitä sivulta voi tehdä</th><td>Sivu on staattinen, eikä siinä ole kirjautumista eikä ylläpitonäkymää, johon voisi murtautua. Selain lukee vain valmiita koostenäkymiä. Kaikissa tietokannan tauluissa on rivitason suojaus (RLS) ilman julkisia käyttöoikeuksia, joten raakadataa ei voi lukea eikä muuttaa suoraan. Tarkistettu 4.11.2026.</td></tr>
-      <tr><th>Kirjoitukset</th><td>Sivulta voi tallentaa vain suunnittelijan arvion ja kuittauksen, ja vain tietokantafunktion kautta. Funktio hyväksyy vain sallitut arvot ja olemassa olevat kohteet, ja tallennuksille on päiväraja (200–300). Demossa kuka tahansa voi kuitata, joten pahimmillaan joku voi sotkea kuittaukset, mutta ei mittausdataa.</td></tr>
-      <tr><th>Salaisuudet</th><td>Kielimallin ja Digitransitin avaimet ovat palvelimen salaisuuksia. Ne eivät ole koodissa, versiohistoriassa eivätkä sivulla, ja versiohistoria on tarkistettu. Sivulla näkyvä julkinen avain on tarkoitettu julkiseksi, ja se antaa vain lukuoikeuden koostenäkymiin.</td></tr>
-      <tr><th>Kustannusten väärinkäyttö</th><td>Kielimallia kutsuvat toiminnot on rajattu: kysymyksiä enintään 300 päivässä, ja katsaus, agentti ja Vahti voi ajaa enintään 90 minuutin, 3 tunnin tai tunnin välein. Pahimman väärinkäytön hinta on noin dollari päivässä.</td></tr>
-      <tr><th>Löydettävyys</th><td>Sivu pyytää hakukoneita olemaan indeksoimatta sitä (noindex), eikä siihen linkitetä mistään. Kaikki tekoälybotit eivät noudata pyyntöä, joten piilotus ei ole suojaus. Suojaus perustuu siihen, ettei sivulla ole mitään salaista: data on avointa, eikä henkilötietoja käsitellä.</td></tr>
-      <tr><th>Supabasen tarkastus</th><td>Supabasen tietoturvatarkastus merkitsee virheiksi 37 julkista koostenäkymää. Valinta on tietoinen: näkymä näyttää koosteen ja pitää raakataulun suljettuna. Kolmen laskentafunktion hakupolku (search_path) kiinnitettiin tarkastuksen perusteella.</td></tr>
-      <tr><th>Suurin riski</th><td>Ylläpitäjän tilit (GitHub, Supabase, Anthropic). Niihin pitää ottaa kaksivaiheinen tunnistautuminen. Tuotannossa HSL:n kirjautuminen (SSO) ja käyttäjäkohtaiset oikeudet korvaisivat avoimet kuittaukset.</td></tr>
+      <tr><th>Rakenne</th><td>Ei kirjautumista eikä ylläpitonäkymää, johon murtautua. Selain lukee vain koosteita. Kaikissa tauluissa rivitason suojaus ilman julkisia oikeuksia (tarkistettu 4.11.2026).</td></tr>
+      <tr><th>Kirjoitukset</th><td>Vain arviot ja kuittaukset, tarkistavan funktion kautta ja päivärajalla. Pahimmillaan joku sotkee kuittaukset, ei mittausdataa.</td></tr>
+      <tr><th>Salaisuudet</th><td>API-avaimet ovat palvelimella, eivät koodissa eivätkä versiohistoriassa. Sivun julkinen avain antaa vain lukuoikeuden koosteisiin.</td></tr>
+      <tr><th>Väärinkäyttö</th><td>Kielimallikutsut on rajattu (300 kysymystä päivässä, ajot aikavälein). Pahin tapaus maksaa noin dollarin päivässä.</td></tr>
+      <tr><th>Löydettävyys</th><td>Hakukoneilta piilotettu, mutta piilotus ei ole suojaus. Suoja on se, ettei sivulla ole mitään salaista: data on avointa, eikä henkilötietoja ole.</td></tr>
+      <tr><th>Tarkastus</th><td>Supabasen tarkastus merkitsee 37 julkista koostenäkymää. Valinta on tietoinen: kooste auki, raakadata kiinni. Muut huomiot korjattu.</td></tr>
+      <tr><th>Suurin riski</th><td>Ylläpitäjän tilit: kaksivaiheinen tunnistautuminen. Tuotannossa HSL:n kirjautuminen ja käyttäjäkohtaiset oikeudet.</td></tr>
     </tbody></table>
 
     <h3>Käyttö ja kustannukset</h3>
@@ -948,14 +940,14 @@ html.uusi #v-home #kpis.strip{grid-template-columns:1.3fr 1fr!important}
 
   <div class="prose" style="max-width:none">
     <h3>Tuoteseloste</h3>
-    <p style="max-width:820px">Malliseloste jokaisesta toiminnosta, jossa tutka käyttää kielimallia. Rakenne noudattaa samaa ajatusta kuin Helsingin kaupungin julkinen tekoälyrekisteri.</p>
+    <p style="max-width:820px">Jokaisesta kielimallia käyttävästä toiminnosta, Helsingin tekoälyrekisterin tapaan.</p>
     <div class="ts-grid">
       <article class="ts">
         <h4>Lupatekstin luku</h4><span class="ts-malli">Claude Haiku 5.5 · tunnin välein</span>
         <dl>
           <dt>Tarkoitus</dt><dd>Päättelee katuluvan vapaasta tekstistä, sulkeeko työ kaistan, raitiotien tai pysäkin.</dd>
           <dt>Syöte</dt><dd>Luvan osoite, tyyppi ja kuvaus kaupungin avoimesta datasta, enintään 500 merkkiä.</dd>
-          <dt>Ihminen</dt><dd>Tulkinta näytetään merkittynä tekoälyn päätelmäksi. Se ei vaikuta mitattuihin lukuihin. Sillä rajataan päällekkäisten töiden listasta pois työt, jotka eivät luvan mukaan haittaa ajoneuvoliikennettä.</dd>
+          <dt>Ihminen</dt><dd>Näytetään merkittynä. Ei vaikuta mitattuihin lukuihin, vain listojen rajaukseen.</dd>
           <dt>Tiedetään</dt><dd>Haittaluokka (pieni, kohtalainen, suuri) ei erotellut mitattua haittaa. Siksi ennakkoarvio perustuu mittaukseen.</dd>
         </dl>
       </article>
@@ -1007,11 +999,11 @@ html.uusi #v-home #kpis.strip{grid-template-columns:1.3fr 1fr!important}
 
   <div class="prose" style="max-width:none">
     <h3>Käyttötapausten priorisointi</h3>
-    <p style="max-width:820px">Jokainen käyttötapaus arvioidaan neljällä perusteella: vaikuttavuus, toteutettavuus, kustannus ja riski. Arvio nojaa tutkan omiin mittauksiin, kuten käyttölokin kustannuksiin, havaittuihin virheisiin ja mitattuun viiveeseen. Kolme alinta riviä ovat HSL:n laajempia ideoita. Niitä ei ole mitattu, ja ne on merkitty arvioiksi. Pisteitä ei lasketa yhteen, koska suuri riski voi kaataa muuten hyvän käyttötapauksen.</p>
+    <p style="max-width:820px">Neljä perustetta: vaikuttavuus, toteutettavuus, kustannus ja riski. Arviot nojaavat tutkan omiin mittauksiin. Kolme alinta ovat HSL:n laajempia ideoita (arvio). Pisteitä ei lasketa yhteen: suuri riski voi kaataa muuten hyvän idean.</p>
     <div class="km-scroll"><table class="t km"><thead><tr><th>Käyttötapaus</th><th>Vaikuttavuus</th><th>Toteutettavuus</th><th>Kustannus</th><th>Riski</th><th>Vaihe</th><th>Päätös ja peruste</th></tr></thead><tbody><tr class=""><td><b>Työmaiden viiveen mittaus</b><small>Laskenta</small></td><td><span class="lv l3">suuri</span></td><td><span class="lv l3">suuri</span></td><td><span class="lv l3">pieni</span></td><td><span class="lv l3">pieni</span></td><td><span class="vaihe v-pilotti">Pilotti­valmis</span></td><td><b>Pilottiin HSL:ssä</b><small>Toimii koko HSL-alueella, mittaa joka päivä. Ei kielimallia, joten kaikki luvut voi toistaa.</small></td></tr><tr class=""><td><b>Ennakkoarvio alkaville töille</b><small>Laskenta</small></td><td><span class="lv l3">suuri</span></td><td><span class="lv l2">keskisuuri</span></td><td><span class="lv l3">pieni</span></td><td><span class="lv l2">keskisuuri</span></td><td><span class="vaihe v-poc">Konsepti­todistus</span></td><td><b>Pilottiin, ennuste vs. toteuma</b><small>Suurin hyöty, koska arvion saa ennen työn alkua. Osuvuutta ei ole vielä mitattu, ja väärä ennuste voi ohjata lausuntoa väärin.</small></td></tr><tr class=""><td><b>Aikatauluagentti</b><small>Laskenta + kielimalli</small></td><td><span class="lv l2">keskisuuri</span></td><td><span class="lv l2">keskisuuri</span></td><td><span class="lv l3">pieni</span></td><td><span class="lv l2">keskisuuri</span></td><td><span class="vaihe v-poc">Konsepti­todistus</span></td><td><b>Pilottiin, jos suunnittelijat hyväksyvät</b><small>$0,07 ajolta. Laatu mitataan suunnittelijan arvioilla. Ihminen päättää aina.</small></td></tr><tr class=""><td><b>Lausunto- ja tiedoteluonnos</b><small>Kielimalli</small></td><td><span class="lv l2">keskisuuri</span></td><td><span class="lv l3">suuri</span></td><td><span class="lv l3">pieni</span></td><td><span class="lv l2">keskisuuri</span></td><td><span class="vaihe v-poc">Konsepti­todistus</span></td><td><b>Pilottiin, ajansäästö mitataan</b><small>Teksti julkaistaan HSL:n nimissä, joten ihminen tarkistaa jokaisen luonnoksen.</small></td></tr><tr class=""><td><b>Sään vaikutus viiveisiin</b><small>Laskenta</small></td><td><span class="lv l2">keskisuuri</span></td><td><span class="lv l3">suuri</span></td><td><span class="lv l3">pieni</span></td><td><span class="lv l3">pieni</span></td><td><span class="vaihe v-poc">Konsepti­todistus</span></td><td><b>Jatketaan, data kertyy talven yli</b><small>Avointa dataa. Tulos vakiintuu vasta, kun lunta ja liukkautta on mitattu.</small></td></tr><tr class=""><td><b>Tilannekatsaus</b><small>Kielimalli</small></td><td><span class="lv l1">pieni</span></td><td><span class="lv l3">suuri</span></td><td><span class="lv l2">keskisuuri</span></td><td><span class="lv l3">pieni</span></td><td><span class="vaihe v-poc">Konsepti­todistus</span></td><td><b>Pilotissa: lopetetaan, jos sitä ei lueta</b><small>Kallein toistuva kutsu (noin $0,10 kerralta, 6 kertaa päivässä). Hyöty on epävarma, koska samat luvut näkyvät sivulla.</small></td></tr><tr class=""><td><b>Lupatekstin luku</b><small>Kielimalli</small></td><td><span class="lv l1">pieni</span></td><td><span class="lv l3">suuri</span></td><td><span class="lv l3">pieni</span></td><td><span class="lv l3">pieni</span></td><td><span class="vaihe v-rajattu">Rajattu käyttö</span></td><td><b>Ei laajenneta</b><small>Haittaluokka ei erotellut mitattua haittaa. Käytetään vain päällekkäisten töiden listan suodatukseen.</small></td></tr><tr class=""><td><b>Kysy tutkalta</b><small>Kielimalli</small></td><td><span class="lv l1">pieni</span></td><td><span class="lv l3">suuri</span></td><td><span class="lv l3">pieni</span></td><td><span class="lv l2">keskisuuri</span></td><td><span class="vaihe v-poc">Konsepti­todistus</span></td><td><b>Pidetään, ei kehitetä</b><small>Halpa (alle sentti kysymykseltä), mutta vastauksessa ei ole lähdeviitteitä.</small></td></tr><tr class="hslrow"><td><b>Poikkeusliikenteen tiedotteet</b><small>HSL, arvio</small></td><td><span class="lv l3">suuri</span></td><td><span class="lv l3">suuri</span></td><td><span class="lv l3">pieni</span></td><td><span class="lv l2">keskisuuri</span></td><td><span class="vaihe v-idea">Idea</span></td><td><b>Seuraava PoC-ehdokas</b><small>Sama malli kuin lausuntoluonnoksessa. Tieto häiriöstä on jo olemassa, ja tiedotteita kirjoitetaan päivittäin.</small></td></tr><tr class="hslrow"><td><b>Asiakaspalautteen luokittelu</b><small>HSL, arvio</small></td><td><span class="lv l3">suuri</span></td><td><span class="lv l2">keskisuuri</span></td><td><span class="lv l2">keskisuuri</span></td><td><span class="lv l1">suuri</span></td><td><span class="vaihe v-idea">Idea</span></td><td><b>PoC vasta tietosuoja-arvion jälkeen</b><small>Paljon tekstiä ja selvä hyöty, mutta palautteissa on henkilötietoja.</small></td></tr><tr class="hslrow"><td><b>Matkustajamäärien ennuste häiriöissä</b><small>HSL, arvio</small></td><td><span class="lv l3">suuri</span></td><td><span class="lv l1">pieni</span></td><td><span class="lv l1">suuri</span></td><td><span class="lv l2">keskisuuri</span></td><td><span class="vaihe v-idea">Idea</span></td><td><b>Vaatii HSL:n datan, ei vielä</b><small>Vaatii matkustajalaskennan ja lipputiedot, joita avoimena ei ole.</small></td></tr></tbody></table></div>
 
     <h3>Ideasta tuotantoon: porttikriteerit</h3>
-    <p style="max-width:820px">Sama malli jokaiselle käyttötapaukselle. Seuraavaan vaiheeseen siirrytään vasta, kun portin kriteerit täyttyvät. Muuten käyttötapaus pysäytetään tai sitä muutetaan, ja päätös kirjataan.</p>
+    <p style="max-width:820px">Seuraavaan vaiheeseen vasta, kun portti ylittyy. Muuten pysäytetään tai muutetaan, ja päätös kirjataan.</p>
     <div class="flow km-flow">
       <div><b>Idea</b><span class="kq">Onko ongelma todellinen?</span>Kuka kärsii, kuinka usein ja mitä se maksaa nyt. Onko data olemassa ja saako sitä käyttää.<span class="kg">Portti: omistaja nimetty, hyöty arvioitu euroina tai tunteina, tietosuoja-arvio tehty.</span></div>
       <div><b>Konseptitodistus</b><span class="kq">Toimiiko se oikealla datalla?</span>2–6 viikkoa, oikea data, ei vielä käyttäjiä. Käyttöloki ja tuoteseloste alusta asti.<span class="kg">Portti: tulos toistettavissa, laatu mitattu, kustannus per käyttökerta tiedossa.</span></div>
@@ -1111,63 +1103,45 @@ html.uusi #v-home #kpis.strip{grid-template-columns:1.3fr 1fr!important}
   <div class="prose">
     <h2>Tietoa Työmaatutkasta</h2>
     <div class="luenae">
-      <h3 style="margin-top:0">Lue näin (1 minuutti)</h3>
+      <h3 style="margin-top:0">Lue näin</h3>
       <ol>
-        <li><b>Tilannekuva</b> vastaa kysymykseen: mikä katutyö hidastaa busseja ja ratikoita eniten juuri nyt? Isoin luku on bussien ja ratikoiden yhteenlaskettu lisäaika työmaiden kohdilla.</li>
-        <li><b>Ohitus</b> tarkoittaa yhtä bussia tai ratikkaa, joka ajaa työmaan ohi. <b>Lisäaika per ohitus</b> kertoo, paljonko yksi bussi tai ratikka hidastuu työmaan kohdalla. +30 s tarkoittaa, että tavallinen ohitus kestää puoli minuuttia pidempään kuin muualla samalla linjalla.</li>
-        <li><b>Arvio vai todennettu?</b> <i>Alustava arvio</i> vertaa työmaan katuosuutta saman linjan muihin osuuksiin, ja voi olla liian suuri. <i>Todennettu</i> vertaa samaa väliä ilman työtä, ennen työn alkua tai sen päätyttyä, ja kertoo työmaan oman vaikutuksen. Sivu kertoo aina, kumpi luku on kyseessä.</li>
-        <li><b>Työmaat</b> näyttää, mitä on tulossa. <b>Linjat</b> näyttää saman linjan kannalta: missä kohtaa reittiä hidastus syntyy ja pitäisikö aikataulua väljentää.</li>
-        <li><b>ⓘ</b> sivun luvuissa avaa selityksen. <b>Kysy tutkalta</b> vastaa vapaisiin kysymyksiin sivun omilla luvuilla.</li>
+        <li><b>Ohitus</b> = yksi bussi tai ratikka työmaan kohdalla. <b>Lisäaika / ohitus</b> = paljonko se hidastuu verrattuna muuhun linjaan. +30 s = puoli minuuttia pidempään.</li>
+        <li><b>Arvio</b> vertaa työmaan katuosuutta linjan muihin osuuksiin ja voi olla liian suuri. <b>Todennettu</b> vertaa samaa väliä ilman työtä ja kertoo työn oman vaikutuksen.</li>
+        <li><b>ⓘ</b> luvun vieressä avaa selityksen.</li>
       </ol>
     </div>
-    <p>Työmaatutka on itsenäinen konsepti ja toimiva demo HSL:lle. Se näyttää, miten tekoäly ja avoin data voivat tuoda katutöiden vaikutuksen joukkoliikenteeseen näkyviin toteutuneista ajoajoista mitattuna, ja varoittaa ennen kuin haitta kasautuu samalle linjalle.</p>
-    <div class="flow" style="grid-template-columns:repeat(3,1fr)">
-      <div><b>Kenelle</b>HSL:n liikennesuunnittelu ja matkustajainformaatio sekä kaupungin katulupien käsittely.</div>
-      <div><b>Mitä se tekee</b>Mittaa jokaisen katutyön tuoman lisäajan linjoittain, ennakoi kasautumat ja kirjoittaa tilannekatsauksen.</div>
-      <div><b>Miksi</b>Lupapäätös ja sen joukkoliikennevaikutus eivät nykyään kohtaa samassa näkymässä. Tämä yhdistää ne.</div>
-    </div>
-    <p class="note">Ei HSL:n eikä Helsingin kaupungin virallinen palvelu. Kaikki data on julkista avointa dataa. Konsepti ja toteutus: Pontus Kettunen · <a href="https://github.com/pontuskettunen-cyber/tyomaatutka">lähdekoodi GitHubissa</a>.</p>
-    <h3>Miten tästä tulisi tuotantopalvelu</h3>
-    <ul>
-      <li>HSL:n oma automaattinen matkustajalaskenta tarkentaisi matkustajatunnit arviosta mitatuksi.</li>
-      <li>Kaupungin lupajärjestelmän kanssa vaikutusarvio voisi näkyä jo lupaa käsiteltäessä, ei vasta työn alettua.</li>
-      <li>Espoon, Vantaan ja Kauniaisen lupadata laajentaisi kattavuuden koko HSL-alueelle.</li>
-      <li>Viikkokatsaus voitaisiin toimittaa suoraan liikennesuunnittelun ja lupakäsittelyn yhteiseen palaveriin.</li>
-    </ul>
-    <h2 style="margin-top:34px">Miten Työmaatutka toimii</h2>
-    <p>Työmaatutka yhdistää kaksi avointa tietolähdettä, joita ei tähän asti ole luettu yhdessä: Helsingin kaupungin katuluvat ja HSL:n ajoneuvojen reaaliaikaisen sijaintisyötteen. Tuloksena on jokaiselle katutyölle mittari siitä, paljonko se hidastaa ohi kulkevaa joukkoliikennettä.</p>
+    <p>Itsenäinen konsepti ja toimiva demo HSL:lle: katutöiden vaikutus joukkoliikenteeseen mitattuna toteutuneista ajoajoista, ja varoitus ennen kuin haitta kasautuu samalle linjalle. Lupapäätös ja sen joukkoliikennevaikutus eivät nykyään kohtaa samassa näkymässä. Tämä yhdistää ne.</p>
+    <p class="note">Ei HSL:n eikä Helsingin kaupungin virallinen palvelu. Kaikki data on avointa. Konsepti ja toteutus: Pontus Kettunen · <a href="https://github.com/pontuskettunen-cyber/tyomaatutka">lähdekoodi GitHubissa</a>.</p>
+
+    <h2 style="margin-top:30px">Miten se toimii</h2>
     <div class="flow">
       <div><b>1. Luvat</b>Kaivuilmoitukset ja liikennejärjestelyt kaupungin rajapinnasta joka yö.</div>
       <div><b>2. Ajoneuvot</b>Kaikkien bussien ja ratikoiden lähdöt pysäkeiltä 2 min välein.</div>
-      <div><b>3. Yhdistäminen</b>Luvan alueen ohi kulkevat pysäkkivälit (alle 40 m).</div>
-      <div><b>4. Mittari</b>Lisäaika linjoittain (arvio ja todennettu), ajoneuvotunnit ja tilannekatsaus.</div>
+      <div><b>3. Yhdistäminen</b>Luvan alueen ohi kulkevat pysäkkivälit (alle 40 m katuviivasta).</div>
+      <div><b>4. Mittari</b>Lisäaika linjoittain, ajoneuvotunnit ja eurot.</div>
     </div>
     <h3 id="sanasto">Mitä luvut tarkoittavat</h3>
-    <dl class="gloss" id="gloss"></dl>
-    <h3>Kaksi lukua: arvio ja todennettu</h3>
-    <p><b>Arvio.</b> Jokainen bussi ja ratikka ilmoittaa pysäkeillä, paljonko se on aikataulusta jäljessä. Jos jääminen kasvaa työmaan pysäkkivälillä enemmän kuin saman linjan muilla väleillä samaan aikaan, erotus on lisäaika. Ruuhka ja sää vaikuttavat kaikkiin väleihin, joten ne kumoutuvat. Luku toimii heti myös jo käynnissä oleville töille, mutta se voi olla liian suuri, koska osa väleistä on hitaita ilman työtäkin (liikennevalot, keskustan ruuhka).</p>
-    <p><b>Todennettu.</b> Samaa pysäkkiväliä verrataan itseensä: työn aikana vs. ilman työtä, samalla vuorokaudenjaksolla. Ilman työtä -tieto saadaan ennen työn alkua (tutka mittaa myös 60 päivän sisällä alkavien töiden välejä) tai työn päätyttyä (välejä seurataan vielä 14 vrk). Välin pysyvä hitaus kumoutuu, ja jäljelle jää työmaan oma vaikutus. Väli lasketaan, kun molemmilta puolilta on vähintään 3 ohitusta ja linja, kun vähintään 10.</p>
-    <p class="note">Tuotannossa HSL:n oma ajoneuvodatan arkisto antaisi vertailukohdan heti myös jo käynnissä oleville töille. Arkisto ei ole avoimesti saatavilla, joten demossa käynnissä olevat työt saavat todennetun luvun vasta päättyessään.</p>
-    <h3>Matkustajavaikutus</h3>
-    <p>Busseille ja ratikoille kertyvä lisäaika (ajoneuvotunnit) lasketaan toteutuneista ajoajoista. Matkustajatunnit saadaan kertomalla ne matkustajamäärällä, joka on sivulla toistaiseksi säädettävä oletus, koska ajantasaista avointa kuormitusdataa ei ole. HSL:n oman automaattisen matkustajalaskennan kanssa luku olisi tarkka pysäkkiväli- ja vuorokohtaisesti.</p>
+    <div class="gloss" id="gloss"></div>
+    <h3>Arvio ja todennettu</h3>
+    <p><b>Arvio.</b> Bussit ja ratikat ilmoittavat pysäkeillä, paljonko ne ovat aikataulusta jäljessä. Jos jääminen kasvaa työmaan välillä enemmän kuin saman linjan muilla väleillä samaan aikaan, erotus on lisäaika. Ruuhka ja sää vaikuttavat kaikkiin väleihin, joten ne kumoutuvat.</p>
+    <p><b>Todennettu.</b> Sama väli työn aikana vs. ilman työtä, samalla vuorokaudenjaksolla. Vertailu saadaan ennen työn alkua (tutka mittaa 60 päivän sisällä alkavat) tai 14 vrk työn jälkeen. HSL:n oma ajoneuvoarkisto antaisi vertailun heti myös jo käynnissä oleville töille.</p>
+    <p><b>Matkustajat.</b> Matkustajatunnit = ajoneuvotunnit × oletusmatkustajamäärä (20), koska avointa kuormitusdataa ei ole. HSL:n matkustajalaskenta tekisi luvusta tarkan.</p>
     <h3>Rajoitukset</h3>
     <ul>
-      <li>Lupadata kattaa Helsingin. Espoon ja Vantaan luvat ovat eri järjestelmissä.</li>
-      <li>Lupa kertoo, missä työ <em>saa</em> olla, ei sitä, onko kaivinkone paikalla juuri tänään. Siksi mittaus perustuu toteutuneisiin ajoaikoihin eikä lupaan itseensä.</li>
-      <li>Pysäkkiväli voidaan liittää useampaan lupaan, jos työt ovat vierekkäin. Silloin vaikutus näkyy kaikilla.</li>
-      <li>Keruu on aloitettu 2.11.2026, joten historia on lyhyt ja luvut tarkentuvat päivä päivältä.</li>
-      <li>Jos kaksi työtä on samalla välillä, todennettu luku kertoo niiden yhteisvaikutuksen.</li>
+      <li>Luvat vain Helsingistä. Espoo ja Vantaa ovat eri järjestelmissä.</li>
+      <li>Lupa kertoo, missä työ <em>saa</em> olla, ei onko kone paikalla tänään. Siksi mitataan ajoaikoja eikä lupia.</li>
+      <li>Vierekkäisten töiden vaikutus näkyy kaikilla, ja todennettu luku on niiden yhteisvaikutus.</li>
     </ul>
-    <h3>Tietosuoja ja vastuullisuus</h3>
-    <p>Työmaatutka ei käsittele henkilötietoja. Ajoneuvodatasta tallennetaan kahden tunnin koosteita pysäkkiväleittäin sekä työmaiden pysäkkiväleiltä yksittäiset ohitukset ilman ajoneuvon tunnistetta, 21 vuorokauden ajan. Lupien hakijoiden ja urakoitsijoiden nimiä ei tallenneta, koska tavoite on koordinointi eikä syyllisten osoittaminen. Kaikki laskenta on avointa ja toistettavaa, ja lähdekoodi on julkinen.</p>
+    <h3>Tietosuoja</h3>
+    <p>Ei henkilötietoja. Ajoneuvodatasta tallennetaan koosteita ja työmaiden kohdalta ohitukset ilman ajoneuvon tunnistetta (21 vrk). Hakijoiden ja urakoitsijoiden nimiä ei tallenneta: tavoite on koordinointi, ei syyllisten osoittaminen.</p>
     <h3>Lähteet</h3>
     <ul>
       <li>HSL High-frequency positioning (HFP v2), <code>mqtt.hsl.fi</code>, CC BY 4.0</li>
-      <li>Helsingin kaupunki: kaivuilmoitukset ja tilapäiset liikennejärjestelyt, <code>kartta.hel.fi</code> avoin data, CC BY 4.0</li>
-      <li>Fintraffic Digitraffic: tietyöt, CC BY 4.0</li>
-      <li>Pohjakartta © OpenStreetMap-tekijät</li>
+      <li>Helsingin kaupunki: kaivuilmoitukset ja tilapäiset liikennejärjestelyt, <code>kartta.hel.fi</code>, CC BY 4.0</li>
+      <li>HSL:n aikataulut (GTFS) ja häiriötiedotteet (Digitransit), CC BY 4.0</li>
+      <li>Ilmatieteen laitos: havainnot, ennusteet ja varoitukset, CC BY 4.0</li>
+      <li>Fintraffic Digitraffic: tietyöt, CC BY 4.0 · Pohjakartta © OpenStreetMap-tekijät</li>
     </ul>
-    <p>Lähdekoodi: <a href="https://github.com/pontuskettunen-cyber/tyomaatutka">github.com/pontuskettunen-cyber/tyomaatutka</a> · Konsepti ja toteutus: Pontus Kettunen</p>
   </div>
 </section>
 
@@ -1550,7 +1524,7 @@ function renderBreakdown(){
   wireInfo(el);
 }
 
-document.getElementById("gloss").innerHTML = Object.values(INFO).map(([h,t,g])=>`<dt>${esc(h.split(":")[0])}</dt><dd>${esc(typeof t==="function"?g:t)}</dd>`).join("");
+document.getElementById("gloss").innerHTML = Object.values(INFO).map(([h,t,g])=>`<details class="sug-d"><summary>${esc(h.split(":")[0])}</summary><p class="note">${esc(typeof t==="function"?g:t)}</p></details>`).join("");
 /* ================= TILANNEKUVA ================= */
 function ranked(){
   return S.luvat.filter(l=>phase(l).k==="kaynnissa" && onRoute(l))
@@ -1614,7 +1588,7 @@ function renderBrief(){
   // Taso 2: kolme asiaa, joihin kannattaa reagoida
   const td = [];
   const top = rH[0] || r[0];
-  if(top) td.push(`<button class="todo red" data-sel="${esc(top.l.lupa_id)}"><small>Eniten lisäaikaa nyt</small><b>${esc(shortStreet(top.l))}</b><span>${top.i.vehH?`${nf(top.i.vehH,1)} h yhteensä · `:""}${top.i.s!=null&&top.i.s>0?`${minuutteina(top.i.s)} jokaista ohitusta kohden${top.i.tod?"":" (arvio)"}`:""}${lines(top.l.linjat).length?" · linjat "+esc(lines(top.l.linjat).filter(n=>!/N$/.test(n)).slice(0,5).join(", ")):""}</span><em>Näytä kartalla →</em></button>`);
+  if(top && !S.uusi) td.push(`<button class="todo red" data-sel="${esc(top.l.lupa_id)}"><small>Eniten lisäaikaa nyt</small><b>${esc(shortStreet(top.l))}</b><span>${top.i.vehH?`${nf(top.i.vehH,1)} h yhteensä · `:""}${top.i.s!=null&&top.i.s>0?`${minuutteina(top.i.s)} jokaista ohitusta kohden${top.i.tod?"":" (arvio)"}`:""}${lines(top.l.linjat).length?" · linjat "+esc(lines(top.l.linjat).filter(n=>!/N$/.test(n)).slice(0,5).join(", ")):""}</span><em>Näytä kartalla →</em></button>`);
   if(next){ const vk = S.vaik?.[next.lupa_id]; td.push(`<button class="todo ind" data-sel="${esc(next.lupa_id)}"><small>Alkaa seuraavaksi · ${fmtDate(next.alkaa)}</small><b>${esc(shortStreet(next))}</b><span>${lines(next.linjat).length?"linjat "+esc(lines(next.linjat).filter(n=>!/N$/.test(n)).slice(0,5).join(", ")):"ei joukkoliikennettä vieressä"}${vk&&vk.pohja_n?` · ${nf(vk.pohja_n)} ohitusta mitattu jo ennen työtä vertailuksi`:""}</span><em>Näytä kartalla →</em></button>`); }
   if(cl[0]) td.push(`<a class="todo warn2" href="#/tyot"><small>Kaksi työtä samalla linjalla · ${fmtShort(cl[0].lo)}–${cl[0].hi<8e15?fmtShort(cl[0].hi):""}</small><b>${esc(shortStreet(cl[0].a))} + ${esc(shortStreet(cl[0].b))}</b><span>Molemmat linjoilla ${esc(cl[0].shared.slice(0,4).join(", "))}${cl[0].shared.length>4?"…":""}, ${nf(cl[0].dist/1000,1)} km:n päässä toisistaan: viiveet kasautuvat samalle matkustajalle.</span><em>Kaikki päällekkäiset työt (${cl.length}) →</em></a>`);
   document.getElementById("todo").innerHTML = td.join("");
@@ -1672,9 +1646,9 @@ const SITE = {
 /* Mittauksen varmuus ihmiskielellä: mitä luku on ja milloin se tarkentuu */
 function varmuus(l){
   const vk = S.vaik?.[l.lupa_id], im = impact(l), ph = phase(l).k;
-  if(im && im.tod) return {k:"tod", lyhyt:"todennettu", txt:`Todennettu: sama pysäkkiväli on mitattu ${im.vert==="ennen"?"ennen työn alkua":"työn päätyttyä"} (${nf(im.nB)} ohitusta) ja työn aikana (${nf(im.n)} ohitusta). Ero on työmaan oma vaikutus.`};
-  if(vk && vk.tila==="pohjaa_kertyy") return {k:"pohja", lyhyt:"vertailu ennen työtä käynnissä", txt:`Työ alkaa ${fmtDate(l.alkaa)}. Samaa katuosuutta mitataan jo nyt ilman työtä, jotta työn oma vaikutus nähdään myöhemmin: ${nf(vk.pohja_n||0)} ohitusta. Todennettu vaikutus näkyy, kun työn aikana on kertynyt vähintään ${MIN_N} ohitusta linjaa kohden, yleensä saman päivän aikana.`};
-  if(ph==="kaynnissa" && im) return {k:"arvio", lyhyt:"alustava arvio", txt:`Alustava arvio: työ oli käynnissä jo ennen kuin tutka alkoi mitata, joten katuosuutta verrataan saman linjan muihin osuuksiin. Luku voi olla liian suuri, koska osa kaduista on hitaita ilman työtäkin. Todennettu luku saadaan, kun työ päättyy${l.paattyy?" ("+fmtDate(l.paattyy)+")":""} ja samaa väliä mitataan ilman sitä.`};
+  if(im && im.tod) return {k:"tod", lyhyt:"todennettu", txt:`Todennettu: sama väli mitattu ${im.vert==="ennen"?"ennen työtä":"työn jälkeen"} (${nf(im.nB)} ohitusta) ja työn aikana (${nf(im.n)}). Ero on työn oma vaikutus.`};
+  if(vk && vk.tila==="pohjaa_kertyy") return {k:"pohja", lyhyt:"vertailu ennen työtä käynnissä", txt:`Työ alkaa ${fmtDate(l.alkaa)}. Katua mitataan jo nyt ilman työtä (${nf(vk.pohja_n||0)} ohitusta), joten vaikutus todennetaan heti työn alettua.`};
+  if(ph==="kaynnissa" && im) return {k:"arvio", lyhyt:"alustava arvio", txt:`Alustava arvio: työ alkoi ennen mittausta, joten vertailuna ovat linjan muut osuudet. Luku voi olla liian suuri. Todennetaan, kun työ päättyy${l.paattyy?" ("+fmtDate(l.paattyy)+")":""}.`};
   return null;
 }
 /* ================= ENNAKKOARVIO ================= */
@@ -2000,15 +1974,15 @@ function minuutteina(sec){
 /* Yhden lauseen yhteenveto työmaasta ihmiselle */
 function tiivis(l, im, ml){
   const ph = phase(l).k, ls = lines(l.linjat).filter(n=>!/N$/.test(n));
-  if(!onRoute(l)) return `<p class="tiivis">Tämän työn kohdalla ei kulje bussi- tai ratikkareittejä, joten se ei vaikuta joukkoliikenteeseen suoraan.</p>`;
+  if(!onRoute(l)) return `<p class="tiivis">Kohdalla ei kulje bussi- tai ratikkareittejä.</p>`;
   if(ph==="tulossa") return `<p class="tiivis">Työ alkaa <b>${fmtDate(l.alkaa)}</b> ja osuu ${ls.length} linjan reitille (${esc(ls.slice(0,5).join(", "))}${ls.length>5?"…":""}). Vaikutus mitataan heti työn alettua.</p>`;
-  if(!im || im.s==null) return `<p class="tiivis">Työ on käynnissä ${ls.length} linjan reitillä. Ohituksia ei ole vielä tarpeeksi luotettavaan lukuun.</p>`;
+  if(!im || im.s==null) return `<p class="tiivis">Työ on käynnissä ${ls.length} linjan reitillä. Ohituksia ei vielä tarpeeksi luotettavaan lukuun.</p>`;
   const top = (ml||[]).filter(r=>r.ohitukset>=MIN_N && r.lisa_ajo>10).sort((a,b)=>b.lisa_ajo-a.lisa_ajo)[0];
-  const verbi = im.s > 10 ? `hidastaa joukkoliikennettä: bussi tai ratikka on työmaan kohdalla keskimäärin <b>${minuutteina(im.s)}</b> pidempään kuin muualla samalla linjalla` : im.s < -10 ? `ei hidasta: ohi pääsee jopa ${minuutteina(im.s)} nopeammin kuin muualla linjalla` : `ei hidasta merkittävästi: alle 10 sekuntia ohitusta kohden`;
-  const ero = top && im.s > 0 && top.lisa_ajo > im.s*1.6 ? ` Linjoittain ero on suuri: linjalla <b>${esc(ln(top.route))}</b> hidastus on ${minuutteina(top.lisa_ajo)}. Linjat kulkevat työmaan ohi eri kohdista ja eri suuntiin, joten luku vaihtelee linjoittain. Ylempi luku on kaikkien linjojen keskiarvo.` : top ? ` Eniten hidastuu linja <b>${esc(ln(top.route))}</b> (${minuutteina(top.lisa_ajo)}).` : "";
+  const verbi = im.s > 10 ? `hidastaa: bussi tai ratikka on kohdalla keskimäärin <b>${minuutteina(im.s)}</b> pidempään kuin muualla linjalla` : im.s < -10 ? `ei hidasta: ohi pääsee jopa ${minuutteina(im.s)} nopeammin kuin muualla linjalla` : `ei hidasta merkittävästi: alle 10 sekuntia ohitusta kohden`;
+  const ero = top && im.s > 0 && top.lisa_ajo > im.s*1.6 ? ` Linjoittain ero on suuri: linjalla <b>${esc(ln(top.route))}</b> ${minuutteina(top.lisa_ajo)}.` : top ? ` Eniten hidastuu linja <b>${esc(ln(top.route))}</b> (${minuutteina(top.lisa_ajo)}).` : "";
   const nSlow = (S.segs[l.lupa_id]||[]).filter(g=>(g.n_24h||0)>=MIN_N && g.lisaviive_s>10).length;
-  const kartta = im.s <= 10 && nSlow ? ` Kartalla punaisena näkyvät ne ${nSlow} pysäkkiväliä, joilla hidastus on selvä. Keskiarvossa muiden välien ja linjojen sujuvampi kulku tasoittaa ne.` : "";
-  return `<p class="tiivis">Työ ${verbi}${im.tod?"":" (arvio)"}.${ero}${kartta} Laskelmassa on ${nf(im.n)} bussin ja ratikan ohitusta.</p>`;
+  const kartta = im.s <= 10 && nSlow ? ` Kartalla punaisena ${nSlow} pysäkkiväliä, joilla hidastus on selvä.` : "";
+  return `<p class="tiivis">Työ ${verbi}${im.tod?"":" (arvio)"}.${ero}${kartta}</p>`;
 }
 function siteKind(l){ const im = impact(l); if(!im || im.kind!=="v2") return "kesken"; return im.s > 10 ? "hidastaa" : "ei"; }
 function renderHomeMap(){
@@ -2141,7 +2115,7 @@ async function renderDetail(){
   const ph = phase(l), im = impact(l), ls = (S.linjat[l.lupa_id]||[]).filter(r=>/^\d{1,3}[A-Z]?$/.test(ln(r.route)) && (r.ohitukset_24h||0) >= 3).slice().sort((a,b)=>(b.ohitukset_24h||0)-(a.ohitukset_24h||0));
   const segs = (S.segs[l.lupa_id]||[]);
   let facts;
-  if(im && im.kind==="v2") facts = [[sgn(im.s)+(im.n<30?' <span class="prelim">alustava</span>':""),`${im.tod?"todennettu":"arvio"}: lisäaika, kun bussi tai ratikka ajaa ohi · ${nf(im.n)} ohitusta ${infoBtn("lisaaika")}`],[Math.abs(Math.round(im.seis))+" s",`${im.seis>=0?"pidempään":"lyhyemmin"} pysäkillä kuin muualla linjalla ${infoBtn("ajossa")}`],[nf(im.vehH,1)+" h",`lisäaika yhteensä · ${period().dur}`]];
+  if(im && im.kind==="v2") facts = [[sgn(im.s)+(im.n<30?' <span class="prelim">alustava</span>':""),`lisäaika / ohitus (${im.tod?"todennettu":"arvio"}) · ${nf(im.n)} ohitusta ${infoBtn("lisaaika")}`],[Math.abs(Math.round(im.seis))+" s",`${im.seis>=0?"pidempään":"lyhyemmin"} pysäkillä ${infoBtn("ajossa")}`],[nf(im.vehH,1)+" h",`lisäaika yhteensä · ${S.ik==="7d"?"7 vrk":"24 h"}`]];
   else if(im) facts = [[sgn(im.s),"lisäviive per ohitus, linjojen keskiarvo"],[nf(im.vehH,1)+" h","ajoneuvotunteja / 24 h"],[nf(l.ohitukset_24h),"ohitusta / 24 h"]];
   else if(ph.k==="tulossa") facts = [[fmtDate(l.alkaa),"työ alkaa"],[nf(l.perustaso_havainnot),"perustason havaintoa"],[nf(baseCover(l)*100)+" %","vuorokaudesta katettu"]];
   else if(onRoute(l)) facts = [[nf(l.ajoja_vrk),"ajoa / vrk ohi työmaan"],[nf(lines(l.linjat).length),"linjaa"],["–","lisäviive kertyy"]];
@@ -2151,7 +2125,7 @@ async function renderDetail(){
     <div class="sup"><span class="st ${ph.k}">${esc(ph.txt)}</span>${kiireellinen(l)?'<span class="st kiire" title="Lupateksti kertoo vuodosta tai vauriosta. Tällaiset korjaukset lisääntyvät pakkasella ja rankkasateen jälkeen.">kiireellinen korjaus</span>':""}<span class="chip">${esc(l.lupa_id)}</span><span class="note">${esc(layerName(l.layer))}${l.kaupunginosa?" · "+esc(district(l.kaupunginosa)):""}</span><button class="share" id="shareBtn">Kopioi linkki</button></div>
     <h3>${esc(title(l))}</h3>
     <div class="addr">${esc(purpose(l))} · ${l.alkaa?fmtDate(l.alkaa):""}–${l.paattyy?fmtDate(l.paattyy):""}</div>
-    ${l.ai_vaikutus?`<div class="aibox"><span class="ai-badge"><i></i>TEKOÄLY LUKI LUPATEKSTIN</span> <span class="note">arvio siitä, mitä lupa sanoo liikenteestä · ei mittaus</span><div style="margin-top:4px"><span class="aitag ${esc(l.ai_vaikutus)}">haitta luvan mukaan: ${esc(l.ai_vaikutus)}</span> ${(l.ai_sulkee||[]).map(x=>`<span class="aitag pieni">${esc(String(x).replace("_"," "))}</span>`).join(" ")} ${l.ai_perustelu?`<div class="note" style="margin-top:3px">${esc(l.ai_perustelu)}</div>`:""}</div></div>`:""}
+    ${l.ai_vaikutus?`<div class="aibox"><span class="ai-badge"><i></i>TEKOÄLY LUVASTA</span> <span class="note">ei mittaus</span><div style="margin-top:4px"><span class="aitag ${esc(l.ai_vaikutus)}">haitta luvan mukaan: ${esc(l.ai_vaikutus)}</span> ${(l.ai_sulkee||[]).map(x=>`<span class="aitag pieni">${esc(String(x).replace("_"," "))}</span>`).join(" ")} ${l.ai_perustelu && !/ei kerro|kuvaus ei/i.test(l.ai_perustelu)?`<div class="note" style="margin-top:3px">${esc(l.ai_perustelu)}</div>`:""}</div></div>`:""}
     ${tiivis(l, im, ml)}
     <div class="facts">${facts.map(f=>`<div><b>${f[0]}</b><small>${f[1]}</small></div>`).join("")}</div>
     ${onRoute(l) && ph.k!=="tulossa" ? `<a class="raplink" href="#/raportti?l=${encodeURIComponent(l.lupa_id)}">${ph.k==="paattynyt"?"Avaa jälkiraportti":"Jälkiraportti (esikatselu)"} →</a>` : ""}
@@ -2511,7 +2485,7 @@ function drawLive(){
   const np = document.getElementById("nowPass");
   if(np) np.innerHTML = `<div class="sec">Ohittaa juuri nyt <span class="note" style="text-transform:none;letter-spacing:0;font-weight:400">livenä</span></div>` + (here.length
     ? here.sort((a,b)=>a.dl-b.dl).slice(0,6).map(v=>`<div class="veh" style="padding:7px 0"><span class="badge ${v.mode==="tram"?"tram":""}">${esc(v.line)}</span><div class="note">${v.head?"→ "+esc(v.head)+" · ":""}${nf((v.spd||0)*3.6)} km/h</div><div class="r mono ${v.dl<-120?"slow":""}">${v.dl<-30?"+"+nf(-v.dl/60,1)+" min":"ajallaan"}</div></div>`).join("")
-    : `<div class="note">Yksikään bussi tai ratikka ei ole juuri nyt tämän työmaan kohdalla.</div>`);
+    : `<div class="note">Ei ohittajia juuri nyt.</div>`);
 }
 
 document.querySelectorAll("#ikSel button").forEach(b=>b.onclick=()=>{ S.ik=b.dataset.ik; document.querySelectorAll("#ikSel button").forEach(x=>x.classList.toggle("on",x===b)); route("refresh"); });
@@ -2704,9 +2678,9 @@ function linjaTiivis(e){
   const nimi = `${e.tram?"Ratikka":"Bussi"} ${esc(e.name)}`;
   const kaikki = (S.ltila?.[e.name]||[]).filter(r=>r.ikkuna===S.ik && r.jakso==="kaikki" && r.vuoroja>=5).sort((a,b)=>b.p90-a.p90)[0];
   const ws = [...e.works.values()].map(w=>({l:w.l, s:lMaxS(w)})).filter(x=>x.s>10).sort((a,b)=>b.s-a.s);
-  const suurin = ws[0] ? ` Suurin yksittäinen hidastaja on <b>${esc(shortStreet(ws[0].l))}</b> (${minuutteina(ws[0].s)}, arvio).` : "";
+  const suurin = ws[0] ? ` Suurin hidastaja: <b>${esc(shortStreet(ws[0].l))}</b> (${minuutteina(ws[0].s)}, arvio).` : "";
   if(kaikki){
-    const kumoaa = ws[0] && ws[0].s > Math.max(30, kaikki.med*3) ? ` Miksi koko reitin luku on pienempi kuin yksittäisen työmaan? Osalla työmaista ${e.tram?"ratikka":"bussi"} kulkee tavallista nopeammin ja osalla hitaammin, ja ne kumoavat osittain toisiaan. Lisäksi työmaakohtainen luku on arvio, kun taas koko reitin luku on mitattu vuoro kerrallaan.` : "";
+    const kumoaa = ws[0] && ws[0].s > Math.max(30, kaikki.med*3) ? ` Koko reitin luku on pienempi, koska työmaiden nopeammat ja hitaammat kohdat kumoavat toisiaan.` : "";
     const tav = kaikki.med > 10 ? `tavallinen vuoro hidastuu työmailla koko reitillä yhteensä <b>${minuutteina(kaikki.med)}</b>` : `tavallinen vuoro ei juuri hidastu työmailla (koko reitillä yhteensä ${sgn(kaikki.med)})`;
     return `<p class="tiivis">${nimi}: ${tav}, mutta joka kymmenes vuoro hidastuu yli <b>${minuutteina(kaikki.p90)}</b>.${suurin}${kumoaa}</p>`; }
   if(ws.length) return `<p class="tiivis">${nimi} kulkee ${nf(e.sites)} työmaa-alueen ohi, joista ${ws.length} hidastaa sitä (arvio).${suurin}</p>`;
@@ -3240,7 +3214,7 @@ const usd = v => v == null ? "–" : "$" + (v < 0.01 && v > 0 ? nf(v, 4) : nf(v,
     <table class="t ai-t"><thead><tr><th>Toiminto</th><th>Malli</th><th class="r">Kutsut</th><th class="r">Tokenit sisään / ulos</th><th class="r">Kustannus</th><th class="r">Per kutsu</th><th class="r">Vasteaika</th><th class="r">Virheet</th></tr></thead><tbody>
     ${lista.map(b=>`<tr><td>${AI_TOIM[b.tila]||b.tila}</td><td>${mn(b.malli)}</td><td class="r">${nf(b.kutsut)}</td><td class="r">${nf(b.syote)} / ${nf(b.tuotos)}</td><td class="r">${usd(b.usd)}</td><td class="r">${b.kutsut?usd(b.usd/b.kutsut):"–"}</td><td class="r">${b.kutsut>b.virheet?nf(b.ms/(b.kutsut-b.virheet)/1000,1)+" s":"–"}</td><td class="r">${b.virheet?`<b style="color:#B91C1C">${nf(b.virheet)}</b>`:"0"}</td></tr>`).join("")}
     </tbody></table>
-    <p class="note">Kirjaus alkoi ${fmtShort(AI_ALKU)}${new Date(AI_ALKU).getFullYear()}${paivat<7?`, joten luvut perustuvat ${paivat} päivään`:""}. Hinnat ovat Anthropicin listahintoja dollareina, koska se laskuttaa dollareissa: Haiku 5.5 0,10 / 0,50 $ ja Sonnet 5.5 2 / 10 $ miljoonaa tokenia kohden (sisään / ulos). Kalliimpi malli on käytössä vain siellä, missä kirjoitetaan ihmiselle luettavaa tekstiä.</p>
+    <p class="note">Kirjaus alkoi ${fmtShort(AI_ALKU)}${new Date(AI_ALKU).getFullYear()}${paivat<7?` (${paivat} pv)`:""}. Listahinnat dollareina: Haiku 5.5 0,10/0,50 $ ja Sonnet 5.5 2/10 $ miljoonaa tokenia kohden. Kalliimpi malli vain ihmiselle kirjoitettavaan tekstiin.</p>
     <div id="aiLaatu"></div>`;
   renderLaatu();
 }
