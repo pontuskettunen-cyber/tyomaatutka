@@ -2207,13 +2207,22 @@ function tarkistettavat(){
     if(!syyt.length || tTiedote(l)) return;
     out.push({l, syyt, ph, s: im && im.kind==="v2" ? im.s : null, k: (S.kuittaus||{})[l.lupa_id] || null});
   });
-  return out.sort((a,b)=>(!!a.k - !!b.k) || ((b.s??-1)-(a.s??-1)) || (new Date(a.l.alkaa)-new Date(b.l.alkaa)));
+  // sama katu ja samat linjat = sama työmaa: yksi rivi, kuittaus koskee kaikkia lupia
+  const G = new Map();
+  out.forEach(x=>{ const key = ((shortStreet(x.l).match(/^[A-Za-zÅÄÖåäö-]+/)||[x.l.lupa_id])[0]).toLowerCase()+"|"+lines(x.l.linjat).sort().join(",");
+    const g = G.get(key); if(!g){ G.set(key, {...x, ids:[x.l.lupa_id]}); return; }
+    g.ids.push(x.l.lupa_id); x.syyt.forEach(t=>{ if(!g.syyt.includes(t) && !(t.startsWith("mitattu") && g.syyt.some(u=>u.startsWith("mitattu")))) g.syyt.push(t); });
+    if((x.s??-1) > (g.s??-1)){ g.s = x.s; g.l = x.l; } if(!x.k) g.k = null; });
+  return [...G.values()].sort((a,b)=>(!!a.k - !!b.k) || ((b.s??-1)-(a.s??-1)) || (new Date(a.l.alkaa)-new Date(b.l.alkaa)));
 }
-async function kuittaa(id, tila){
+async function kuittaa(ids, tila){
+  const id = String(ids).split(",")[0];
   try{
-    const r = await fetch(API+"rpc/kuittaa_tarkistus", {method:"POST", headers:{apikey:KEY, Authorization:"Bearer "+KEY, "content-type":"application/json"}, body:JSON.stringify({p_lupa:id, p_tila:tila})});
-    if((await r.json()) !== "ok") throw 0;
-    S.kuittaus ||= {}; if(tila) S.kuittaus[id] = {tila}; else delete S.kuittaus[id];
+    for(const x of String(ids).split(",")){
+      const r = await fetch(API+"rpc/kuittaa_tarkistus", {method:"POST", headers:{apikey:KEY, Authorization:"Bearer "+KEY, "content-type":"application/json"}, body:JSON.stringify({p_lupa:x, p_tila:tila})});
+      if((await r.json()) !== "ok") throw 0;
+      S.kuittaus ||= {}; if(tila) S.kuittaus[x] = {tila}; else delete S.kuittaus[x];
+    }
   }catch(e){ const li = document.querySelector(`#tark li[data-id="${CSS.escape(id)}"]`); if(li && !li.querySelector(".sa-virhe")) li.insertAdjacentHTML("beforeend", `<span class="sa-virhe">Kuittausta ei saatu tallennettua.</span>`); return; }
   renderTyot();
 }
@@ -2223,10 +2232,10 @@ function renderTark(){
   if(!T || !T.length){ el.innerHTML = ""; return; }
   const auki = T.filter(x=>!x.k), kuit = T.length - auki.length;
   const nayta = S.tarkAll ? T : auki.slice(0, 4);
-  const rivi = x => `<li data-id="${esc(x.l.lupa_id)}" class="${x.k?"kuitattu":""}"><div class="tk-h"><a href="#/?l=${encodeURIComponent(x.l.lupa_id)}"><b>${esc(title(x.l))}</b></a> <span class="note">${x.ph==="tulossa"?"alkaa "+fmtDate(x.l.alkaa):"käynnissä"}</span></div>
+  const rivi = x => `<li data-id="${esc(x.ids[0])}" class="${x.k?"kuitattu":""}"><div class="tk-h"><a href="#/?l=${encodeURIComponent(x.l.lupa_id)}"><b>${esc(title(x.l))}</b></a> <span class="note">${x.ph==="tulossa"?"alkaa "+fmtDate(x.l.alkaa):"käynnissä"}${x.ids.length>1?` · ${x.ids.length} lupaa samalla kadulla`:""}</span></div>
       <div class="cl-ch">${x.syyt.map(t=>`<span class="tk-syy">${esc(t)}</span>`).join("")}${lines(x.l.linjat).slice(0,8).map(t=>`<span class="chip">${esc(t)}</span>`).join("")}${lines(x.l.linjat).length>8?`<span class="chip">+${lines(x.l.linjat).length-8}</span>`:""}</div>
-      <div class="sugarv">${x.k ? `<span class="sa-tila ${x.k.tila==="tiedossa"?"hyvaksy":""}">✓ Kuitattu: ${x.k.tila==="tiedossa"?"hoidossa":"ei vaadi toimia"}</span><button onclick="kuittaa('${esc(x.l.lupa_id)}',null)">Peru</button>`
-        : `<span class="sa-k">Tarkistettu?</span><button onclick="kuittaa('${esc(x.l.lupa_id)}','tiedossa')">Hoidossa</button><button onclick="kuittaa('${esc(x.l.lupa_id)}','ei_tarvetta')">Ei vaadi toimia</button>`}</div></li>`;
+      <div class="sugarv">${x.k ? `<span class="sa-tila ${x.k.tila==="tiedossa"?"hyvaksy":""}">✓ Kuitattu: ${x.k.tila==="tiedossa"?"hoidossa":"ei vaadi toimia"}</span><button onclick="kuittaa('${esc(x.ids.join(","))}',null)">Peru</button>`
+        : `<span class="sa-k">Tarkistettu?</span><button onclick="kuittaa('${esc(x.ids.join(","))}','tiedossa')">Hoidossa</button><button onclick="kuittaa('${esc(x.ids.join(","))}','ei_tarvetta')">Ei vaadi toimia</button>`}</div></li>`;
   el.innerHTML = `<div class="warn tark"><div class="h2row"><h4>Tarkistettavat työmaat (${nf(auki.length)})</h4>${infoBtn("tark")}</div>
     <div class="note" style="margin-bottom:6px">Lupa sulkee reitillä pysäkin, kaistan, raitiotien tai kadun, tai työ hidastaa bussia tai ratikkaa yli 90 s, eikä HSL:n häiriötiedotteissa ole mitään samasta paikasta. Tarvitaanko poikkeus, pysäkkisiirto tai aikataulumuutos?${kuit?` ${nf(kuit)} kuitattu tarkistetuksi.`:""}</div>
     ${auki.length ? "" : `<div class="note"><b>Kaikki tarkistettu.</b></div>`}
