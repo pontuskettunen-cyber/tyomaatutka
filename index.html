@@ -1780,10 +1780,11 @@ function ranked(){
     .map(l=>({l, i:impact(l)}))
     .sort((a,b)=> (b.i?.vehH ?? -1) - (a.i?.vehH ?? -1) || (b.l.ohitukset_24h||0) - (a.l.ohitukset_24h||0));
   if(!yhteisetValit()) return r;
-  // sama työmaa-alue näytetään kerran (suurimman luvun lupa edustaa aluetta)
-  breakdown(); const nahty = new Set();
-  return r.filter(x=>{ const k = S._clMap.get(x.l.lupa_id); if(k == null) return true; if(nahty.has(k)) return false; nahty.add(k); return true; })
-    .map(x=>({...x, muut: alueenLuvat(x.l.lupa_id)}));
+  // sama mittaus näytetään kerran: lupa jää pois, jos korkeammalla oleva lupa mittaa valtaosin samoja välejä
+  const pois = new Set(), out = [];
+  for(const x of r){ if(pois.has(x.l.lupa_id)) continue;
+    const m = out.length < 40 ? alueenLuvat(x.l.lupa_id) : []; m.forEach(y=>pois.add(y.lupa_id)); out.push({...x, muut:m}); }
+  return out;
 }
 addEventListener("mousedown", e=>{ const p = document.getElementById("saaPop"); if(S.saaPop && p && !p.contains(e.target) && !e.target.closest("#saaPill")){ S.saaPop = false; p.hidden = true; document.getElementById("saaPill")?.setAttribute("aria-expanded","false"); } });
 addEventListener("keydown", e=>{ if(e.key==="Escape" && S.saaPop){ S.saaPop = false; const p = document.getElementById("saaPop"); if(p) p.hidden = true; } });
@@ -1866,7 +1867,7 @@ function renderCards(){
     if(S.uusi && im && im.vehH > 0.05) big = `<b class="slow" title="Lisäaika yhteensä kaikille ohi ajaneille busseille ja ratikoille">${nf(im.vehH,1)} h<small class="cunit"> yht. · ${sgn(im.s)} / ohitus</small></b>`;
     else if(!(im && im.s != null)) big = `<b title="ajoa / vrk ohi työmaan">${nf(l.ajoja_vrk)}<small style="font-size:11px;color:var(--m)"> ajoa</small></b>`;
     return `<button class="card ${S.sel===l.lupa_id?"sel":""}" data-id="${esc(l.lupa_id)}">
-      <div class="hd"><span class="num">${i+1}</span><span class="t">${esc(shortStreet(l))}</span>${(muut.get(l.lupa_id)||[]).length ? `<span class="alue-n" title="${esc("Samalla työmaa-alueella: "+muut.get(l.lupa_id).map(x=>shortStreet(x)).join(", "))}">+${muut.get(l.lupa_id).length}</span>` : ""}</div>
+      <div class="hd"><span class="num">${i+1}</span><span class="t">${esc(shortStreet(l))}</span>${(muut.get(l.lupa_id)||[]).length ? `<span class="alue-n" title="${esc("Sama mittaus kuin: "+muut.get(l.lupa_id).map(x=>shortStreet(x)).join(", "))}">+${muut.get(l.lupa_id).length}</span>` : ""}</div>
       <div class="w">${esc(purpose(l))}</div>
       <div class="crow"><span class="cbig">${big}</span><div class="chips">${lines(l.linjat).filter(r=>!/N$/.test(r)).slice(0,3).map(r=>`<span class="chip">${esc(r)}</span>`).join("")}${lines(l.linjat).filter(r=>!/N$/.test(r)).length>3?`<span class="chip" title="ja ${lines(l.linjat).filter(r=>!/N$/.test(r)).length-3} muuta linjaa">+${lines(l.linjat).filter(r=>!/N$/.test(r)).length-3}</span>`:""}</div></div>
     </button>`;
@@ -2506,26 +2507,25 @@ function select(id, pan){
 /* ================= TYÖMAAT ================= */
 // Päällekkäisyys = alkava työ samalle linjalle, jolla on jo toinen työ lähellä (0,3–2,5 km) samaan aikaan.
 // Alle 300 m päässä toisistaan olevat luvat yhdistetään samaksi työmaa-alueeksi (esim. Laakson sairaalatyömaan useat luvat).
-/* Työmaa-alue: luvat, jotka ovat alle 300 m päässä toisistaan TAI (testissä) mittaavat pääosin samoja pysäkkivälejä.
-   Hidastus mitataan pysäkkiväleittäin, joten samoja välejä jakavien lupien lisäaika on sama mittaus: se lasketaan kerran. */
-const yhteisetValit = () => kompakti();
 function clusters(list){
   const c = list.map(l=>l.geom && centroid(l.geom)), parent = list.map((_,i)=>i);
   const find = i => parent[i]===i ? i : (parent[i]=find(parent[i]));
-  const V = yhteisetValit() ? list.map(l=>new Set((S.segs?.[l.lupa_id]||[]).map(g=>g.from_stop+"|"+g.to_stop))) : null;
   for(let i=0;i<list.length;i++) for(let j=i+1;j<list.length;j++){
-    if(c[i] && c[j] && Math.hypot((c[i][0]-c[j][0])*111200,(c[i][1]-c[j][1])*55800) < 300){ parent[find(i)] = find(j); continue; }
-    if(V && V[i].size && V[j].size){ const [a,b] = V[i].size <= V[j].size ? [V[i],V[j]] : [V[j],V[i]]; let n = 0; a.forEach(k=>{ if(b.has(k)) n++; });
-      if(n / a.size >= 0.5) parent[find(i)] = find(j); }
+    if(!c[i]||!c[j]) continue;
+    if(Math.hypot((c[i][0]-c[j][0])*111200,(c[i][1]-c[j][1])*55800) < 300) parent[find(i)] = find(j);
   }
   return {cl: list.map((_,i)=>find(i)), c};
 }
-const clAvain = () => S.luvat.length + "|" + Object.keys(S.segs||{}).length + "|" + yhteisetValit();
-/* Saman työmaa-alueen muut luvat (käynnissä, reitillä) */
+/* Sama mittaus: luvat, joiden pysäkkivälit ovat valtaosin samat (Jaccard ≥ 0,5). Hidastus mitataan pysäkkiväleittäin,
+   joten niiden lisäaika on yksi ja sama mittaus. Kärkilistassa ja otsikossa ne näytetään kerran (testissä ?tiivis). */
+const yhteisetValit = () => kompakti();
+const valiJoukko = id => new Set((S.segs?.[id]||[]).map(g=>g.from_stop+"|"+g.to_stop));
+function samaMittaus(a, b){ const A = valiJoukko(a), B = valiJoukko(b); if(!A.size || !B.size) return false;
+  let n = 0; A.forEach(k=>{ if(B.has(k)) n++; }); return n / (A.size + B.size - n) >= 0.5; }
+const clAvain = () => S.luvat;
+/* Samoja pysäkkivälejä mittaavat muut käynnissä olevat luvat */
 function alueenLuvat(id){
-  if(!S._clMap || S._clKey !== clAvain()) breakdown();
-  const k = S._clMap && S._clMap.get(id); if(k == null) return [];
-  return S.luvat.filter(l=>l.lupa_id!==id && S._clMap.get(l.lupa_id)===k && phase(l).k==="kaynnissa");
+  return S.luvat.filter(l=>l.lupa_id!==id && phase(l).k==="kaynnissa" && onRoute(l) && samaMittaus(id, l.lupa_id));
 }
 let _clashCache = null;
 function clashes(){
@@ -3555,9 +3555,9 @@ function alueLaatikko(l){
   const eka = paattyy[0], toka = paattyy[1];
   const porras = eka && toka && +new Date(eka.paattyy) < +new Date(toka.paattyy) - DAY
     ? ` Osuudet selviävät, kun <b>${esc(shortStreet(eka))}</b> päättyy ${fmtDate(eka.paattyy)}: jos yhteisten välien hidastus silloin pienenee, pudotus on sen osuus.` : "";
-  return `<div class="alue"><div class="k"><b>Työmaa-alue · ${kaikki.length} lupaa</b>${yhteiset ? " mittaa samoja pysäkkivälejä" : " vierekkäin"}</div>
+  return `<div class="alue"><div class="k"><b>Sama mittaus · ${kaikki.length} lupaa</b> mittaavat valtaosin samoja pysäkkivälejä</div>
     <div class="al">${m.slice(0,5).map(x=>`<a href="#/?l=${encodeURIComponent(x.lupa_id)}">${esc(shortStreet(x))}</a>`).join(" · ")}${m.length>5?" …":""}</div>
-    <div class="note">Hidastus mitataan pysäkkiväleittäin, joten samanaikaisten töiden osuuksia ei voi vielä erottaa. Alue lasketaan kokonaislukuun ja kärkilistaan kerran.${porras}</div></div>`;
+    <div class="note">Hidastus mitataan pysäkkiväleittäin, joten samanaikaisten töiden osuuksia ei voi vielä erottaa. Lisäaika on yksi mittaus: se näkyy kärkilistassa kerran ja lasketaan kokonaislukuun kerran.${porras}</div></div>`;
 }
 /* ================= Työmaa ↔ linja: linjasirut, linja Tilannekuvan kartalla (testissä ?tiivis) ja paluupolku ================= */
 const HLay = {g:null, vilk:[], r:null, rengas:null};
