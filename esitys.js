@@ -114,7 +114,7 @@
   /* ---------- kierros ---------- */
   async function kierros() {
     document.documentElement.classList.add("esitys");
-    await odotaEl(() => window.S && S.loaded, 30000);
+    await odotaEl(() => typeof S !== "undefined" && S.loaded, 30000);
     // lähtötila: Yleiskuva, erittely kiinni, ylälaita
     S.bdOpen = false; if (location.hash !== "#/") location.hash = "#/"; await odota(600); renderBrief(); scrollTo(0, 0);
 
@@ -147,7 +147,7 @@
     if (piste) { await kerro("KARTTA", "Punainen väli on hidas pysäkkiväli. Klikkaus kertoo linjat ja lisäviiveen.");
       await klikkaa(kartta, { piste, kartta: true, jalkeen: 2600 });
       const sulje = $("#map .leaflet-popup-close-button"); if (sulje) await liiku(sulje); await odota(250);
-      if (window.M && M.home) M.home.closePopup(); await odota(400); }
+      if (typeof M !== "undefined" && M.home) M.home.closePopup(); await odota(400); }
     const nous = await odotaEl(() => { const b = $("#nousBox .nous b"); return b && b.getBoundingClientRect().height ? b : null; }, 6000);
     if (nous) {
       const sec = $("#nousSec"); await vieri(sisaY(det, sec, 16), 1300, det); await odota(300);
@@ -259,7 +259,7 @@
   alku.innerHTML = `<div><button type="button" disabled>Ladataan tietoja…</button><p>Käynnistä ensin näytöntallennus. Älä liikuta hiirtä esityksen aikana. Välilyönti käynnistää, Esc keskeyttää.</p></div>`;
   document.body.appendChild(alku);
   let valmis = false;
-  (async () => { while (!(window.S && S.loaded)) await odota(200); await odota(1500); valmis = true;
+  (async () => { while (!(typeof S !== "undefined" && S.loaded)) await odota(200); await odota(1500); valmis = true;
     const b = alku.querySelector("button"); b.disabled = false; b.textContent = "▶ Käynnistä esitys"; })();
   const kaynnista = async () => { if (!alku.isConnected || !valmis) return; alku.remove(); await odota(400);
     try { await kierros(); } catch (e) { console.warn("Esitys:", e.message); lopeta(); } };
