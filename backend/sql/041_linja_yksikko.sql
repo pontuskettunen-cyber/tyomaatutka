@@ -7,6 +7,6 @@ begin
                   $a$then case when cardinality(v_linjat) = 1 then 'Linja ' || v_linjat[1] || ' myöhästyy' else 'Linjat ' || array_to_string(v_linjat[1:6], ', ') || ' myöhästyvät' end || ' tällä kohdalla tavallista enemmän.'$a$);
   execute d;
 end $$;
-update halytys set vaikutus = 'Linja ' || linjat[1] || ' myöhästyy tällä kohdalla tavallista enemmän.'
- where lahde = 'liikenne' and cardinality(linjat) = 1 and vaikutus like 'Linjat %';
+update halytys set vaikutus = 'Linja ' || (hsl_linjat(linjat))[1] || ' myöhästyy tällä kohdalla tavallista enemmän.'
+ where lahde = 'liikenne' and cardinality(hsl_linjat(linjat)) = 1 and vaikutus like 'Linjat %';
 select position('myöhästyy' in pg_get_functiondef(p.oid)) > 0 as ok from pg_proc p where p.proname = 'halytys_ajo';
