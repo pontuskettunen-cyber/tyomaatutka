@@ -944,6 +944,18 @@ a.lnk-linja:hover{color:var(--a)}
 .alue .note{font-size:12px}
 
 #v-halytykset h2 .h-alaots{font-size:14px;font-weight:600;color:var(--m);margin-left:6px}
+.h-puh{display:grid;grid-template-columns:minmax(0,520px) 1fr;gap:18px;align-items:start;background:#fff;border:1px solid var(--l);border-radius:16px;padding:14px;margin:0 0 14px}
+.h-puh-kuvat{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.h-puh-kuvat figure{margin:0}
+.h-puh-kuvat img{width:100%;display:block;border-radius:12px;border:1px solid var(--l);box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.h-puh-kuvat figcaption{font-size:11.5px;color:var(--m,#5A626B);margin-top:4px;text-align:center}
+.h-puh-teksti h3{margin:0 0 6px;font-size:16px}
+.h-puh-teksti p{font-size:13.5px;line-height:1.5;margin:0 0 8px}
+.h-puh-teksti table{width:100%;border-collapse:collapse;font-size:13px;margin:4px 0 8px}
+.h-puh-teksti td,.h-puh-teksti th{text-align:left;padding:5px 8px 5px 0;border-bottom:1px solid var(--l);vertical-align:top}
+.h-puh-teksti td:first-child{font-weight:700;white-space:nowrap}
+@media(max-width:760px){.h-puh{grid-template-columns:1fr}.h-puh-teksti td:first-child{white-space:normal}}
+#v-halytykset.kortti .h-puh{display:none}
 .h-tausta{background:var(--p);border-radius:14px;padding:10px 14px;margin:6px 0 12px;font-size:13.5px;line-height:1.5}
 .h-tausta p{margin:0}
 .h-tausta summary{cursor:pointer;font-weight:800;color:var(--a);margin-top:6px;font-size:13px}
@@ -1293,6 +1305,23 @@ html.hsl .navn.lC{background:#003456}
         </table>
         <p class="note">Hälytysten määrää ja laatua mitataan prosessiteollisuuden standardien ISA-18.2 ja EEMUA 191 mukaan (mittarit listan alla).</p>
       </details>
+    </div>
+    <div class="h-puh">
+      <div class="h-puh-kuvat">
+        <figure><a href="img/ilmoitus-jarjestelma.jpg" target="_blank" rel="noopener" title="Avaa isona"><img src="img/ilmoitus-jarjestelma.jpg" alt="Puhelinilmoitus: vakava järjestelmähälytys, napit Aja uudelleen, Kuittaa ja Avaa kortti" loading="lazy"></a><figcaption>Järjestelmävika lukitusnäytöllä</figcaption></figure>
+        <figure><a href="img/ilmoitus-liikenne.jpg" target="_blank" rel="noopener" title="Avaa isona"><img src="img/ilmoitus-liikenne.jpg" alt="Puhelinilmoitus: työmaa hidastaa Erottajankadulla, linja 10, napit Kuittaa, Avaa kortti ja Kartalla" loading="lazy"></a><figcaption>Liikennepoikkeama</figcaption></figure>
+      </div>
+      <div class="h-puh-teksti">
+        <h3>Hälytys tulee puhelimeen, kuten huoltomiehelle</h3>
+        <p>Päivystäjä ei tuijota valvomoa. Ilmoitus kertoo heti, mitä tapahtui, miksi, mihin se vaikuttaa ja mitä tehdä. Napeista vian voi kuitata, ajaa uudelleen tai avata kartalle avaamatta tutkaa. Kuvat ovat oikeista ilmoituksista marraskuulta 2026.</p>
+        <table>
+          <tr><th>Kuka</th><th>Mitä puhelimeen tulee</th></tr>
+          <tr><td>Linjan liikennesuunnittelija</td><td>Oman linjan työmaapoikkeamat: kun työmaa alkaa hidastaa linjaa selvästi tavallista enemmän</td></tr>
+          <tr><td>Liikennevalvomo</td><td>Kaikki liikennepoikkeamat, luokka B ja A heti</td></tr>
+          <tr><td>Ylläpito</td><td>Järjestelmäviat: keruu pysähtyi, ajo kaatui, kielimalli ei vastaa</td></tr>
+        </table>
+        <p class="note">Nyt käytössä on yksi kanava, johon tulee kaikki. Pilotissa tilaukset rajataan roolin ja linjan mukaan, ja ilmoitukset voi ohjata myös Teamsiin. Valvomo pysyy yhteisenä listana, josta näkee kaikki.</p>
+      </div>
     </div>
     <div id="hKortti"></div>
     <div class="h-ctl">
