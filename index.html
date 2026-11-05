@@ -3587,11 +3587,11 @@ document.getElementById("lQ").oninput = e => { S.lQ = e.target.value; renderLinj
 document.getElementById("lQ").onkeydown = e => { if(e.key==="Enter"){ const f = document.querySelector("#lList .lrow"); if(f) f.click(); } };
 document.querySelectorAll("#lMode button").forEach(b=>b.onclick=()=>{ S.lMode=b.dataset.m; document.querySelectorAll("#lMode button").forEach(x=>x.classList.toggle("on",x===b)); renderLinjat(); });
 
-/* Tervetuloikkuna: ensimmäisellä avauskerralla (esikatselu ?esittely), myöhemmin ?-painikkeesta */
+/* Tervetuloikkuna: ensimmäisellä avauskerralla, myöhemmin ?-painikkeesta (?esittely näyttää aina) */
 addEventListener("DOMContentLoaded", function(){
   const m = document.getElementById("ttModal"), help = document.getElementById("ttHelp");
   let esik = false; try{ esik = new URLSearchParams(location.search).has("esittely"); }catch(e){}
-  const KAYTOSSA = esik;   // vaihdetaan true:ksi, kun ikkuna hyväksytään kaikille
+  const KAYTOSSA = true;   // käytössä kaikille 5.11.2026 (?esittely näyttää aina)
   if(!KAYTOSSA) return;
   help.hidden = false;
   const auki = on=>{ m.hidden = !on; document.documentElement.classList.toggle("tt-lukko", on); if(on) document.getElementById("ttmGo").focus(); };
