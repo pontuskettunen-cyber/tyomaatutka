@@ -2182,26 +2182,31 @@ function kasautumaHTML(L2, s, a, p){
     const pros = vara ? yht/vara*100 : null, prosNyt = vara ? nyt/vara*100 : null;
     const nolla = vara === 0;
     const paattyy = e ? [...e.works.values()].filter(w=>w.l.lupa_id!==EN.lupa && w.l.paattyy && +new Date(w.l.paattyy) < alku).length : 0;
-    const tila = nolla ? (yht > 0 ? "zero" : "ok") : pros==null ? "na" : pros >= 100 ? "red" : pros >= 50 ? "amb" : "ok";
-    return {n:r.n, d, tram:r.tram, nyt, lahde, yht, vara, pros, prosNyt, tila, nolla, kaanto:!!(pk&&pk.kaanto), paattyy, ylitys: prosNyt!=null && prosNyt < 100 && pros >= 100};
+    const tila = !r.tram ? "bus" : nolla ? (yht > 0 ? "zero" : "ok") : pros==null ? "na" : pros >= 100 ? "red" : pros >= 50 ? "amb" : "ok";
+    const suht = nyt > 0 ? Math.max(0, s)/nyt*100 : null;
+    return {n:r.n, d, tram:r.tram, nyt, lahde, yht, vara, pros, prosNyt, tila, nolla, suht, kaanto:!!(pk&&pk.kaanto), paattyy, ylitys: prosNyt!=null && prosNyt < 100 && pros >= 100};
   });
   const mm = x => { const t = Math.round(x); return (t<0?"−":"+")+Math.floor(Math.abs(t)/60)+":"+String(Math.abs(t)%60).padStart(2,"0"); };
-  const CH = {ok:["pk-ok","mahtuu"], amb:["pk-amb","seuraa"], red:["pk-red","ylittyy"], zero:["pk-red","ei varaa aikataulussa"], na:["","ei tiedossa"]};
+  const CH = {ok:["pk-ok","mahtuu"], amb:["pk-amb","seuraa"], red:["pk-red","ylittyy"], zero:["pk-red","ei varaa aikataulussa"], na:["","ei tiedossa"], bus:["","aikataulun arvo"]};
   const yli = rivit.filter(r=>r.tila==="red"||r.tila==="zero"), lk = r => `${esc(r.n)} (suunta ${r.d})`;
   const pahin = yli[0] || rivit.filter(r=>r.pros!=null).sort((x,y)=>y.pros-x.pros)[0];
-  const yhteenveto = !pahin ? "Viivevaraa ei löytynyt aikataulusta näille linjoille, joten kasautumaa ei voi verrata siihen."
-    : yli.length ? `<b>${yli.length===1?"Linjalla":"Linjoilla"} ${yli.map(lk).join(", ")} viivevara ylittyy</b>${yli.some(r=>r.ylitys)?" (osalla juuri tämän työn myötä)":""}: huonoimmissa vuoroissa myöhästyminen siirtyy saman auton seuraavaan lähtöön. Harkitse ennen työn alkua aikataulun väljennystä, lisäautoa ruuhka-aikaan, työn ajoittamista ruuhkien ulkopuolelle tai kiertoreittiä.`
-    : pahin.tila==="amb" ? `<b>Linjalla ${esc(pahin.n)} (suunta ${pahin.d}) yli puolet viivevarasta on käytössä.</b> Ei vaadi toimenpiteitä heti, mutta seuraa linjaa työn aikana. Jos samalle linjalle tulee vielä uusi työ, varaa ylittyy.`
-    : "Kaikilla linjoilla työmaiden yhteisvaikutus mahtuu aikataulun viivevaraan. Toimenpiteitä ei tarvita.";
+  const eniten = rivit.filter(r=>r.suht!=null).sort((x,y)=>y.suht-x.suht)[0];
+  const suhtLause = eniten ? ` Uusi työ lisää eniten linjan ${lk(eniten)} viivettä: huonoimmat vuorot ${mm(eniten.nyt)} → ${mm(eniten.yht)} (+${nf(Math.round(eniten.suht))} %).` : rivit.length ? " Linjoilla ei ole nyt muita mitattuja töitä, joten tämä työ olisi niiden ainoa hidastaja." : "";
+  const ratikat = rivit.filter(r=>r.tram);
+  const yhteenveto = (yli.length ? `<b>${yli.length===1?"Ratikkalinjalla":"Ratikkalinjoilla"} ${yli.map(lk).join(", ")} viivevara ylittyy</b>${yli.some(r=>r.ylitys)?" (osalla juuri tämän työn myötä)":""}: huonoimmissa vuoroissa myöhästyminen siirtyy saman vaunun seuraavaan lähtöön. Harkitse ennen työn alkua aikataulun väljennystä, lisävaunua ruuhka-aikaan, työn ajoittamista ruuhkien ulkopuolelle tai poikkeusreittiä.`
+      : ratikat.some(r=>r.tila==="amb") ? `<b>Ratikkalinjalla ${ratikat.filter(r=>r.tila==="amb").map(lk).join(", ")} yli puolet viivevarasta on käytössä.</b> Seuraa linjaa työn aikana.`
+      : ratikat.length ? "Ratikkalinjoilla työmaiden yhteisvaikutus mahtuu viivevaraan." : "")
+    + suhtLause
+    + (rivit.some(r=>!r.tram) ? ` <span class="note">Busseilla aikataulun viivevaraa ei ole vielä tarkistettu autokierroista, joten ylittymistä ei arvioida. Pilotissa se tarkistetaan liikennöitsijöiden autokierroista.</span>` : "");
   return `<div class="sec">Kasautuminen linjalla</div>
     <p class="tiivis" style="margin-top:0">${yhteenveto}</p>
     <table class="t kas-t"><thead><tr><th>Linja</th><th class="r">Nyt työmailta</th><th class="r">+ tämä työ</th><th class="r">Yhteensä</th><th class="r">Viivevara</th><th></th></tr></thead><tbody>
     ${rivit.map(r=>`<tr><td><span class="chip">${esc(r.n)}</span> <span class="note">suunta ${r.d}</span></td>
       <td class="r">${r.lahde==="ei töitä"?'<span class="note">ei töitä</span>':mm(r.nyt)}${r.paattyy?`<div class="note">${nf(r.paattyy)} päättyy ennen</div>`:""}</td>
-      <td class="r">${mm(Math.max(0,s))}</td><td class="r"><b>${mm(r.yht)}</b></td>
+      <td class="r">${mm(Math.max(0,s))}${r.suht!=null?`<div class="note">+${nf(Math.round(r.suht))} %</div>`:""}</td><td class="r"><b>${mm(r.yht)}</b></td>
       <td class="r">${r.vara!=null?nf(r.vara/60)+" min":"–"}</td>
-      <td><span class="kas-chip ${CH[r.tila][0]}">${r.pros!=null&&r.tila!=="ok"||r.pros!=null&&r.pros>=10?nf(Math.round(r.pros))+" % · ":""}${CH[r.tila][1]}</span></td></tr>`).join("")}</tbody></table>
-    <div class="note" style="margin-top:4px">Nyt työmailta = linjan huonoimman 10 %:n vuorojen mitattu lisäaika reitin kaikista töistä (min:s per vuoro). Viivevara = HSL:n aikataulun max_delay, päiväajan vuorojen mediaani minuutteina: kuinka paljon vuoro voi myöhästyä ilman, että saman auton seuraava lähtö myöhästyy (busseilla aikataulun arvo, ei mitattu; 0 min = aikataulussa ei varaa)${rivit.some(r=>r.kaanto)?"; ratikoilla tarkistettu kääntöajasta":""}. Jos osa nykyisistä töistä päättyy ennen tämän työn alkua, todellinen kasautuma on pienempi. Lisäautojen määrä vaatii autokierrot, joita avoimessa datassa ei ole.</div>`;
+      <td><span class="kas-chip ${CH[r.tila][0]}" ${r.tila==="bus"?'title="Bussien viivevara on HSL:n aikataulun arvo, jota ei ole vielä tarkistettu autokierroista. Siksi ylittymistä ei arvioida."':""}>${r.tila!=="bus"&&r.pros!=null&&(r.tila!=="ok"||r.pros>=10)?nf(Math.round(r.pros))+" % · ":""}${CH[r.tila][1]}</span></td></tr>`).join("")}</tbody></table>
+    <div class="note" style="margin-top:4px">Nyt työmailta = linjan huonoimman 10 %:n vuorojen mitattu lisäaika reitin kaikista töistä (min:s per vuoro). Viivevara = HSL:n aikataulun max_delay, päiväajan vuorojen mediaani minuutteina: kuinka paljon vuoro voi myöhästyä ilman, että saman auton seuraava lähtö myöhästyy (ratikoilla tarkistettu kääntöajoista; busseilla aikataulun arvo, jota ei vielä arvioida; 0 min = aikataulussa ei varaa)${rivit.some(r=>r.kaanto)?"; ratikoilla tarkistettu kääntöajasta":""}. Jos osa nykyisistä töistä päättyy ennen tämän työn alkua, todellinen kasautuma on pienempi. Lisäautojen määrä vaatii autokierrot, joita avoimessa datassa ei ole.</div>`;
 }
 /* Ennakkoarvio: linjan reitillä nyt käynnissä olevat työt (pois lukien arvioitava lupa) ja niiden mitattu lisäaika. */
 function linjanTyot(n){
@@ -2268,7 +2273,7 @@ function naytaEn(){
     ${puuttuu.length?`<div class="note" style="margin-top:4px">Liikennemääriä ei ole vielä mitattu kaikille vuorokaudenajoille (puuttuu: ${puuttuu.map(j=>({aamu:"aamu 6–10",paiva:"päivä 10–14",ilta:"ilta 14–18",muu:"ilta–yö 18–6"})[j]).join(", ")}). Keruu alkoi 2.11., joten luvut täydentyvät vuorokauden kuluessa, ja vuorokausiluvut ovat siihen asti liian pieniä.</div>`:""}
     <div class="note" style="margin-top:4px">Oletus: kun työtä ei tehdä, kaistat ovat auki eikä haittaa synny.</div>
     ${kas.length?`<div class="sec">Muut työt samoilla linjoilla</div><ul class="kas">${kas.map(o=>`<li><a href="#/?l=${encodeURIComponent(o.x.lupa_id)}">${esc(shortStreet(o.x))}</a> ${nf(o.d/1000,1)} km päässä, ${o.yht.length===1?"linja":"linjat"} ${esc(o.yht.slice(0,5).join(", "))}${o.x.alkaa?` · ${fsY(o.x.alkaa)}${o.x.paattyy&&fsY(o.x.paattyy)!==fsY(o.x.alkaa)?"–"+fsY(o.x.paattyy):""}`:""}</li>`).join("")}</ul>`:""}
-    ${LIIK_TESTI ? kasautumaHTML(L2, s, a, p) : ""}
+    ${kasautumaHTML(L2, s, a, p)}
     <div class="sec">Linjat</div>
     <table class="t"><thead><tr><th>Linja</th><th class="r">Ohituksia / arkipäivä</th><th class="r">Aamulla klo 6–10</th><th class="r">Lisäaika / vrk</th><th>Linjalla nyt käynnissä</th></tr></thead><tbody>
     ${L2.slice(0,10).map(e=>{ const lt = linjanTyot(e.n);
