@@ -770,9 +770,28 @@ html.tt-lukko{overflow:hidden}
 .tt-foot{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 .tt-go{font:inherit;font-size:15px;font-weight:600;background:#0074BF;color:#fff;border:0;border-radius:999px;padding:11px 24px;cursor:pointer}
 .tt-go:hover{background:#005A96}
+.tt-go:focus{outline:none}.tt-go:focus-visible{outline:3px solid #9FD3F5;outline-offset:2px}
 .tt-foot .note{flex:1;min-width:200px;font-size:12px}
 .tt-help{position:fixed;right:18px;bottom:18px;z-index:1500;width:40px;height:40px;border-radius:50%;border:0;background:#0074BF;color:#fff;font:700 18px/1 inherit;box-shadow:0 6px 18px rgba(0,0,0,.2);cursor:pointer}
-@media(max-width:640px){.tt-3{grid-template-columns:1fr}.tt-card{padding:22px 18px 18px}.tt-card h2{font-size:20px}}
+.tt-mob{display:none}
+@media(max-width:640px){
+.tt-modal{align-items:flex-end;padding:0}
+.tt-card{border-radius:20px 20px 0 0;max-height:92vh;padding:18px 18px calc(16px + env(safe-area-inset-bottom))}
+.tt-x{top:8px;right:8px}
+.tt-brand{font-size:14px}
+.tt-card h2{font-size:19px;margin:8px 0 6px}
+.tt-lead{font-size:14.5px;line-height:1.5;margin-bottom:12px}
+.tt-3{grid-template-columns:1fr;gap:0;margin-bottom:12px;background:#EBF6FD;border-radius:12px;padding:4px 12px}
+.tt-3 div{background:none;border-radius:0;padding:8px 0;font-size:13.5px;border-bottom:1px solid #D3E8F5}
+.tt-3 div:last-child{border-bottom:0}
+.tt-3 b{display:inline;font-size:13.5px;margin:0 6px 0 0}
+.tt-voit{display:none}
+.tt-mob{display:flex;gap:10px;align-items:flex-start;background:#FFF7E6;border:1px solid #F3D9A4;border-radius:12px;padding:10px 12px;margin:0 0 14px;font-size:13.5px;line-height:1.45;color:#5B4100}
+.tt-mob svg{flex:none;width:20px;height:20px;margin-top:1px}
+.tt-foot{gap:10px}
+.tt-go{width:100%;padding:13px 20px;font-size:15.5px}
+.tt-foot .note{min-width:0;font-size:11.5px;text-align:center}
+}
 /* ===== Hälytykset (rakennusautomaation hälytyslista: tiivis rivi, avautuva kortti) ===== */
 .hbell{position:relative;display:inline-grid;place-items:center;width:34px;height:34px;border-radius:50%;border:1px solid var(--l);background:var(--g);color:var(--i2);text-decoration:none;flex:none}
 .hbell[hidden]{display:none}
@@ -3594,7 +3613,7 @@ addEventListener("DOMContentLoaded", function(){
   const KAYTOSSA = true;   // käytössä kaikille 5.11.2026 (?esittely näyttää aina)
   if(!KAYTOSSA) return;
   help.hidden = false;
-  const auki = on=>{ m.hidden = !on; document.documentElement.classList.toggle("tt-lukko", on); if(on) document.getElementById("ttmGo").focus(); };
+  const auki = on=>{ m.hidden = !on; document.documentElement.classList.toggle("tt-lukko", on); if(on && matchMedia("(min-width:641px)").matches) document.getElementById("ttmGo").focus(); };
   const sulje = ()=>{ auki(false); try{ localStorage.setItem("tt_tervetuloa","1"); }catch(e){} };
   document.getElementById("ttmX").onclick = sulje; document.getElementById("ttmGo").onclick = sulje;
   m.addEventListener("mousedown", e=>{ if(e.target===m) sulje(); });
@@ -4154,6 +4173,7 @@ setInterval(()=>{ if(!document.hidden) load(); }, 120000);
       <div><b>Ennakoi</b>Alkavien töiden vaikutus ja kasautumat samoille linjoille.</div>
       <div><b>Ehdottaa</b>Tekoälyagentti ehdottaa aikataulumuutoksia. Ihminen päättää.</div>
     </div>
+    <p class="tt-mob"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg><span><b>Tehty tietokoneelle.</b> Puhelimella näet tilannekuvan pääpiirteet. Kartta, linjat ja ennakkoarvio toimivat parhaiten isolla näytöllä.</span></p>
     <ul class="tt-voit">
       <li><b>Klikkaa työmaata</b> kartalla tai listassa: näet mitatun vaikutuksen.</li>
       <li><b>Hae linjaa</b> yläpalkista, esim. 55: näet sen kaikki työmaat reitillä.</li>
