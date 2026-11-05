@@ -1,0 +1,73 @@
+name: Ulkoinen vahti
+# Tarkistaa tietokannan ulkopuolelta, että tutka elää. Sisäinen Vahti pyörii
+# samassa tietokannassa, joten se ei pysty hälyttämään, jos tietokanta on alhaalla.
+# Hälytys: ntfy (salaisuus NTFY_TOPIC) ja epäonnistunut ajo (GitHubin oma ilmoitus).
+on:
+  schedule:
+    - cron: "7,22,37,52 * * * *"
+  workflow_dispatch:
+permissions:
+  actions: read
+  contents: read
+concurrency: { group: ulkoinen-vahti, cancel-in-progress: false }
+jobs:
+  tarkista:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Tarkista tietokanta ja datan tuoreus
+        id: t
+        env:
+          API: https://pdbmxnmeyhifksgivnky.supabase.co/rest/v1
+          KEY: sb_publishable_ZM_StZYcp6QJs5HdlqHbDA_gzQHPqVf
+          RAJA_MIN: "30"
+        run: |
+          set +e
+          vastaus=$(curl -sS -m 40 -w '\n%{http_code}' "$API/v_tila?select=viimeisin" -H "apikey: $KEY" -H "Authorization: Bearer $KEY")
+          koodi=$(echo "$vastaus" | tail -n1); runko=$(echo "$vastaus" | head -n -1)
+          viimeisin=$(echo "$runko" | python3 -c "import sys,json;d=json.load(sys.stdin);print(d[0]['viimeisin'] or '')" 2>/dev/null)
+          if [ "$koodi" != "200" ] || [ -z "$viimeisin" ]; then
+            echo "tila=alhaalla" >> $GITHUB_OUTPUT
+            echo "viesti=Tietokanta ei vastaa (HTTP $koodi). Sisäinen Vahti ei pysty hälyttämään. Tarkista Supabase: kuorma, levyn I/O ja palvelun tila." >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          ika=$(python3 -c "from datetime import datetime,timezone;t=datetime.fromisoformat('$viimeisin'.replace('Z','+00:00'));print(int((datetime.now(timezone.utc)-t).total_seconds()//60))")
+          echo "ika=$ika" >> $GITHUB_OUTPUT
+          if [ "$ika" -gt "$RAJA_MIN" ]; then
+            echo "tila=pysahtynyt" >> $GITHUB_OUTPUT
+            echo "viesti=Ajoneuvodata ei ole päivittynyt $ika minuuttiin. Tietokanta vastaa, mutta keruu tai koostus on pysähtynyt." >> $GITHUB_OUTPUT
+          else
+            echo "tila=ok" >> $GITHUB_OUTPUT
+          fi
+      - name: Edellisen ajon tila
+        id: e
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          ed=$(gh run list -R "$GITHUB_REPOSITORY" --workflow ulkoinen-vahti.yml -L 5 --json conclusion,databaseId \
+               --jq "[.[] | select(.databaseId != ${{ github.run_id }}) | select(.conclusion != \"\")][0].conclusion // \"success\"")
+          echo "edellinen=$ed" >> $GITHUB_OUTPUT
+      - name: Ilmoita puhelimeen
+        env:
+          TOPIC: ${{ secrets.NTFY_TOPIC }}
+          TILA: ${{ steps.t.outputs.tila }}
+          ED: ${{ steps.e.outputs.edellinen }}
+          VIESTI: ${{ steps.t.outputs.viesti }}
+        run: |
+          [ -z "$TOPIC" ] && { echo "NTFY_TOPIC puuttuu, ohitetaan ntfy"; exit 0; }
+          minuutti=$(date -u +%M)
+          if [ "$TILA" != "ok" ]; then
+            # uusi vika heti, jatkuva vika muistutuksena kerran tunnissa
+            if [ "$ED" = "success" ] || [ "$minuutti" -lt 15 ]; then
+              curl -sS -m 20 -H "Title: [KRIITTINEN] Tutka ei vastaa (ulkoinen vahti)" -H "Priority: urgent" -H "Tags: rotating_light" \
+                -H "Click: https://pontuskettunen-cyber.github.io/tyomaatutka/#/halytykset" \
+                -d "$VIESTI"$'\n'"Tarkistettu GitHubista $(TZ=Europe/Helsinki date +%H.%M)." "https://ntfy.sh/$TOPIC" >/dev/null
+            fi
+          elif [ "$ED" = "failure" ]; then
+            curl -sS -m 20 -H "Title: [KORJAUTUNUT] Tutka vastaa taas (ulkoinen vahti)" -H "Tags: white_check_mark" \
+              -d "Tietokanta vastaa ja data päivittyy. Tarkistettu $(TZ=Europe/Helsinki date +%H.%M)." "https://ntfy.sh/$TOPIC" >/dev/null
+          fi
+      - name: Merkitse ajo epäonnistuneeksi, jos tutka ei elä
+        if: steps.t.outputs.tila != 'ok'
+        run: |
+          echo "::error::${{ steps.t.outputs.viesti }}"
+          exit 1
