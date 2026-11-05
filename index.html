@@ -944,6 +944,8 @@ a.lnk-linja:hover{color:var(--a)}
 .alue .note{font-size:12px}
 
 #v-halytykset h2 .h-alaots{font-size:14px;font-weight:600;color:var(--m);margin-left:6px}
+.en-lt .note a{color:var(--a)}
+.en-lt .lnk{font-size:12px;padding:0;margin-top:2px}
 .h-puh{display:grid;grid-template-columns:minmax(0,520px) 1fr;gap:18px;align-items:start;background:#fff;border:1px solid var(--l);border-radius:16px;padding:14px;margin:0 0 14px}
 .h-puh-kuvat{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .h-puh-kuvat figure{margin:0}
@@ -2163,6 +2165,12 @@ function laskeEn(){
     if(id === EN.req) naytaEn();
   }, 250);
 }
+/* Ennakkoarvio: linjan reitillä nyt käynnissä olevat työt (pois lukien arvioitava lupa) ja niiden mitattu lisäaika. */
+function linjanTyot(n){
+  const t = S.luvat.filter(x=>x.lupa_id!==EN.lupa && onRoute(x) && phase(x).k==="kaynnissa" && lines(x.linjat).includes(n))
+    .map(l=>{ const im = impact(l); return {l, vehH: im && im.vehH ? im.vehH : 0}; }).sort((a,b)=>b.vehH-a.vehH);
+  return {n:t.length, h:t.reduce((a,x)=>a+x.vehH,0), top:t.slice(0,2)};
+}
 function naytaEn(){
   const out = document.getElementById("enOut"); if(!EN.res) return;
   if(!EN.segL) EN.segL = L.layerGroup().addTo(M.en); EN.segL.clearLayers();
@@ -2172,7 +2180,9 @@ function naytaEn(){
   const seen = new Set(); rows.forEach(g=>{ const k = g.from_stop+"|"+g.to_stop; if(seen.has(k)) return; seen.add(k);
     const pts = Array.isArray(g.viiva)&&g.viiva.length>1 ? g.viiva : [[g.from_lat,g.from_lon],[g.to_lat,g.to_lon]];
     L.polyline(pts,{color:"#fff",weight:5,opacity:.7,interactive:false}).addTo(EN.segL);
-    L.polyline(pts,{color:"#1D4ED8",weight:3,opacity:.55}).bindTooltip(`${esc(g.from_nimi||g.from_stop)} → ${esc(g.to_nimi||g.to_stop)}`,{sticky:true}).bindPopup(`<b>${esc(g.from_nimi||g.from_stop)} → ${esc(g.to_nimi||g.to_stop)}</b><br>Linjat: ${esc([...new Set(rows.filter(x=>x.from_stop===g.from_stop&&x.to_stop===g.to_stop).map(x=>ln(x.route)))].join(", "))}`).addTo(EN.segL); });
+    const vl = [...new Set(rows.filter(x=>x.from_stop===g.from_stop&&x.to_stop===g.to_stop).map(x=>ln(x.route)))].sort((x,y)=>parseInt(x)-parseInt(y));
+    const vlt = (vl.length===1?"Linja ":"Linjat ")+vl.join(", ");
+    L.polyline(pts,{color:"#1D4ED8",weight:3,opacity:.55}).bindTooltip(`<b>${esc(vlt)}</b><br>${esc(g.from_nimi||g.from_stop)} → ${esc(g.to_nimi||g.to_stop)}`,{sticky:true}).bindPopup(`<b>${esc(vlt)}</b><br>${esc(g.from_nimi||g.from_stop)} → ${esc(g.to_nimi||g.to_stop)}`).addTo(EN.segL); });
   if(EN.layer) EN.layer.eachLayer(x=>x.bringToFront && x.bringToFront());
   // linja × suunta × jakso: suurin ohitusmäärä alueen väleistä (sama vuoro ohittaa kaikki välit)
   const lj = new Map(); rows.forEach(r=>{ const k = ln(r.route)+"|"+r.dir+"|"+r.jakso; lj.set(k, Math.max(lj.get(k)||0, r.ohit_vrk)); });
@@ -2221,11 +2231,15 @@ function naytaEn(){
     <div class="note" style="margin-top:4px">Oletus: kun työtä ei tehdä, kaistat ovat auki eikä haittaa synny.</div>
     ${kas.length?`<div class="sec">Muut työt samoilla linjoilla</div><ul class="kas">${kas.map(o=>`<li><a href="#/?l=${encodeURIComponent(o.x.lupa_id)}">${esc(shortStreet(o.x))}</a> ${nf(o.d/1000,1)} km päässä, ${o.yht.length===1?"linja":"linjat"} ${esc(o.yht.slice(0,5).join(", "))}${o.x.alkaa?` · ${fsY(o.x.alkaa)}${o.x.paattyy&&fsY(o.x.paattyy)!==fsY(o.x.alkaa)?"–"+fsY(o.x.paattyy):""}`:""}</li>`).join("")}</ul>`:""}
     <div class="sec">Linjat</div>
-    <table class="t"><thead><tr><th>Linja</th><th class="r">Ohituksia / arkipäivä</th><th class="r">Aamulla klo 6–10</th><th class="r">Lisäaika / vrk</th></tr></thead><tbody>
-    ${L2.slice(0,10).map(e=>`<tr><td><span class="chip">${esc(e.n)}</span> <span class="note">suunta ${e.d}</span></td><td class="r">${nf(e.vrk)}</td><td class="r">${nf(e.j.aamu||0)}</td><td class="r">${nf(H(e.vrk,s)*60,0)} min</td></tr>`).join("")}</tbody></table>
+    <table class="t"><thead><tr><th>Linja</th><th class="r">Ohituksia / arkipäivä</th><th class="r">Aamulla klo 6–10</th><th class="r">Lisäaika / vrk</th><th>Linjalla nyt käynnissä</th></tr></thead><tbody>
+    ${L2.slice(0,10).map(e=>{ const lt = linjanTyot(e.n);
+      return `<tr><td><span class="chip">${esc(e.n)}</span> <span class="note">suunta ${e.d}</span></td><td class="r">${nf(e.vrk)}</td><td class="r">${nf(e.j.aamu||0)}</td><td class="r">${nf(H(e.vrk,s)*60,0)} min</td>
+        <td class="en-lt">${lt.n ? `<b>${nf(lt.n)} ${lt.n===1?"työ":"työtä"}</b><div class="note">${lt.top.map(x=>`<a href="#/?l=${encodeURIComponent(x.l.lupa_id)}">${esc(shortStreet(x.l))}</a>${x.vehH>=0.05?` +${nf(x.vehH,1)} h`:""}`).join(" · ")}${lt.n>lt.top.length?" …":""}</div><button type="button" class="lnk" data-en-linja="${esc(e.n)}">Avaa linja kartalla →</button>` : `<span class="note">ei muita töitä</span>`}</td></tr>`; }).join("")}</tbody></table>
+    <div class="note" style="margin-top:4px">"Linjalla nyt käynnissä" kertoo, mitä muita töitä linjan reitillä on jo käynnissä. Uusi työ kasautuu niiden päälle, ja aikataulun viivevara on yhteinen. Työn perässä oleva luku on työn mitattu lisäaika kaikille linjoille yhteensä.</div>
     <div class="enai"><button type="button" class="btn" id="enLaus">Kirjoita HSL:n lausuntoluonnos ja matkustajatiedote</button><div id="enAiOut"></div></div>
     <div class="note" style="margin-top:10px"><b>Miten arvio on laskettu:</b> ohitukset ovat työalueen pysäkkiväleiltä mitattuja bussien ja ratikoiden määriä arkipäivinä (${esc(String(S.tila?.keruu_alkoi?"keruu alkoi "+fmtDate(S.tila.keruu_alkoi):""))}). Lisäaika per ohitus on ${esc(kesk)}. Arvio tarkentuu, kun todennettuja lukuja kertyy.</div>`;
   document.getElementById("enLaus").onclick = lausuntoEn;
+  out.querySelectorAll("[data-en-linja]").forEach(b=>b.onclick=()=>avaaLinja(b.dataset.enLinja));
   document.getElementById("enSave").onclick = ()=>{ if(EN.alt.length>=3) return;
     EN.alt.push({nimi:String.fromCharCode(65+EN.alt.length), pts:EN.pts.map(p=>p.slice()), rings:kopioRenkaat(EN.rings), muok:EN.muok, lupa:EN.lupa, calc:JSON.parse(JSON.stringify(EN.calc))});
     drawAlt(); naytaEn(); };
