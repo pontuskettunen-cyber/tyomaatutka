@@ -7,3 +7,7 @@ Live-näkymä konseptiin, joka mittaa Helsingin katutöiden vaikutusta bussien j
 - Sivu: staattinen HTML, hakee koostenäkymät 20 s välein.
 
 Vain koostettua joukkoliikenne- ja lupadataa, ei henkilötietoja.
+
+## Oikeudet
+
+© 2026 Pontus Kettunen. Kaikki oikeudet pidätetään. Koodi on nähtävillä tutustumista varten, mutta sitä ei saa kopioida tai käyttää ilman lupaa. Ks. [LICENSE](LICENSE).
