@@ -1014,6 +1014,18 @@ html.tt-lukko{overflow:hidden}
 .tt-3 b{display:block;font-size:15px;margin-bottom:3px}
 .tt-voit{margin:0 0 18px;padding-left:18px}.tt-voit li{font-size:14.5px;line-height:1.5;margin:4px 0;color:var(--i2)}
 .tt-foot{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.tt-video{position:relative;display:flex;align-items:center;gap:16px;width:100%;min-height:150px;margin:14px 0 16px;padding:22px 24px;border:0;border-radius:12px;cursor:pointer;text-align:left;overflow:hidden;
+  background:radial-gradient(120% 140% at 85% 50%,#1F3A63 0%,#0F1B2D 62%);color:#fff;font:inherit;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06)}
+.tt-video:hover .tv-play,.tt-video:focus-visible .tv-play{transform:scale(1.07);background:#F5A524;color:#0F1B2D}
+.tt-video .tv-play{flex:none;width:58px;height:58px;border-radius:50%;display:grid;place-items:center;background:#fff;color:#0F1B2D;transition:transform .15s,background .15s;position:relative;z-index:1}
+.tt-video .tv-play svg{margin-left:3px}
+.tt-video .tv-t{position:relative;z-index:1;display:flex;flex-direction:column;gap:5px}.tt-video .tv-t b{font-size:19px;line-height:1.25}.tt-video .tv-t small{font-size:13px;color:#B9C7DA;line-height:1.4}
+.tt-video .tv-tutka{position:absolute;right:-40px;top:50%;width:220px;height:220px;transform:translateY(-50%);pointer-events:none}
+.tt-video .tv-tutka i{position:absolute;inset:0;border:1.5px solid rgba(140,200,255,.22);border-radius:50%}
+.tt-video .tv-tutka i:nth-child(2){inset:35px}.tt-video .tv-tutka i:nth-child(3){inset:70px;background:radial-gradient(circle,#F5A524 0 6px,transparent 7px)}
+@media(prefers-reduced-motion:no-preference){.tt-video .tv-tutka i:nth-child(1){animation:tvPulssi 2.6s ease-out infinite}}
+@keyframes tvPulssi{from{transform:scale(.55);opacity:1}to{transform:scale(1.05);opacity:0}}
+@media(max-width:900px){.tt-video{display:none}}
 .tt-go{font:inherit;font-size:15px;font-weight:600;background:#1F5FBF;color:#fff;border:0;border-radius:999px;padding:11px 24px;cursor:pointer}
 .tt-go:hover{background:#184C99}
 .tt-go:focus{outline:none}.tt-go:focus-visible{outline:3px solid #0F1B2D;outline-offset:2px}
@@ -4568,6 +4580,11 @@ addEventListener("DOMContentLoaded", function(){
   const auki = on=>{ m.hidden = !on; document.documentElement.classList.toggle("tt-lukko", on); if(on && matchMedia("(min-width:641px)").matches) document.getElementById("ttmGo").focus(); };
   const sulje = ()=>{ auki(false); try{ localStorage.setItem("tt_tervetuloa","1"); }catch(e){} };
   document.getElementById("ttmX").onclick = sulje; document.getElementById("ttmGo").onclick = sulje;
+  // esittely: ladataan vasta pyydettäessä, ajetaan sivun omilla toiminnoilla oikealla datalla
+  document.getElementById("ttmVideo").onclick = ()=>{ sulje();
+    const aja = ()=>window.ttOpastus && window.ttOpastus();
+    if(window.ttOpastus) return aja();
+    const es = document.createElement("script"); es.src = "esitys.js?v=7"; es.onload = aja; document.body.appendChild(es); };
   m.addEventListener("mousedown", e=>{ if(e.target===m) sulje(); });
   addEventListener("keydown", e=>{ if(e.key==="Escape" && !m.hidden) sulje(); });
   help.onclick = ()=>auki(true);
@@ -5135,7 +5152,7 @@ route(); load(); loadAI();
 { const hk = ()=>{ if(!document.hidden && S.nakyma!=="halytykset") hRpc("halytykset_lista").then(hBell).catch(()=>{}); };
   document.getElementById("hBell").hidden = false; hk(); setInterval(hk, 60000); }
 // esitysajo videota varten (?demo): ladataan vain pyydettäessä
-try{ if(new URLSearchParams(location.search).has("demo")){ const es = document.createElement("script"); es.src = "esitys.js?v=6"; document.body.appendChild(es); } }catch(e){}
+try{ if(new URLSearchParams(location.search).has("demo")){ const es = document.createElement("script"); es.src = "esitys.js?v=7"; document.body.appendChild(es); } }catch(e){}
 setInterval(()=>{ if(!document.hidden) loadAI(); }, 600000);
 setInterval(()=>{ if(!document.hidden) load(); }, 120000);
 </script>
@@ -5145,6 +5162,11 @@ setInterval(()=>{ if(!document.hidden) load(); }, 120000);
   <div class="tt-card">
     <button class="tt-x" id="ttmX" aria-label="Sulje">×</button>
     <div class="tt-brand"><span class="tmlogo">Työmaa<b>tutka</b></span></div>
+    <button type="button" class="tt-video" id="ttmVideo" aria-label="Katso esittely: miten tutka toimii, noin minuutti">
+      <span class="tv-tutka" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span class="tv-play" aria-hidden="true"><svg viewBox="0 0 24 24" width="26" height="26"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></svg></span>
+      <span class="tv-t"><b>Katso, miten tutka toimii</b><small>Esittely noin minuutissa · tutka näyttää itse oikealla datalla · Esc lopettaa</small></span>
+    </button>
     <h2 id="ttmH">Mitä katutyöt maksavat joukkoliikenteelle?</h2>
     <p class="tt-lead">Työmaatutka mittaa avoimesta datasta joka päivä, paljonko Helsingin katutyöt hidastavat busseja ja ratikoita. Se kertoo myös, mitä asialle kannattaisi tehdä.</p>
     <div class="tt-3">
