@@ -1471,6 +1471,7 @@ html.hsl .seg button,html.hsl .top .omarow input,html.hsl .st,html.hsl .olo-c,ht
   <div class="prose">
     <h2>Miten Työmaatutka toimisi HSL:ssä</h2>
     <p class="lead">Työmaatutka on prototyyppi, ei valmis järjestelmä. Tällä sivulla: mitä on jo löydetty, mitä ei vielä tiedetä ja miten idea testattaisiin HSL:ssä kuudessa viikossa.</p>
+    <div class="paiv"><b>Päivitetty 14.11.2026.</b> Vaikutus mitataan nyt samalta kadulta ennen töitä ja työn aikana (todennettu tai alustava, vaihteluväleineen). Aiempi vertailu linjan muihin osuuksiin näkyy enää harmaana arviona, koska se antoi puolelle töistä negatiivisen luvun. Lisäksi: karttatyöpöytä siirrettävine paletteineen, yksi haku linjoille, kaduille ja luville, seisovat autot erotellaan livenäkymässä, sekä puhelin- ja saavutettavuuskorjaukset.</div>
     <p><b>Työnjako lyhyesti:</b> kaikki luvut lasketaan toistettavasti SQL:llä. Kielimalli lukee lupatekstejä ja kirjoittaa katsauksia ja luonnoksia. Ihminen päättää kaikesta. Tarkemmin <a href="#/kehitys">Tekoäly tuotannossa → Tuoteseloste</a>.</p>
 
     <h3>Löydetyt viat ja korjaukset</h3>
@@ -5196,6 +5197,7 @@ setInterval(()=>{ if(!document.hidden) load(); }, 120000);
 .tmlogo b{font-weight:800;color:#8CC8FF}
 .tt-brand .tmlogo{color:var(--i);font-size:28px}.tt-brand .tmlogo b{color:#1F5FBF}
 #haAvaa,#enOlet,.ha-esit,#haEsit{display:none!important}
+.paiv{background:#EEF6FF;border-left:3px solid #1F5FBF;padding:9px 12px;margin:4px 0 18px;font-size:14px;line-height:1.5;max-width:820px;border-radius:0 6px 6px 0}
 </style>
 </body>
 </html>
